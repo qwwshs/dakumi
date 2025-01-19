@@ -8,12 +8,13 @@ room_sidebar = {
     load = function()
         objact_button_chart_info.load(1250,100,0,150,50)
         objact_button_settings.load(1250,200,0,150,50)
-        objact_button_togithub.load(1565,765,0,25,25)
-        objact_button_todakumi.load(1540,765,0,25,25)
-        objact_button_tracks_edit.load(1250,300,0,150,50)
+        objact_button_track_sidebar.load(1250,300,0,150,50)
+        objact_button_tracks_edit.load(1250,400,0,150,50)
+
         objact_events_edit.load(1250,100,0,150,50)
         objact_button_break.load(1570,0,0,30,30)
-        
+        objact_button_togithub.load(1565,765,0,25,25)
+        objact_button_todakumi.load(1540,765,0,25,25)
     end,
     update = function(dt)
         if not the_room_pos(pos) then
@@ -34,6 +35,7 @@ room_sidebar = {
         love.graphics.rectangle("fill",1220,0,400,800) --背景板
         objact_chart_info.draw()
         objact_settings.draw()
+        objact_track_sidebar.draw()
         objact_tracks_edit.draw()
         objact_event_edit.draw()
         objact_note_edit.draw()
@@ -41,7 +43,7 @@ room_sidebar = {
         love.graphics.setColor(1,1,1,1)
         love.graphics.print(objact_language.get_string_in_languages(displayed_content),1250,50)
         love.graphics.setColor(1,1,1,1)
-        love.graphics.print(objact_language.get_string_in_languages("version")..version,1230,780)
+        love.graphics.print(objact_language.get_string_in_languages("version")..version,1500,50)
         local fps = love.timer.getFPS( )
         love.graphics.print("FPS:"..fps,1230,760)
     end,
@@ -50,6 +52,7 @@ room_sidebar = {
             return
         end
         objact_chart_info.keypressed(key)
+        objact_track_sidebar.keypressed(key)
         objact_settings.keypressed(key)
         objact_event_edit.keypressed(key)
         objact_button_break.keyboard(key)
@@ -65,7 +68,7 @@ room_sidebar = {
         objact_chart_info.wheelmoved(x,y)
         objact_settings.wheelmoved(x,y)
         objact_tracks_edit.wheelmoved(x,y)
-
+        objact_track_sidebar.wheelmoved(x,y)
     end,
     mousepressed = function( x, y, button, istouch, presses )
         if not the_room_pos(pos) then
@@ -75,7 +78,7 @@ room_sidebar = {
         objact_tracks_edit.mousepressed( x, y, button, istouch, presses )
         objact_settings.mousepressed( x, y, button, istouch, presses )
         objact_event_edit.mousepressed( x, y, button, istouch, presses )
-
+        objact_track_sidebar.mousepressed( x, y, button, istouch, presses )
     end,
     mousereleased = function( x, y, button, istouch, presses )
         if not the_room_pos(pos) then

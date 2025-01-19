@@ -1,5 +1,11 @@
 
 local pos = "edit"
+local now_all_track_pos = {} --现在所有轨道的属性
+
+function get_all_track_pos()
+    return now_all_track_pos
+end
+
 room_play = { -- 最基础的 播放页面
 load = function()
     objact_hit.load()
@@ -10,6 +16,12 @@ update = function(dt)
     if not the_room_pos(pos) then
         return
     end
+    local all_track = track_get_all_track()
+    for i = 1,#all_track do
+        local x,w = event_get(all_track[i],beat.nowbeat)
+        now_all_track_pos[all_track[i]] = {x = x,w = w}
+    end
+
     objact_hit.update(dt)
 end,
 
@@ -41,6 +53,8 @@ draw = function()
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
     love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 60)
+    
+    objact_demo_now_x_pos.draw()
 
     --event渲染
     local event_h = settings.note_height

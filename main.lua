@@ -1,4 +1,4 @@
-version = "0.3.1"
+version = "0.3.3"
 beat = {nowbeat = 0,allbeat = 100}
 time = {nowtime = 0 ,alltime = 100}
 denom = {scale = 1,denom = 4} --分度的缩放和使用的分度
@@ -62,7 +62,6 @@ meta_settings = { --设置基本格式 元表
 }
 
 require('the_require')
-
 function the_room_pos(pos) -- 房间状态判定
     local isroom = false
     if type(pos) == 'table' then
@@ -157,7 +156,7 @@ function love.load()
     objact_mouse.load()
     room_edit_tool.load()
     room_tracks_edit.load()
-    log("start")
+    if log then log("start") end
     objact_message_box.message("start")
     love.keyboard.setKeyRepeat(true) --键重复
 
@@ -331,10 +330,10 @@ local function error_printer(msg, layer)
 end
 
 function love.errorhandler(msg)
-    save(chart,"chart.d3")
+    if type(save) == 'function' then pcall(function() save(chart,"chart.d3") end) end
     love.system.openURL(love.filesystem.getRealDirectory( "chart" ))
 	msg = tostring(msg)
-    log("error:"..msg)
+    if type(log) == 'function' then log("error:"..msg) end
 	error_printer(msg, 2)
 
 	if not love.window or not love.graphics or not love.event then

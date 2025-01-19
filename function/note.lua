@@ -104,21 +104,8 @@ function note_place(note_type,pos)
     end
 end
 function note_sort()
+        table.sort(chart.note,function(a,b) return thebeat(a.beat) < thebeat(b.beat) end)
         local_tab = {}
-        --对note进行排序
-        local thetable = {} --临时note表
-    
-        while #chart.note > 0 do
-            local min = 1 --设1 note大小最小
-            for i = 1 ,#chart.note do
-                if thebeat(chart.note[i].beat) < thebeat(chart.note[min].beat) then
-                    min = i
-                end
-            end
-            thetable[#thetable + 1] = chart.note[min]
-            table.remove(chart.note,min)
-        end
-        chart.note = thetable
         hold_clean_up()
 end
 function get_hold_table()

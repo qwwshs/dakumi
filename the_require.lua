@@ -45,7 +45,7 @@ require("room/play")
     require('objact/play/demo_mode')
     require('objact/play/denom_play')
     require('objact/play/note_play_in_edit')
-    
+    require('objact/play/demo_now_x_pos')
 
 require("room/sidebar")
     require('objact/sidebar/button_break')
@@ -72,6 +72,9 @@ require("room/sidebar")
     require('objact/sidebar/button_tracks_edit')
         require('objact/sidebar/tracks_edit')
 
+    require('objact/sidebar/button_track')
+        require('objact/sidebar/track_sidebar')
+
 require("room/edit_tool")
     require('objact/edit_tool/switch_note_fake')
     require("objact/edit_tool/button_denom")
@@ -96,6 +99,8 @@ require("room/select")
     require('objact/select/button_open_directory')
     require('objact/select/button_edit_chart')
     require('objact/select/button_new_chart')
+    require('objact/select/button_to_dakumi')
+    require('objact/select/button_to_github')
 
 require("room/tracks_edit")
 

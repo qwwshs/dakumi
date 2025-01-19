@@ -21,6 +21,7 @@ if ui_tab and #ui_tab > 0 then
         end
     end
 end
+
 --演示的
 objact_demo_inplay = {
     draw = function(sx,sy) --x缩放和y缩放
@@ -33,35 +34,25 @@ objact_demo_inplay = {
 
     love.graphics.setColor(0,0,0,1) --游玩区域显示的背景板2底板
     love.graphics.rectangle("fill",0,settings.judge_line_y,900,800 - settings.judge_line_y)
+    
+    all_track_pos = get_all_track_pos()
 
-
-
-    local drawed_track = {} --已经绘制的track
-    for i=1 ,#chart.event do --轨道底板绘制
-        if thebeat(chart.event.beat) > beat.nowbeat then
-            break
-        end
-        if drawed_track[chart.event[i].track] == nil then
-            local x,w = event_get(chart.event[i].track,beat.nowbeat)
+    local all_track = track_get_all_track()
+    love.graphics.setColor(0,0,0,0.5 )  --底板
+    for i=1 ,#all_track do --轨道底板绘制
+            local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = to_play_track(x,w) --为了居中
             --倾斜计算
-            if w ~= 0 then
-                love.graphics.setColor(0,0,0,0.5 )  --底板
-                love.graphics.polygon("fill",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
-            end
-            drawed_track[chart.event[i].track] = true
+        if w ~= 0 then
+            love.graphics.polygon("fill",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
         end
     end
-    local draw_exist = false --选择时底板已经绘制
-    drawed_track = {} --已经绘制的track
-    for i=1 ,#chart.event do --轨道侧线绘制
-        if drawed_track[chart.event[i].track] == nil then
-            local x,w = event_get(chart.event[i].track,beat.nowbeat)
+
+    for i=1 ,#all_track do --轨道侧线绘制
+            local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = to_play_track(x,w) --为了居中
             --倾斜计算
-
-            if track.track == chart.event[i].track and draw_exist == false and demo_mode == false then --选择时的底板
-                draw_exist = true
+            if track.track == all_track[i] and (not demo_mode ) then --选择时的底板
                 love.graphics.setColor(1,1,1,0.2) 
                 love.graphics.polygon("fill",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
             end
@@ -69,15 +60,13 @@ objact_demo_inplay = {
                 love.graphics.setColor(1,1,1,1) --侧线
                 love.graphics.polygon("line",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
             end
-            love.graphics.setColor(1,1,1,1) --轨道编号
-            if demo_mode == false then
-                if track.track == chart.event[i].track then
+            if not demo_mode then
+                love.graphics.setColor(1,1,1,1) --轨道编号
+                if track.track == all_track[i] then
                     love.graphics.setColor(0,1,1,1) --轨道编号
                 end
-                love.graphics.print(chart.event[i].track,x+w/2,settings.judge_line_y+20) --为了居中
+                love.graphics.print(all_track[i],x+w/2,settings.judge_line_y+20) --为了居中
             end
-            drawed_track[chart.event[i].track] = true
-        end
     end
 
     --游玩区域侧线
@@ -90,130 +79,153 @@ objact_demo_inplay = {
     
     local note_h = settings.note_height --25 * denom.scale
     local note_w = 75
+    local _width, _height = ui_note:getDimensions() -- 得到宽高
     love.graphics.setColor(1,1,1,settings.note_alpha / 100)
+
     --展示侧note渲染
-    for i = 1,#chart.note do
-        local x,w = event_get(chart.note[i].track,beat.nowbeat)
-        local y = beat_to_y(chart.note[i].beat)
-        local y2 = y
-        if chart.note[i].type == "hold" then
-            y2 = beat_to_y(chart.note[i].beat2)
-        end
-        local original_x = to_play_track_original_x(x) --原始x没有因为居中修改坐标
-        local original_w = to_play_track_original_w(w) --原始x没有因为居中修改坐标
-        x,w = to_play_track(x,w) --为了居中
-        if w > 40 and chart.note[i].type ~= "wipe" then --增加间隙
-            w = w - 20
-        elseif w <= 40 and w > 20 and chart.note[i].type ~= "wipe" then
-            w = 20
-        elseif w > 60 and chart.note[i].type == "wipe" then --增加间隙
-            w = w - 30
-        elseif w <= 60 and w > 30 and chart.note[i].type == "wipe" then
-            w = 30
-        end
-        
-        if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
-            local to_3d = (y - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
-                (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
-            local to_3d_w =  w *to_3d
-        
-            local to_3d_x = (original_x-450) *to_3d - to_3d_w/2
+    if settings.angle ~= 90 then
+        for i = 1,#chart.note do
+            local x,w = all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w
+            local y = beat_to_y(chart.note[i].beat)
+            local y2 = y
+            if y <  0 -  note_h then break end --超出范围
 
-            --图像范围限制函数
-            local function myStencilFunction()
-                love.graphics.polygon("fill",x-450,settings.judge_line_y-y,x-450+original_w,settings.judge_line_y-y,0,note_occurrence_point*math.tan(math.rad(settings.angle))-y)
+            if chart.note[i].type == "hold" then
+                y2 = beat_to_y(chart.note[i].beat2)
             end
+            local original_x = to_play_track_original_x(x) --原始x没有因为居中修改坐标
+            local original_w = to_play_track_original_w(w) --原始x没有因为居中修改坐标
+            x,w = to_play_track(x,w) --为了居中
+            if w > 40 and chart.note[i].type ~= "wipe" then --增加间隙
+                w = w - 20
+            elseif w <= 40 and w > 20 and chart.note[i].type ~= "wipe" then
+                w = 20
+            elseif w > 60 and chart.note[i].type == "wipe" then --增加间隙
+                w = w - 30
+            elseif w <= 60 and w > 30 and chart.note[i].type == "wipe" then
+                w = 30
+            end
+        
+            if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
+                local to_3d = (y - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
+                    (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
+                local to_3d_w =  w *to_3d
+        
+                local to_3d_x = (original_x-450) *to_3d - to_3d_w/2
 
-            --使图片倾斜
-            local note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
-            love.graphics.push()
-            love.graphics.translate(450, y)
-            love.graphics.stencil(myStencilFunction, "replace", 1)
-            love.graphics.setStencilTest("greater", 0)
-            love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
-
-            if chart.note[i].type == "note" then
-                local _width, _height = ui_note:getDimensions() -- 得到宽高
-
-                local _scale_w = 1 / _width * to_3d_w
-
-                local _scale_h = 1 / _height * note_h
-                if y > 0 - note_h and y < 800 + note_h then
-                
-                    love.graphics.draw(ui_note,to_3d_x
-                    ,-note_h,0,_scale_w,_scale_h)
+                --图像范围限制函数
+                local function myStencilFunction()
+                    love.graphics.polygon("fill",x-450,settings.judge_line_y-y,x-450+original_w,settings.judge_line_y-y,0,note_occurrence_point*math.tan(math.rad(settings.angle))-y)
                 end
-                love.graphics.pop()  -- 恢复之前的变换状态 
-            elseif chart.note[i].type == "wipe" then
-                local _width, _height = ui_note:getDimensions() -- 得到宽高
 
-                local _scale_w = 1 / _width * to_3d_w
-
-                local _scale_h = 1 / _height * note_h
-                if y > 0 - note_h and y < 800 + note_h then
-                    love.graphics.draw(ui_wipe,to_3d_x
-                    ,-note_h,0,_scale_w,_scale_h)
-                end
-                love.graphics.pop()  -- 恢复之前的变换状态 
-            else --hold
-                local _width, _height = ui_note:getDimensions() -- 得到宽高
-
-                local _scale_w = 1 / _width * to_3d_w
-
-                local _scale_h = 1 / _height * note_h
-                if y > 0 - note_h and y < 800 + note_h then
-                    love.graphics.draw(ui_hold,to_3d_x
-                    ,-note_h,0,_scale_w,_scale_h)
-                end
-                love.graphics.pop() --提前释放 重新偏移
-            
+                --使图片倾斜
+                local note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
                 love.graphics.push()
-                to_3d = (y2 -note_h -  note_occurrence_point * math.tan(math.rad(settings.angle))) / 
-                        (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
-                to_3d_w =  w *to_3d
-                _scale_w = 1 / _width * to_3d_w
-                to_3d_x = (original_x-450) *to_3d - to_3d_w/2
+                love.graphics.translate(450, y)
+                love.graphics.stencil(myStencilFunction, "replace", 1)
+                love.graphics.setStencilTest("greater", 0)
+                love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
 
-                note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
+                local _scale_w = 1 / _width * to_3d_w
+
+                local _scale_h = 1 / _height * note_h
+
+                if chart.note[i].type == "note" then
+                    love.graphics.draw(ui_note,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                    love.graphics.pop()  -- 恢复之前的变换状态 
+                elseif chart.note[i].type == "wipe" then
+                    love.graphics.draw(ui_wipe,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                    love.graphics.pop()  -- 恢复之前的变换状态 
+                else --hold
+                    if y > 0 - note_h and y < 800 + note_h then
+                        love.graphics.draw(ui_hold,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                    end
+                    love.graphics.pop() --提前释放 重新偏移
+            
+                    love.graphics.push()
+                    to_3d = (y2 -note_h -  note_occurrence_point * math.tan(math.rad(settings.angle))) / 
+                            (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
+                    to_3d_w =  w *to_3d
+                    _scale_w = 1 / _width * to_3d_w
+                    to_3d_x = (original_x-450) *to_3d - to_3d_w/2
+
+                    note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
             
 
-                if y2 > 0 - note_h and y2 < 800 + note_h and settings.angle == 90 then --尾
-                    love.graphics.translate(450, y2)
-                    love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
-                    love.graphics.draw(ui_hold_tail,to_3d_x
-                    ,0,0,_scale_w,_scale_h)
-                end
+                    if y2 > 0 - note_h and y2 < 800 + note_h and settings.angle == 90 then --尾
+                        love.graphics.translate(450, y2)
+                        love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
+                        love.graphics.draw(ui_hold_tail,to_3d_x
+                        ,0,0,_scale_w,_scale_h)
+                    end
 
-                love.graphics.pop() --提前释放 重新偏移
+                    love.graphics.pop() --提前释放 重新偏移
 
-                local note_h2 = y - y2
-                local _scale_h2 = 1 / _height * note_h / 4
-                if y > 0 - note_h and y2 < 800 + note_h then
-                    --把长条拆成一段段来渲染 以达到倾斜效果
-                    for i = y2 + note_h ,y-note_h - note_h/4,note_h /4 do
-                        love.graphics.push()
+                    local note_h2 = y - y2
+                    local _scale_h2 = 1 / _height * note_h / 4
+                    if y > 0 - note_h and y2 < 800 + note_h then
+                        --把长条拆成一段段来渲染 以达到倾斜效果
+                        for i = y2 + note_h ,y-note_h - note_h/4,note_h /4 do
+                            love.graphics.push()
                     
 
-                        to_3d = (i - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
-                        (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
-                        to_3d_w =  w *to_3d 
-                        _scale_w = 1 / _width * to_3d_w
-                        to_3d_x = (original_x-450) *to_3d - to_3d_w/2
+                            to_3d = (i - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
+                            (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
+                            to_3d_w =  w *to_3d 
+                            _scale_w = 1 / _width * to_3d_w
+                            to_3d_x = (original_x-450) *to_3d - to_3d_w/2
 
-                        note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
-                        love.graphics.translate(450, i) --减去尾的位置
-                        love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
+                            note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
+                            love.graphics.translate(450, i) --减去尾的位置
+                            love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
 
-                        love.graphics.draw(ui_hold_body,to_3d_x
-                        ,0,0,_scale_w,_scale_h2) --身
-                        love.graphics.pop()
+                            love.graphics.draw(ui_hold_body,to_3d_x,0,0,_scale_w,_scale_h2) --身
+                            love.graphics.pop()
+                        end
+                    end
+            
+                end
+                love.graphics.setStencilTest()
+            end
+        end
+
+    elseif settings.angle == 90 then
+        for i = 1,#chart.note do
+            local x,w = to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
+
+            if w > 40 and chart.note[i].type ~= "wipe" then --增加间隙
+                w = w - 20
+            elseif w <= 40 and w > 20 and chart.note[i].type ~= "wipe" then
+                w = 20
+            elseif w > 60 and chart.note[i].type == "wipe" then --增加间隙
+                w = w - 30
+            elseif w <= 60 and w > 30 and chart.note[i].type == "wipe" then
+                w = 30
+            end
+
+            local y = beat_to_y(chart.note[i].beat)
+            local y2 = y
+
+            local _scale_w = 1 / _width * w
+
+            local _scale_h = 1 / _height * note_h
+
+            if y <  0 -  note_h then break end --超出范围
+            if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
+                if chart.note[i].type == "note" then
+                    love.graphics.draw(ui_note,x,y-note_h,0,_scale_w,_scale_h)
+                elseif chart.note[i].type == "wipe" then
+                    love.graphics.draw(ui_wipe,x,y-note_h,0,_scale_w,_scale_h)
+                else --hold
+                    local _scale_h2 = 1 / _height * (y2 - y)
+                    if y > 0 - note_h and y < 800 + note_h then
+                        love.graphics.draw(ui_hold,x,y-note_h,0,_scale_w,_scale_h)
+                        love.graphics.draw(ui_hold_body,x,y2,0,_scale_w,_scale_h2) --身
+                        love.graphics.draw(ui_hold_tail,x,y2-note_h,0,_scale_w,_scale_h)
                     end
                 end
-            
             end
-            love.graphics.setStencilTest()
-        elseif y < 0 - note_h then
-            break --因为note按顺序排的 所以不用再算一遍
+
         end
     end
     love.graphics.setColor(0,0,0,1) --判定线 play
@@ -230,5 +242,5 @@ objact_demo_inplay = {
     --hit
     objact_hit.draw()
     love.graphics.pop()
-    end
+end
 }

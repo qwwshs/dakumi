@@ -22,7 +22,7 @@ room_edit_tool = {
             love.graphics.setCanvas()
 
         
-        objact_note_fake.load(100,0,0,25,25)
+        objact_note_fake.load(100,25,0,25,25)
         
         objact_music_speed.load(575,50,0,25,25)
         objact_denom.load(875,50,0,25,25)

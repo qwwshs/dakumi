@@ -8,6 +8,7 @@ update = function(dt)
     if not the_room_pos(pos) then
         return
     end
+    room_play.update(dt)
     track.track = tracks_table[math.floor(((mouse.x-20) / 300)) + 1 - tracks_edit_x_move] or 1
 end,
 draw = function()

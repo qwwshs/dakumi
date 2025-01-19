@@ -94,6 +94,8 @@ end
 room_select = {
     load = function()
 
+            objact_button_todakumi_in_select.load(850,0,0,25,25)
+            objact_button_togithub_in_select.load(850,25,0,25,25)
             objact_edit_chart.load(0,750,0,100,50)
             objact_delete_chart.load(100,750,0,100,50)
             objact_new_chart.load(200,750,0,100,50)

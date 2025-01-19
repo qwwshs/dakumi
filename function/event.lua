@@ -138,19 +138,7 @@ function event_place(type,pos)
 end
 function event_sort()
     --对event进行排序
-    local thetable = {} --临时event表
-    while #chart.event > 0 do
-        local min = 1 --设1 event大小最小
-        for i = 1 ,#chart.event do
-            if thebeat(chart.event[i].beat) < thebeat(chart.event[min].beat) then
-                min = i
-            end
-        end
-    
-        thetable[#thetable + 1] = chart.event[min]
-        table.remove(chart.event,min)
-    end
-    chart.event = thetable
+    table.sort(chart.event,function(a,b) return thebeat(a.beat) < thebeat(b.beat) end)
 end
 
 function get_event_table()

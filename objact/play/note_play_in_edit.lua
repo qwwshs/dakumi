@@ -30,6 +30,8 @@ local _scale_w = 1 / _width * note_w
 
 objact_note_play_in_edit = {
     draw = function(pos,istrack)
+        local all_track_pos = get_all_track_pos()
+        local all_track = track_get_all_track()
         local note_h = settings.note_height --25 * denom.scale
         local _scale_h = 1 / _height * note_h
         pos = pos or 900
@@ -189,7 +191,7 @@ objact_note_play_in_edit = {
             love.graphics.setColor(1,1,1,1) --现在节拍
             love.graphics.print(objact_language.get_string_in_languages('beat')..":"..math.floor(beat.nowbeat*100)/100,pos,settings.judge_line_y+20)
             love.graphics.print(objact_language.get_string_in_languages('time')..":"..math.floor(time.nowtime*100)/100,pos,settings.judge_line_y+40)
-            local now_x,now_w = event_get(track.track,beat.nowbeat)
+            local now_x,now_w = all_track_pos[istrack].x,all_track_pos[istrack].w
             love.graphics.print(objact_language.get_string_in_languages('x')..":"..math.floor(now_x*100)/100,pos + 100,settings.judge_line_y+20)
             love.graphics.print(objact_language.get_string_in_languages('w')..":"..math.floor(now_w*100)/100,pos + 200,settings.judge_line_y+20)
             love.graphics.print(objact_language.get_string_in_languages('track')..":"..istrack,pos,settings.judge_line_y+60)
