@@ -186,14 +186,19 @@ objact_note_play_in_edit = {
                 end
                 
             end
-            love.graphics.setColor(0,0,0,0.5)
-            love.graphics.rectangle("fill",pos,settings.judge_line_y + 10,275,100) --遮罩
-            love.graphics.setColor(1,1,1,1) --现在节拍
-            love.graphics.print(objact_language.get_string_in_languages('beat')..":"..math.floor(beat.nowbeat*100)/100,pos,settings.judge_line_y+20)
-            love.graphics.print(objact_language.get_string_in_languages('time')..":"..math.floor(time.nowtime*100)/100,pos,settings.judge_line_y+40)
-            local now_x,now_w = all_track_pos[istrack].x,all_track_pos[istrack].w
-            love.graphics.print(objact_language.get_string_in_languages('x')..":"..math.floor(now_x*100)/100,pos + 100,settings.judge_line_y+20)
-            love.graphics.print(objact_language.get_string_in_languages('w')..":"..math.floor(now_w*100)/100,pos + 200,settings.judge_line_y+20)
-            love.graphics.print(objact_language.get_string_in_languages('track')..":"..istrack,pos,settings.judge_line_y+60)
+            
+                love.graphics.setColor(0,0,0,0.5)
+                love.graphics.rectangle("fill",pos,settings.judge_line_y + 10,275,100) --遮罩
+                love.graphics.setColor(1,1,1,1) --现在节拍
+                love.graphics.print(objact_language.get_string_in_languages('beat')..":"..math.floor(beat.nowbeat*100)/100,pos,settings.judge_line_y+20)
+                love.graphics.print(objact_language.get_string_in_languages('time')..":"..math.floor(time.nowtime*100)/100,pos,settings.judge_line_y+40)
+                local now_x,now_w = 0,0
+                if all_track_pos[istrack] then
+                    now_x,now_w = all_track_pos[istrack].x,all_track_pos[istrack].w
+                end
+                love.graphics.print(objact_language.get_string_in_languages('x')..":"..math.floor(now_x*100)/100,pos + 100,settings.judge_line_y+20)
+                love.graphics.print(objact_language.get_string_in_languages('w')..":"..math.floor(now_w*100)/100,pos + 200,settings.judge_line_y+20)
+                love.graphics.print(objact_language.get_string_in_languages('track')..":"..istrack,pos,settings.judge_line_y+60)
+
     end
 }

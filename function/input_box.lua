@@ -89,7 +89,7 @@ end
 
 function input_box_key(key) --键入内容
     if key == "backspace" then -- 退格
-        if #input_string == 1 then
+        if #input_string == 1 or type(input_string) ~= "string" then
             input_string = ""
                 input_string_index = input_string_index - 1
         else

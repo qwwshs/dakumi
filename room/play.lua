@@ -45,7 +45,7 @@ draw = function()
     end
     
     objact_demo_inplay.draw()
-    
+
     if demo_mode then
         return
     end

@@ -1,6 +1,7 @@
 function to_play_track(x,w)
     x = x or 0
     w = w or 0
+    
     return (x-w/2) *8.5 + 25,w*8.5
 end
 function to_play_track_original_x(x)

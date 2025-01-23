@@ -96,6 +96,7 @@ objact_demo_inplay = {
             local original_x = to_play_track_original_x(x) --原始x没有因为居中修改坐标
             local original_w = to_play_track_original_w(w) --原始x没有因为居中修改坐标
             x,w = to_play_track(x,w) --为了居中
+            x = x + w /2
             if w > 40 and chart.note[i].type ~= "wipe" then --增加间隙
                 w = w - 20
             elseif w <= 40 and w > 20 and chart.note[i].type ~= "wipe" then
@@ -105,7 +106,7 @@ objact_demo_inplay = {
             elseif w <= 60 and w > 30 and chart.note[i].type == "wipe" then
                 w = 30
             end
-        
+            x = x - w /2
             if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
                 local to_3d = (y - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
                     (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
@@ -192,7 +193,7 @@ objact_demo_inplay = {
     elseif settings.angle == 90 then
         for i = 1,#chart.note do
             local x,w = to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
-
+            x = x + w /2
             if w > 40 and chart.note[i].type ~= "wipe" then --增加间隙
                 w = w - 20
             elseif w <= 40 and w > 20 and chart.note[i].type ~= "wipe" then
@@ -202,14 +203,16 @@ objact_demo_inplay = {
             elseif w <= 60 and w > 30 and chart.note[i].type == "wipe" then
                 w = 30
             end
-
+            x = x - w /2
             local y = beat_to_y(chart.note[i].beat)
             local y2 = y
+            if chart.note[i].type == "hold" then
+                y2 = beat_to_y(chart.note[i].beat2)
+            end
 
             local _scale_w = 1 / _width * w
 
             local _scale_h = 1 / _height * note_h
-
             if y <  0 -  note_h then break end --超出范围
             if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
                 if chart.note[i].type == "note" then
@@ -217,17 +220,19 @@ objact_demo_inplay = {
                 elseif chart.note[i].type == "wipe" then
                     love.graphics.draw(ui_wipe,x,y-note_h,0,_scale_w,_scale_h)
                 else --hold
-                    local _scale_h2 = 1 / _height * (y2 - y)
-                    if y > 0 - note_h and y < 800 + note_h then
-                        love.graphics.draw(ui_hold,x,y-note_h,0,_scale_w,_scale_h)
-                        love.graphics.draw(ui_hold_body,x,y2,0,_scale_w,_scale_h2) --身
-                        love.graphics.draw(ui_hold_tail,x,y2-note_h,0,_scale_w,_scale_h)
-                    end
+                    local _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
+                    love.graphics.draw(ui_hold,x,y-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(ui_hold_body,x,y2+note_h,0,_scale_w,_scale_h2) --身
+                    love.graphics.draw(ui_hold_tail,x,y2,0,_scale_w,_scale_h)
                 end
             end
 
         end
     end
+    love.graphics.setColor(0,0,0,1)
+    --遮挡板
+    love.graphics.rectangle("fill",0,settings.judge_line_y,900,800 - settings.judge_line_y)
+    
     love.graphics.setColor(0,0,0,1) --判定线 play
 
     love.graphics.rectangle("fill",0,settings.judge_line_y - 3,900,16) --2是为了对其中心
