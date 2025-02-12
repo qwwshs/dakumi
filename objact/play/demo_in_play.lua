@@ -21,12 +21,13 @@ if ui_tab and #ui_tab > 0 then
         end
     end
 end
-
 --演示的
 objact_demo_inplay = {
     draw = function(sx,sy) --x缩放和y缩放
     sx = sx or 1
     sy = sy or 1
+    local effect = get_effect()
+    if not demo_mode then effect = get_init_effect() end
     love.graphics.push()
     love.graphics.scale(sx,sy)
         love.graphics.setColor(RGBA_hexToRGBA("#64000000")) --游玩区域显示的背景板
@@ -38,7 +39,7 @@ objact_demo_inplay = {
     all_track_pos = get_all_track_pos()
 
     local all_track = track_get_all_track()
-    love.graphics.setColor(0,0,0,0.5 )  --底板
+    love.graphics.setColor(0,0,0,0.5 * effect.track_alpha / 100 )  --底板
     for i=1 ,#all_track do --轨道底板绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = to_play_track(x,w) --为了居中
@@ -57,7 +58,7 @@ objact_demo_inplay = {
                 love.graphics.polygon("fill",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
             end
             if w ~= 0 then
-                love.graphics.setColor(1,1,1,1) --侧线
+                love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
                 love.graphics.polygon("line",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
             end
             if not demo_mode then
@@ -65,12 +66,12 @@ objact_demo_inplay = {
                 if track.track == all_track[i] then
                     love.graphics.setColor(0,1,1,1) --轨道编号
                 end
-                love.graphics.print(all_track[i],x+w/2,settings.judge_line_y+20) --为了居中
+                love.graphics.print(all_track[i],x+w/2,settings.judge_line_y-20) --为了居中
             end
     end
 
     --游玩区域侧线
-    love.graphics.setColor(1,1,1,1) --侧线
+    love.graphics.setColor(1,1,1,1)
     local x,w = to_play_track(0,1)
     love.graphics.polygon("fill",x,settings.judge_line_y,x+w,settings.judge_line_y,450,note_occurrence_point*math.tan(math.rad(settings.angle)))
     x,w = to_play_track(100,1)
@@ -80,7 +81,7 @@ objact_demo_inplay = {
     local note_h = settings.note_height --25 * denom.scale
     local note_w = 75
     local _width, _height = ui_note:getDimensions() -- 得到宽高
-    love.graphics.setColor(1,1,1,settings.note_alpha / 100)
+    love.graphics.setColor(1,1,1,effect.note_alpha / 100)
 
     --展示侧note渲染
     if settings.angle ~= 90 then
@@ -132,14 +133,14 @@ objact_demo_inplay = {
                 local _scale_h = 1 / _height * note_h
 
                 if chart.note[i].type == "note" then
-                    love.graphics.draw(ui_note,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(ui_note,to_3d_x+to_3d_w/2,-note_h,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     love.graphics.pop()  -- 恢复之前的变换状态 
                 elseif chart.note[i].type == "wipe" then
-                    love.graphics.draw(ui_wipe,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(ui_wipe,to_3d_x+to_3d_w/2,-note_h,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     love.graphics.pop()  -- 恢复之前的变换状态 
                 else --hold
                     if y > 0 - note_h and y < 800 + note_h then
-                        love.graphics.draw(ui_hold,to_3d_x,-note_h,0,_scale_w,_scale_h)
+                        love.graphics.draw(ui_hold,to_3d_x,-note_h,effect.note_rotate,_scale_w,_scale_h)
                     end
                     love.graphics.pop() --提前释放 重新偏移
             
@@ -216,9 +217,9 @@ objact_demo_inplay = {
             if y <  0 -  note_h then break end --超出范围
             if (not  (y2 > 800 + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
                 if chart.note[i].type == "note" then
-                    love.graphics.draw(ui_note,x,y-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(ui_note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
                 elseif chart.note[i].type == "wipe" then
-                    love.graphics.draw(ui_wipe,x,y-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(ui_wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                 else --hold
                     local _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
                     love.graphics.draw(ui_hold,x,y-note_h,0,_scale_w,_scale_h)

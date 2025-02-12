@@ -1,4 +1,4 @@
-version = "0.3.3"
+version = "0.3.4"
 beat = {nowbeat = 0,allbeat = 100}
 time = {nowtime = 0 ,alltime = 100}
 denom = {scale = 1,denom = 4} --分度的缩放和使用的分度
@@ -51,7 +51,6 @@ meta_settings = { --设置基本格式 元表
         hit_sound = 0,
         language= 1,
         contact_roller = 1, --鼠标滚动系数
-        note_alpha = 100,
         note_height = 75,
         bg_alpha = 50,
         denom_alpha = 70,
@@ -62,6 +61,7 @@ meta_settings = { --设置基本格式 元表
 }
 
 require('the_require')
+
 function the_room_pos(pos) -- 房间状态判定
     local isroom = false
     if type(pos) == 'table' then

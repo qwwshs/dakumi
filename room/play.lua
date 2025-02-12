@@ -1,9 +1,23 @@
 
 local pos = "edit"
 local now_all_track_pos = {} --现在所有轨道的属性
-
+local effect = {note_alpha = 100,
+                track_alpha = 100,
+                track_line_alpha = 100,
+                note_rotate = 0,
+            } --影响效果
 function get_all_track_pos()
     return now_all_track_pos
+end
+function get_effect()
+    return effect
+end
+function get_init_effect()
+    return {note_alpha = 100,
+    track_alpha = 100,
+    track_line_alpha = 100,
+    note_rotate = 0,
+} --影响效果
 end
 
 room_play = { -- 最基础的 播放页面
@@ -16,6 +30,38 @@ update = function(dt)
     if not the_room_pos(pos) then
         return
     end
+    local now_note_alpha_ed = false --已经计算
+    local now_track_alpha_ed = false --已经计算
+    local now_track_line_alpha_ed = false --已经计算
+    local now_note_rotate_ed = false --已经计算
+    local now_scroll_ed = false --已经计算
+    for i =  #chart.effect,1,-1 do --倒着减小计算量
+        if now_note_alpha_ed and now_track_alpha_ed and now_track_line_alpha_ed and now_note_rotate_ed and now_scroll_ed then --计算完成
+            break
+        end
+        if chart.effect[i] then
+            if (thebeat(chart.effect[i].beat) <= beat.nowbeat and thebeat(chart.effect[i].beat2) > beat.nowbeat) or (thebeat(chart.effect[i].beat2) <= beat.nowbeat) then
+                if chart.effect[i].type == "note_alpha" and (not now_note_alpha_ed) then
+                    effect.note_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                    now_note_alpha_ed = true
+                elseif chart.effect[i].type == "track_alpha" and (not now_track_alpha_ed) then
+                    effect.track_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                    now_track_alpha_ed = true
+                elseif chart.effect[i].type == "track_line_alpha" and (not now_track_alpha_ed) then
+                    effect.track_line_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                    now_track_line_alpha_ed = true
+                elseif chart.effect[i].type == "note_rotate" and (not now_track_alpha_ed) then
+                    effect.note_rotate = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                    now_note_rotate_ed = true
+                elseif chart.effect[i].type == "scroll" and (not now_track_alpha_ed) then
+                    effect.scroll = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                    now_scroll_ed = true
+                end
+            end
+        end
+    end
+
+
     local all_track = track_get_all_track()
     for i = 1,#all_track do
         local x,w = event_get(all_track[i],beat.nowbeat)
@@ -53,7 +99,9 @@ draw = function()
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
     love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 60)
-    
+    --effect绘制
+    local str = 'rotate: '..effect.note_rotate
+    love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 80)
     objact_demo_now_x_pos.draw()
 
     --event渲染

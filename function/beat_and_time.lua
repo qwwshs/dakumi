@@ -23,7 +23,7 @@ end
 
 
 function beat_to_time(bpm, beat) -- 根据bpm和beat计算时间
-    
+    if type(beat) == "table" then  beat = thebeat(beat) end -- 转数值
     function thetime(isbeat,bpm) -- 转时间的函数
         return isbeat / bpm * 60
     end
