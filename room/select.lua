@@ -105,6 +105,7 @@ room_select = {
             objact_delete_music.load(1400,0,0,100,50)
             objact_export.load(1300,0,0,100,50)
             --objact_selector.load(500,50,0,1100,800)
+            objact_file_select.load(1100,0,0,100,50)
 
         load_select()
     end,
