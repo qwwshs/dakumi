@@ -102,6 +102,7 @@ require("room/select")
     require('objact/select/button_new_chart')
     require('objact/select/button_to_dakumi')
     require('objact/select/button_to_github')
+    require('objact/select/button_file_select')
 
 require("room/tracks_edit")
 
