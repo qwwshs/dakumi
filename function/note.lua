@@ -33,8 +33,7 @@ function note_delete(pos)
         if chart.note[i].track == track.track and 
         ((thebeat(chart.note[i].beat) >= note_beat_down and thebeat(chart.note[i].beat) <= note_beat_up)
         or (chart.note[i].beat2 and -- 长条
-        (thebeat(chart.note[i].beat) <= note_beat_down and thebeat(chart.note[i].beat2) >= note_beat_down)
-        or (thebeat(chart.note[i].beat) <= note_beat_up and thebeat(chart.note[i].beat2) >= note_beat_up))) then
+        intervals_intersect(thebeat(chart.note[i].beat), thebeat(chart.note[i].beat2), note_beat_up, note_beat_down))) then
             objact_redo.write_revoke("note delete",chart.note[i])
             table.remove(chart.note, i)
             displayed_content = 'nil'

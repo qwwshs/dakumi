@@ -111,60 +111,36 @@ objact_copy = {
             end
         if copy_tab.pos == "play" then
             for i = 1,#copy_tab.note do
-                local x,w = event_get(copy_tab.note[i].track,beat.nowbeat)
+                local x,w = to_play_track(all_track_pos[copy_tab.note[i].track].x,all_track_pos[copy_tab.note[i].track].w)
+                x = x + w /2
+                if w > 40 and copy_tab.note[i].type ~= "wipe" then --增加间隙
+                    w = w - 20
+                elseif w <= 40 and w > 20 and copy_tab.note[i].type ~= "wipe" then
+                    w = 20
+                elseif w > 60 and copy_tab.note[i].type == "wipe" then --增加间隙
+                    w = w - 30
+                elseif w <= 60 and w > 30 and copy_tab.note[i].type == "wipe" then
+                    w = 30
+                end
+                x = x - w /2
                 local y = beat_to_y(copy_tab.note[i].beat)
                 local y2 = y
                 if copy_tab.note[i].type == "hold" then
                     y2 = beat_to_y(copy_tab.note[i].beat2)
                 end
-                local original_x = to_play_track_original_w(x,w)  --原始x没有因为居中修改坐标
-                x,w =   to_play_track(x,w) --为了居中
-
-                local to_3d = (y - note_occurrence_point * math.tan(math.rad(settings.angle))) / 
-                (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
-                local to_3d_w =  w --没变为3d的必要
-                
-                local to_3d_x = (original_x-450) *to_3d - to_3d_w/2
-        
-                    --图像范围限制函数
-                local function myStencilFunction()
-                    love.graphics.polygon("fill",x-450,settings.judge_line_y-y,x-450+w,settings.judge_line_y-y,0,note_occurrence_point*math.tan(math.rad(settings.angle))-y)
-                end
-                --使图片倾斜
-                local note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
-                love.graphics.push()
-                love.graphics.translate(450, y)
-                love.graphics.stencil(myStencilFunction, "replace", 1)
-                love.graphics.setStencilTest("greater", 0)
-                love.graphics.shear(math.cos(note_angle),0)  -- 水平倾斜，适应轨道
-        
-                if copy_tab.note[i].type ~= "hold" then
-                    if y > 0 - note_h and y < 800 + note_h then
-                        
-                        love.graphics.rectangle("fill",to_3d_x,-note_h,to_3d_w,note_h)
+                if y <  0 -  note_h then break end --超出范围
+                if (not  (y2 > settings.judge_line_y + note_h or y < 0 -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1  ) )then
+                    if y ~= y2 and y > settings.judge_line_y then y = settings.judge_line_y end --hold头保持在线上
+    
+                    if copy_tab.note[i].type ~= "hold" then
+                        love.graphics.rectangle("fill",x,y-note_h,w,note_h)
+                    else --hold
+                        love.graphics.rectangle("fill",x,y,w,y2 - y)
                     end
-                    love.graphics.pop()  -- 恢复之前的变换状态 
-                else --hold
-                    local to_3d_tail = (y2 -note_h -  note_occurrence_point * math.tan(math.rad(settings.angle))) / 
-                            (settings.judge_line_y - note_occurrence_point * math.tan(math.rad(settings.angle))) --变成伪3d y 比上长度
-                    local to_3d_w_tail =  w *to_3d_tail
-                    local to_3d_x_tail = (original_x-450) *to_3d - to_3d_w/2
-        
-                    note_angle = math.acos( (x-450) / (settings.judge_line_y-note_occurrence_point *math.tan(math.rad(settings.angle)) ))
-                    
-        
-                    if y > 0 - note_h and y2 < 800 + note_h then --身
-                        love.graphics.polygon("fill",to_3d_x,0,to_3d_w + to_3d_x,0,to_3d_w_tail + to_3d_x_tail,y2 - y + note_h,to_3d_x_tail,y2 - y  + note_h)
-                    end
-        
-                    love.graphics.pop()
-
                 end
-                love.graphics.setStencilTest()
+    
             end
-
         end
-
         for i=1,#copy_tab.event do
 
             local y = beat_to_y(copy_tab.event[i].beat)
@@ -220,24 +196,23 @@ objact_copy = {
     end,
     mousereleased = function(x,y)
         --松手＋shift确认选中
-        if not ((iskeyboard.lshift == true or iskeyboard.rshift == true) and love.mouse.isDown(1) ) then
+        if not ((iskeyboard.lshift or iskeyboard.rshift ) and love.mouse.isDown(1) ) then
             return
         end
         copy_tab = {note = {},event = {}}
-        local min_x = math.min(x,mouse_start_pos.x)
-        local max_x = math.max(x,mouse_start_pos.x)
+        local min_x = to_play_track(to_chart_track(math.min(x,mouse_start_pos.x)),1)
+        local max_x = to_play_track(to_chart_track(math.max(x,mouse_start_pos.x)),1)
         local min_y_beat = y_to_beat(math.max(y,mouse_start_pos.y))
         local max_y_beat = y_to_beat(math.min(y,mouse_start_pos.y))  --这引擎y是向下增长的 服了 beat是向上增长的 所以要取反
 
-        if max_x < 900  then --在note轨道 play区域
+        if x < 900 or mouse_start_pos.x < 900  then --在note轨道 play区域
             copy_tab.pos = 'play'
             --先for循环记录此刻在游玩区域的轨道
             local local_track = {} --记录表
             for i = 1,#chart.event do --点击轨道进入轨道的编辑事件
-                local track_x,track_w = event_get(chart.event[i].track,beat.nowbeat)
-                track_x,track_w = to_play_track(track_x,track_w)
+                local track_x,track_w = to_play_track(event_get(chart.event[i].track,beat.nowbeat))
                 if not (max_x < track_x or track_x + track_w < min_x) then
-                    local_track[i] = true
+                    local_track[chart.event[i].track] = true
                 end
                 if thebeat(chart.event[i].beat) > max_y_beat then
                     break

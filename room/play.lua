@@ -75,19 +75,29 @@ draw = function()
     if not the_room_pos(pos) then
         return
     end
+    objact_demo_mode.draw()
     love.graphics.setColor(1,1,1,settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
-        local bg_width, bg_height = bg:getDimensions( ) -- 得到宽高
-            bg_scale_h = 1 / bg_width * 900 / (window_h_scale / window_w_scale)
-            bg_scale_w = 1 / bg_width * 900
-        if demo_mode then
-            bg_scale_h = 1 / bg_width * 900 / (window_h_scale / window_w_scale)   / ((1 + 150 / 800) / (1600/900))
-            bg_scale_w = 1 / bg_width * 900
+        --图像范围限制函数
+        local function myStencilFunction()
+            love.graphics.rectangle("fill",0,0,900,800)
         end
 
-        love.graphics.draw(bg,0,0,0,bg_scale_w,bg_scale_h)
+        love.graphics.stencil(myStencilFunction, "replace", 1)
+        love.graphics.setStencilTest("greater", 0)
 
+        local bg_width, bg_height = bg:getDimensions( ) -- 得到宽高
+            bg_scale_h = 1 / bg_height * 800 
+            bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)
+        if demo_mode then
+            bg_scale_h = 1 / bg_height * 800 
+            bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)   / (1 / (900/1600))
+        end
+
+        love.graphics.draw(bg,450 - (bg_width *bg_scale_w) / 2,0,0,bg_scale_w,bg_scale_h) --居中显示
+        
+        love.graphics.setStencilTest()
     end
     
     objact_demo_inplay.draw()
@@ -99,9 +109,6 @@ draw = function()
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
     love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 60)
-    --effect绘制
-    local str = 'rotate: '..effect.note_rotate
-    love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 80)
     objact_demo_now_x_pos.draw()
 
     --event渲染
@@ -156,7 +163,7 @@ keypressed = function(key)
     if mouse.x > 1200 then  --限制范围
         return
     end
-
+    objact_demo_mode.keyboard(key)
     objact_alt_note_event.keyboard(key)
     objact_note.keyboard(key)
     objact_note_edit_inplay.keyboard(key)

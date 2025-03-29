@@ -5,23 +5,6 @@ local ui_wipe = love.graphics.newImage("asset/ui_wipe.png")
 local ui_hold = love.graphics.newImage("asset/ui_hold_head.png")
 local ui_hold_body = love.graphics.newImage("asset/ui_hold_body.png")
 local ui_hold_tail = love.graphics.newImage("asset/ui_hold_tail.png")
-local ui_tab = love.filesystem.getDirectoryItems("ui") --得到文件夹下的所有文件
-if ui_tab and #ui_tab > 0 then
-    for i=1,#ui_tab do
-        local v = ui_tab[i]
-        if string.find(v,"ui_note") then
-            ui_note = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_wipe") then
-            ui_wipe = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_head") then
-            ui_hold = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_body") then
-            ui_hold_body = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_tail") then
-            ui_hold_tail = love.graphics.newImage("ui/"..v)
-        end
-    end
-end
 
 local note_w = 75
 local _width, _height = ui_note:getDimensions( ) -- 得到宽高

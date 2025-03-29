@@ -5,10 +5,10 @@ local w = 0
 local h = 0
 local r = 0
 local function will_draw_play()
-    return music_play and the_room_pos({"edit",'tracks_edit'})
+    return music_play and the_room_pos({"edit",'tracks_edit'}) and not demo_mode
 end
 local function will_draw_pause()
-    return (not music_play) and the_room_pos({"edit",'tracks_edit'})
+    return (not music_play) and the_room_pos({"edit",'tracks_edit'}) and not demo_mode
 end
 local function will_do ()
     music_play = not music_play

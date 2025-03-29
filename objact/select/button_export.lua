@@ -21,37 +21,27 @@ local function will_do()
             loadstring('return '..love.filesystem.read(chart_info.chart_name[i].path))()
         ))
     end
+
+    nativefs.mount(love.filesystem.getSourceBaseDirectory( ))
+    nativefs.createDirectory("export") --防止有人运行一半删文件夹
+
     local file_tab = love.filesystem.getDirectoryItems("chart/"..chart_tab[select_music_pos]) --导出
-    local file_name = ""
     for i,v in ipairs(file_tab) do
         local info = love.filesystem.read("chart/"..chart_tab[select_music_pos].."/"..v)
-        if v:sub(1,1) == "-" then --防读不了
-            v = v:sub(2,#v)
-        end
-        v = 'export_'..v
-        local file = io.open(v, "wb")
+        local file = io.open("export/"..v, "wb")
         file:write(info)
         file:close()
-        file_name = file_name.. " ".. v
     end
-    local err = os.execute("7z a "..chart_tab[select_music_pos]..".zip"..file_name)  --导出 调用7zip
+    local err = os.execute("cd export && 7z a "..chart_tab[select_music_pos]..".zip"..[[ *]])  --导出 调用7zip
     objact_message_box.message("export")
     if err ~= 0 then
-        log("export error:"..err,chart_tab[select_music_pos]..".zip", file_name)
+        log("export error:"..err,chart_tab[select_music_pos]..".zip", [[ *]])
     end
+    
     for i,v in ipairs(file_tab) do
-        if v:sub(1,1) == "-" then
-            v = v:sub(2,#v)
-        end
-        for i = 1,#v do --去空格
-            if v:sub(i,i) == " " then
-                v = v:sub(1,i-1)v:sub(i+1,#v)
-                break
-            end
-        end
-        v = 'export_'..v
-        os.remove(v)  --删除
+        nativefs.remove("export/"..v)  --删除
     end
+    nativefs.unmount()
 end
 
 objact_export = { --分度改变用的

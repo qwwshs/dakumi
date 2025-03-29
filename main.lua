@@ -1,4 +1,4 @@
-version = "0.3.4"
+version = "0.4.0"
 beat = {nowbeat = 0,allbeat = 100}
 time = {nowtime = 0 ,alltime = 100}
 denom = {scale = 1,denom = 4} --分度的缩放和使用的分度
@@ -8,7 +8,7 @@ language = {} --语言表
 bg = nil
 music = nil
 music_data = {count = 0,soundData = nil} --音频可视化用的
-room_pos = "select" --所属房间
+room_pos = "start" --所属房间
 music_play = false
 mouse  = {x = 0,y = 0,original_x = 0,original_y = 0, down_state = false}--鼠标按下状态
 elapsed_time = 0 -- 已运行时间
@@ -22,45 +22,10 @@ music_speed = 1 --播放速度
 demo_mode = false --演示状态
 window_w_scale = 1
 window_h_scale = 1
-meta_chart = { --谱面基本格式 元表
-    __index ={
-        bpm_list = {
-            {beat = {0,0,1},bpm = 120},
-        },
-        note = {},
-        event = {},
-        effect = {},
-        offset = 0 ,
-        info = {
-            song_name = [[]],
-            chart_name = [[]],
-            chartor = [[]],
-            artist = [[]],
-        }
-    }
-}
-meta_settings = { --设置基本格式 元表
-    __index ={
-        
-        judge_line_y = 700,
-        angle = 90,
-        music_volume = 100,
-        mouse = 0,
-        hit_volume = 100,
-        hit = 0,
-        hit_sound = 0,
-        language= 1,
-        contact_roller = 1, --鼠标滚动系数
-        note_height = 75,
-        bg_alpha = 50,
-        denom_alpha = 70,
-        window_width = 1600,
-        window_height = 800,
-        auto_save = 1, --自动保存
-    }
-}
 
-require('the_require')
+require 'the_require'
+
+love.window.setTitle("Dakumi editor")
 
 function the_room_pos(pos) -- 房间状态判定
     local isroom = false
@@ -80,19 +45,7 @@ end
 function love.load()
     --初始化
     love.graphics.setFont(font)
-    -- 读取文本文件
-    --local chart_file = io.open("chart.txt", "r")  -- 以只读模式打开文件
-    --if chart_file then
-    --    local content = chart_file:read("*a")  -- 读取整个文件内容
-    --    chart_file:close()  -- 关闭文件
-    --    chart = loadstring("return "..content)()
-    --end
-    --if type(chart) ~= "table" then
-    --    chart = {}
-    --end
     setmetatable(chart,meta_chart) --防谱报废
-    --fillMissingElements(chart,meta_chart.__index)
-        -- 读取语言
         local language_file = io.open("language.txt", "r")  -- 以只读模式打开文件
         if language_file then
             local content = language_file:read("*a")  -- 读取整个文件内容
@@ -117,50 +70,10 @@ function love.load()
     setmetatable(settings,meta_settings) --防谱报废
     
     fillMissingElements(settings,meta_settings.__index)
-    love.resize( settings.window_width, settings.window_height )  --缩放窗口
-    love.window.setMode(settings.window_width, settings.window_height, {resizable = true})  
-
-    --    local music_esist = false
-    --    music_error = ""
-    --    -- 读取音频文件
-    --    local music_file = io.open("music.wav", "r")  -- 以只读模式打开文件
-    --    local music_file2 = io.open("music.ogg", "r")  -- 以只读模式打开文件
-    --    local music_file3 = io.open("music.mp3", "r")  -- 以只读模式打开文件
-    --    if music_file then
-    --        music_esist,music_error = pcall(function() music = love.audio.newSource("music.wav", "stream") music_data.soundData = love.sound.newSoundData("music.wav")  end)
-    --    elseif music_file2 then
-    --        music_esist,music_error = pcall(function() music = love.audio.newSource("music.ogg", "stream") music_data.soundData = love.sound.newSoundData("music.wav") end)
-    --    elseif music_file3 then
-    --        music_esist,music_error = pcall(function() music = love.audio.newSource("music.mp3", "stream") music_data.soundData = love.sound.newSoundData("music.wav") end)
-    --    end
-    --    if music_esist then
-    --        music_data.count = music_data.soundData:getSampleCount() --用来显示音频图
-    --        time.alltime = music:getDuration() + chart.offset / 1000 -- 得到音频总时长
-    --        beat.allbeat = time_to_beat(chart.bpm_list,time.alltime)
-    --    end
-
-
-    --local bg_flie = io.open("bg.png", "r")  -- 以只读模式打开文件
-    --local bg_flie2 = io.open("bg.jpg", "r")  -- 以只读模式打开文件
-    --bg_esist,bg_error = false,""
-    --if bg_flie then
-    ---- 读取图片文件
-    --    bg_esist,bg_error = pcall(function() bg = love.graphics.newImage("bg.png") end)
-    --elseif bg_flie2 then
-    --    -- 读取图片文件
-    --    bg_esist,bg_error = pcall(function() bg = love.graphics.newImage("bg.jpg") end)
-    --end
-    room_play.load()
-    room_sidebar.load()
-    room_select.load()
-    objact_mouse.load()
-    room_edit_tool.load()
-    room_tracks_edit.load()
+    room_start.load()
     if log then log("start") end
-    objact_message_box.message("start")
     love.keyboard.setKeyRepeat(true) --键重复
 
-    
 end
 function love.update(dt)
     if love.window.getFullscreen()  then  --全屏
@@ -182,12 +95,13 @@ function love.update(dt)
     room_sidebar.update(dt)
     room_select.update(dt)
     room_edit_tool.update(dt)
+    room_start.update(dt)
     objact_message_box.update(dt)
 
 end
 function love.draw()
     love.graphics.scale(window_w_scale,window_h_scale)
-    objact_demo_mode.draw()
+    room_start.draw()
     room_play.draw()
     room_tracks_edit.draw()
     room_sidebar.draw()
@@ -222,7 +136,6 @@ function love.keypressed(key)
     room_edit_tool.keypressed(key)
     objact_message_box.message(key)
     input_box_key(key) --所有键入内容都照样读的 直接塞主函数
-    objact_demo_mode.keyboard(key)
     room_select.keypressed(key)
 end
 function love.keyreleased(key)

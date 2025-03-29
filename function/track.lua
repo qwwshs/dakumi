@@ -1,19 +1,29 @@
+local function get_track_offset()
+    return (900 - 100*settings.track_w_scale) / 2
+end
 function to_play_track(x,w)
     x = x or 0
     w = w or 0
     
-    return (x-w/2) *8.5 + 25,w*8.5
+    return (x + chart.preference.x_offset -w/2) *settings.track_w_scale + get_track_offset(),w*settings.track_w_scale
 end
+function to_play_original_track(x,w)
+    x = x or 0
+    w = w or 0
+    
+    return (x-w/2) *settings.track_w_scale + get_track_offset(),w*settings.track_w_scale
+end
+
 function to_play_track_original_x(x)
     x = x or 0
-    return x*8.5 + 25
+    return (x+ chart.preference.x_offset)*settings.track_w_scale + get_track_offset()
 end
 function to_play_track_original_w(w)
     w = w or 0
-    return w*8.5
+    return w*settings.track_w_scale
 end
 function to_chart_track(x)
-    return (x - 25) / 8.5
+    return (x- chart.preference.x_offset * settings.track_w_scale - get_track_offset()) / settings.track_w_scale
 end
 function track_get_max_track() --得到最大的轨道
     local max_track = 0
@@ -36,9 +46,9 @@ end
 function track_get_near_fence_x() --得到附近的栅栏所对应的play区域的x
     local pos = 0
     if track.fence == 0 then
-        pos = (mouse.x - 25) / 8.5
+        pos = (mouse.x - get_track_offset()) / settings.track_w_scale
     else
-        pos = (100 / track.fence * track_get_near_fence())
+        pos = (100 / track.fence * track_get_near_fence()) - chart.preference.x_offset
     end
     return pos
 end

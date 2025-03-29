@@ -8,20 +8,30 @@ objact_alt_note_event = {
             if string.sub(displayed_content,1,4) == "note" then
                 chart.note[tonumber(string.sub(displayed_content,5,#displayed_content))].beat = to_nearby_Beat(y_to_beat(mouse.y))
                 note_sort()
+                displayed_content = "nil"
             end
             if string.sub(displayed_content,1,5) == "event" then
                 chart.event[tonumber(string.sub(displayed_content,6,#displayed_content))].beat = to_nearby_Beat(y_to_beat(mouse.y))
                 event_sort()
+                displayed_content = "nil"
             end
         end
         if key == 'x' then --拖尾
             if string.sub(displayed_content,1,4) == "note" and chart.note[tonumber(string.sub(displayed_content,5,#displayed_content))].beat2 then
+                if thebeat(to_nearby_Beat(y_to_beat(mouse.y))) <= thebeat(chart.note[tonumber(string.sub(displayed_content,5,#displayed_content))].beat) then
+                    return
+                end
                 chart.note[tonumber(string.sub(displayed_content,5,#displayed_content))].beat2 = to_nearby_Beat(y_to_beat(mouse.y))
                 note_sort()
+                displayed_content = "nil"
             end
             if string.sub(displayed_content,1,5) == "event" then
+                if thebeat(to_nearby_Beat(y_to_beat(mouse.y))) <= thebeat(chart.event[tonumber(string.sub(displayed_content,6,#displayed_content))].beat) then
+                    return
+                end
                 chart.event[tonumber(string.sub(displayed_content,6,#displayed_content))].beat2 = to_nearby_Beat(y_to_beat(mouse.y))
                 event_sort()
+                displayed_content = "nil"
             end
         end
         if key == "c"  then --裁切

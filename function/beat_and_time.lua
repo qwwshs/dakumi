@@ -154,7 +154,7 @@ end
 function to_nearby_Beat(beat) --取最近的beat
     local istempbeat = beat
     local istemp_min_beat = 1 --假设1最近
-    for i = 1, denom.denom do --取分度 哪个近取哪个
+    for i = 0, denom.denom do --取分度 哪个近取哪个
         if math.abs(istempbeat - (math.floor(istempbeat) + i / denom.denom)) < math.abs(istempbeat - (math.floor(istempbeat) + istemp_min_beat / denom.denom)) then
             istemp_min_beat = i
         end

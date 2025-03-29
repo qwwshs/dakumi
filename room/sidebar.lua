@@ -7,9 +7,10 @@ end
 room_sidebar = {
     load = function()
         objact_button_chart_info.load(1250,100,0,150,50)
-        objact_button_settings.load(1250,200,0,150,50)
-        objact_button_track_sidebar.load(1250,300,0,150,50)
-        objact_button_tracks_edit.load(1250,400,0,150,50)
+        objact_button_preference.load(1250,200,0,150,50)
+        objact_button_settings.load(1250,300,0,150,50)
+        objact_button_track_sidebar.load(1250,400,0,150,50)
+        objact_button_tracks_edit.load(1250,500,0,150,50)
 
         objact_events_edit.load(1250,100,0,150,50)
         objact_button_break.load(1570,0,0,30,30)
@@ -34,6 +35,7 @@ room_sidebar = {
         love.graphics.setColor(0.1,0.1,0.1,0.5)
         love.graphics.rectangle("fill",1220,0,400,800) --背景板
         objact_chart_info.draw()
+        objact_preference.draw()
         objact_settings.draw()
         objact_track_sidebar.draw()
         objact_tracks_edit.draw()
@@ -66,6 +68,7 @@ room_sidebar = {
             return
         end
         objact_chart_info.wheelmoved(x,y)
+        objact_preference.wheelmoved(x,y)
         objact_settings.wheelmoved(x,y)
         objact_tracks_edit.wheelmoved(x,y)
         objact_track_sidebar.wheelmoved(x,y)

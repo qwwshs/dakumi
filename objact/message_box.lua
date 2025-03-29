@@ -6,28 +6,27 @@ local window_str = ""
 --消息框
 objact_message_box = {
     draw = function()
-        for i = 1,#message do
-            local alpha = bezier(message[i][2],message[i][2]+3,0.75,0,{0.12,0.54,0.283,0.83},elapsed_time) --透明度变换
-            local x = bezier(message[i][2],message[i][2]+0.5,-100,0,{0.12,0.54,0.283,0.83},elapsed_time)  --x坐标 出现
-            if elapsed_time - message[i][2] > 2.5 then
-                x = bezier(message[i][2]+1.5,message[i][2]+3,00,-100,{0.12,0.54,0.283,0.83},elapsed_time) --x坐标 返回
+        if not demo_mode then
+            for i = 1,#message do
+                local alpha = 0.75 - 0.75 * easings.easings_use_string.out_cubic((elapsed_time-message[i][2]) /3) --透明度
+                local x =-100+ 100 * easings.easings_use_string.out_cubic(math.min((elapsed_time-message[i][2]),0.5) /0.5) --透明度
+
+                love.graphics.setColor(0.3,0.3,0.3,alpha)  -- 背景板
+                love.graphics.rectangle("fill",x,300 +  (#message - i) * 35,#message[i][1]*10 + 20,25)
+                love.graphics.setColor(1,1,1,alpha)  -- 背景板
+                love.graphics.rectangle("line",x,295 +  (#message - i) * 35,#message[i][1]*10 + 10 + 20,35)
+
+                love.graphics.setColor(1,1,1,alpha)  --文字
+                love.graphics.print(message[i][1],x + 20,300 + (#message - i) * 35)
             end
-
-            love.graphics.setColor(0.5,0.5,0.5,alpha)  -- 背景板
-            love.graphics.rectangle("fill",x,300 +  (#message - i) * 35,#message[i][1]*10 + 20,25)
-            love.graphics.setColor(1,1,1,alpha)  -- 背景板
-            love.graphics.rectangle("line",x,295 +  (#message - i) * 35,#message[i][1]*10 + 10 + 20,35)
-
-            love.graphics.setColor(1,1,1,alpha)  --文字
-            love.graphics.print(message[i][1],x + 20,300 + (#message - i) * 35)
         end
-        if message_window == true then --消息框
-            love.graphics.setColor(0.3,0.3,0.3,0.9)
+        if message_window then --消息框
+            love.graphics.setColor(0,0,0,0.9)
             love.graphics.rectangle("fill",600,300,400,200)
             love.graphics.setColor(1,1,1,1)
             love.graphics.rectangle("line",600,300,400,200)
             love.graphics.setColor(1,1,1,1)
-            love.graphics.print(window_str,800-#window_str / 2 * 4,310)
+            love.graphics.printf(window_str,600,310,400,"center")
             love.graphics.print("Y",700,450)
             love.graphics.print("N",900,450)
 
@@ -66,10 +65,10 @@ objact_message_box = {
         window_func_no = func_no
     end,
     mousepressed = function( x1, y1, button, istouch, presses )
-        if message_window == true and x1 >= 600 and x1 <= 800 and y1 >= 400 and y1 <= 500 then
+        if message_window  and x1 >= 600 and x1 <= 800 and y1 >= 400 and y1 <= 500 then
             message_window = false
             window_func()
-        elseif message_window == true and x1 >= 800 and x1 <= 1000 and y1 >= 400 and y1 <= 500 then
+        elseif message_window  and x1 >= 800 and x1 <= 1000 and y1 >= 400 and y1 <= 500 then
             message_window = false
             window_func_no()
         end

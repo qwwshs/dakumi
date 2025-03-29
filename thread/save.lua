@@ -1,4 +1,4 @@
-
+serpent = require("function/serpent") --lua序列化
 require("function/save")
 require("function/log")
 require("function/table")
@@ -7,26 +7,10 @@ require("function/note")
 require("function/event")
 require("function/beat_and_time")
 require("love.timer")
+require("objact/meta")
 chart = {}
 path = ""
 local the_save_start = false --减少休眠时间
-local meta_chart = { --谱面基本格式 元表
-            __index ={
-                bpm_list = {
-                {beat = {0,0,1},bpm = 120},
-            },
-            note = {},
-            event = {},
-            effect = {},
-            offset = 0 ,
-            info = {
-                song_name = [[]],
-                chart_name = [[]],
-                chartor = [[]],
-                artist = [[]],
-            }
-        }
-    }
         setmetatable(chart,meta_chart) --防谱报废
         fillMissingElements(chart,meta_chart.__index)
 
@@ -38,6 +22,17 @@ end
 
 -- 获取主线程传递的频道  
 local channel = ...  
+
+function extractBetweenSlashes(str) -- 提取两个斜杠之间的内容
+    local lastSlash = str:match(".*()/")
+    if not lastSlash then return nil end  -- 如果没有斜杠，返回nil
+    
+    local secondLastSlash = str:sub(1, lastSlash - 1):match(".*()/")
+    if not secondLastSlash then return nil end  -- 如果只有一个斜杠，返回nil
+    
+    return str:sub(secondLastSlash + 1, lastSlash - 1)
+end
+
 
 -- 从主线程接收消息  
 while true do  
@@ -52,6 +47,10 @@ while true do
         fillMissingElements(chart,meta_chart.__index)
         if type(path) == "string" and #path > 0 then
             local s = love.filesystem.write(path , tableToString(chart) )
+            local nowdate = os.date("%Y-%m-%d %H %M %S")
+
+            love.filesystem.newFile('auto_save/'..nowdate.."music "..extractBetweenSlashes(path)..".d3")
+            log(love.filesystem.write('auto_save/'..nowdate.."music "..extractBetweenSlashes(path)..".d3" , tableToString(chart) ))
             if s then
                 log("save:"..tostring(s))
             end

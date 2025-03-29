@@ -51,6 +51,16 @@ local function coroutine_save()
         love.thread.getChannel( 'save' ):push({"info['"..i .."']" ,"[["..the_table_to_str.."]]"})
         to_yield()
     end
+    for i,v in pairs(chart.effect) do
+        the_table_to_str = v
+        love.thread.getChannel( 'save' ):push({"effect['"..i .."']" ,"[["..the_table_to_str.."]]"})
+        to_yield()
+    end
+    for i,v in pairs(chart.preference) do
+        the_table_to_str = v
+        love.thread.getChannel( 'save' ):push({"preference['"..i .."']" ,"[["..the_table_to_str.."]]"})
+        to_yield()
+    end
 
     the_table_to_str = chart.offset
     love.thread.getChannel( 'save' ):push({"offset" ,the_table_to_str})
@@ -61,7 +71,7 @@ end
 -- 创建协程  
 local the_coroutine_save= coroutine.create(coroutine_save)
 local function will_draw()
-    return the_room_pos({"edit",'tracks_edit'})
+    return the_room_pos({"edit",'tracks_edit'}) and not demo_mode
 end
 
 local function do_save()

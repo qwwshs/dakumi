@@ -19,31 +19,10 @@ local function will_do()
 
         local file = love.filesystem.newFile(name..".d3")
         file:open("w") --为了创建谱面
-        love.filesystem.write("chart/"..chart_tab[select_music_pos].."/"..name..".d3",tableToString(meta_chart.__index)) --初始化
+        file:write(tableToString(meta_chart.__index)) --初始化
         file:close()
         chart_info.chart_name =  {}
-        local file_tab = love.filesystem.getDirectoryItems("chart/"..chart_tab[select_music_pos]) --得到谱面文件夹下的所有谱面
-        for i,v in ipairs(file_tab) do
-            if string.find(v,".d3") then --谱面文件
-                local info = love.filesystem.read("chart/"..chart_tab[select_music_pos].."/"..v)
-                pcall(function() info = loadstring("return "..info)() end)
-                if type(info) ~= "table" then
-                    info = {}
-                    love.filesystem.write("chart/"..chart_tab[select_music_pos].."/"..v,tableToString(meta_chart.__index))
-                end
-                setmetatable(info,meta_chart) --防谱报废
-                fillMissingElements(info,meta_chart.__index)
-
-                chart = copyTable(info) --读取谱面
-                setmetatable(chart,meta_chart) --防谱报废
-
-                fillMissingElements(chart,meta_chart.__index)
-                chart_info.song_name = info.info.song_name
-                chart_info.chart_name[#chart_info.chart_name + 1] = {name = info.info.chart_name,
-                path = "chart/"..chart_tab[select_music_pos].."/"..v}
-                
-            end
-        end
+        select_music()
 end
 
 objact_new_chart = { --分度改变用的

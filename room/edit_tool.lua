@@ -4,24 +4,6 @@ local tool_canvas
 
 room_edit_tool = {
     load = function()
-        -- 设置Canvas为当前绘图目标
-            tool_canvas = love.graphics.newCanvas(1300, 120) --画布
-            love.graphics.setCanvas(tool_canvas)
-
-            -- 在Canvas上绘制一些内容
-            love.graphics.clear() -- 清空
-            --顶上的工具栏
-            love.graphics.setColor(0.1,0.1,0.1,0.9)
-            love.graphics.rectangle("fill",0,0,1220-5,100)
-            love.graphics.setColor(1,1,1,1)
-            love.graphics.rectangle("fill",0,100,1220-5,2)
-            
-            love.graphics.setColor(1,1,1,1)
-        
-            -- 重置绘图目标为默认（屏幕）
-            love.graphics.setCanvas()
-
-        
         objact_note_fake.load(100,25,0,25,25)
         
         objact_music_speed.load(575,50,0,25,25)
@@ -49,7 +31,12 @@ room_edit_tool = {
         if demo_mode then
             return
         end
-        love.graphics.draw(tool_canvas, 0, 0)
+        --顶上的工具栏
+        love.graphics.setColor(0.1,0.1,0.1,0.9)
+        love.graphics.rectangle("fill",0,0,1220-5,100)
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.rectangle("fill",0,100,1220-5,2)
+                    
         --放置假note
         objact_note_fake.draw()
         --ui 节拍线

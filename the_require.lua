@@ -1,8 +1,8 @@
 utf8 = require("utf8")
 socket = require("socket") --网络通信
 ffi = require("ffi") --调用C语言库
-
-
+--nuklear = require 'nuklear' --图形界面
+serpent = require("function/serpent") --lua序列化
 require("function/music")
 require("function/beat_and_time")
 require("function/log")
@@ -25,11 +25,13 @@ require("function/track")
 require("function/note")
 require("function/event")
 
-
-require("objact/mouse") --属于main
+--属于main
+require("objact/mouse") 
 require('objact/message_box')
 require('objact/language')
 require('objact/ui')
+require('objact/meta')
+
 
 
 
@@ -54,6 +56,9 @@ require("room/sidebar")
     require('objact/sidebar/button_chart_info')
         require('objact/sidebar/chart_info')
             require('objact/sidebar/button_bpm_list')
+
+    require('objact/sidebar/button_preference')
+    require('objact/sidebar/preference')
 
     require('objact/sidebar/note_edit')
 
@@ -102,7 +107,8 @@ require("room/select")
     require('objact/select/button_new_chart')
     require('objact/select/button_to_dakumi')
     require('objact/select/button_to_github')
-    require('objact/select/button_file_select')
+    require('objact/select/button_file_selection_dialog_box')
 
 require("room/tracks_edit")
 
+require("room/start")

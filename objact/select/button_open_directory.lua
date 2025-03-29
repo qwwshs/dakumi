@@ -11,7 +11,7 @@ local function will_draw()
     return the_room_pos('select')
 end
 local function will_do()
-    love.system.openURL(love.filesystem.getRealDirectory(''))
+    love.system.openURL(love.filesystem.getSaveDirectory( ))
 end
 objact_open_directory = { --分度改变用的
 load = function(x1,y1,r1,w1,h1)

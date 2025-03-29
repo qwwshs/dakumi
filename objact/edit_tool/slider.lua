@@ -5,6 +5,7 @@ local y = 0
 local r = 0
 local w = 0
 local h = 0
+local isbutton_down = false
 objact_slider = {
     load = function(x1,y1,r1,w1,h1)
         x= x1 --初始化
@@ -15,7 +16,7 @@ objact_slider = {
         now_y = y + h
     end,
     draw = function()
-        if demo_mode == true then
+        if demo_mode then
             return
         end
         love.graphics.setColor(0.15,0.15,0.15,0.7)
@@ -48,7 +49,6 @@ objact_slider = {
             end
         end
         if max == min then max = min + 1 end
-        love.graphics.setColor(0,1,1,0.5)
         for i = 1, 100, 1 do
             local max_h = w
             local density_ratio = (local_tab[i]-min) / (max - min) --密度比例
@@ -56,11 +56,11 @@ objact_slider = {
             love.graphics.rectangle("fill",x,y+ h - h / 100 * i,density_ratio * max_h,h / 100)
         end
 
-
+        love.graphics.setColor(1,1,1,0.5)
         love.graphics.rectangle('line',x,y,w,h) -- 框
         love.graphics.setColor(1,1,1,1)
         love.graphics.rectangle('fill',x,now_y,w,4) --现在所在位置点 
-        if isbutton == true then
+        if isbutton_down then
             love.graphics.setColor(1,1,1,1) 
             love.graphics.print(objact_language.get_string_in_languages("nowtime")..":"..(math.floor(time.nowtime*100)/100).."\n"..
             objact_language.get_string_in_languages("beat")..":"..math.floor(beat.nowbeat*100)/100,x+w,now_y)
@@ -71,7 +71,7 @@ objact_slider = {
         local y1 = mouse.y
         if  y1 < y then y1 = y  end ---限制范围
         if y1 > y + h then  y1 = y + h  end
-        if isbutton == true then
+        if isbutton_down  then
             music_play = false
             now_y = y1
             time.nowtime = -(now_y-y - h) / h  * time.alltime
@@ -82,10 +82,10 @@ objact_slider = {
         if not (y1 >= y - 10 and x1 >= x - 10 and y1 <= y + h + 10 and x1 <= x + w + 10)  then --加减10是为了更好抓取
             return
         end
-        isbutton = true
+        isbutton_down = true
         music_play = false
     end,
     mousereleased = function(x1,y1)
-        isbutton = false
+        isbutton_down = false
     end
 }

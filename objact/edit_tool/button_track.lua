@@ -4,13 +4,13 @@ local w = 0
 local h = 0
 local r = 0
 local function will_draw()
-    return the_room_pos({"edit",'tracks_edit'})
+    return the_room_pos({"edit",'tracks_edit'}) and not demo_mode
 end
 local function do_up()
     track.track = track.track + 1
 end
 local function do_down()
-    track.track = math.abs(track.track - 2) + 1--防止非自然数
+    track.track = math.max(track.track - 1,1)
 end
 objact_track = { --改变现在显示的轨道
     load = function(x1,y1,r1,w1,h1)

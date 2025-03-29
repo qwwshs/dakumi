@@ -5,13 +5,13 @@ local w = 0
 local h = 0
 local r = 0
 local function will_draw()
-    return the_room_pos({"edit",'tracks_edit'})
+    return the_room_pos({"edit",'tracks_edit'}) and not demo_mode
 end
 local function do_up()
     track.fence = track.fence + 1
 end
 local function do_down()
-    track.fence = math.abs(track.fence - 1)--防止非自然数
+    track.fence = math.max(track.fence - 1,1)
 end
 objact_track_fence = { --分度改变用的
     load = function(x1,y1,r1,w1,h1)

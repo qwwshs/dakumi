@@ -60,8 +60,7 @@ function event_delete(type,pos)
     for i = 1,#chart.event do
         if chart.event[i].track == track.track and chart.event[i].type == type and
         (chart.event[i].beat2 and -- 长条
-        (thebeat(chart.event[i].beat) <= event_beat_down and thebeat(chart.event[i].beat2) >= event_beat_down)
-        or (thebeat(chart.event[i].beat) <= event_beat_up and thebeat(chart.event[i].beat2) >= event_beat_up)) then
+        intervals_intersect(thebeat(chart.event[i].beat), thebeat(chart.event[i].beat2), event_beat_down, event_beat_up)) then
             objact_redo.write_revoke("event delete",chart.event[i])
             table.remove(chart.event, i)
             return

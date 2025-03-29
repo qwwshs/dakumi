@@ -13,6 +13,14 @@ end
 local function will_do()
     love.audio.stop( ) --停止歌曲
     if not chart_info.chart_name[select_chart_pos] then
+        objact_message_box.message_window_dlsplay('Not music',function() end,function() end)
+        return
+    end
+    if not chart_info.chart_name[select_chart_pos].is_true_chart then 
+        objact_message_box.message_window_dlsplay('Error chart',function() end,function() end)
+        return
+    end
+    if not chart_info.chart_name[select_chart_pos] then
         objact_message_box.message_window_dlsplay('Create a chart first',function() end,function() end)
         return
     end
@@ -29,6 +37,7 @@ local function will_do()
     end
 
     room_pos = 'edit' --进入编辑
+    love.window.setTitle(chart.info.song_name.."-"..chart.info.chart_name)
 end
 objact_edit_chart = { --进入谱面用的
     load = function(x1,y1,r1,w1,h1)

@@ -17,7 +17,7 @@ objact_mouse = { -- 鼠标
         end
     end,  
     draw = function()
-        if demo_mode == false and settings.mouse == 0 then
+        if not demo_mode and settings.mouse == 0 and room_pos ~= "start" then
             love.graphics.setColor(1,1,1,1)
             love.graphics.circle("line",mouse.x,mouse.y,animation.mouse_r,animation.mouse_side)
         end
@@ -30,7 +30,7 @@ objact_mouse = { -- 鼠标
         elseif settings.mouse == 0 then
             love.mouse.setVisible( false )
         end
-        if demo_mode == true then
+        if demo_mode  then
             love.mouse.setVisible( false )
         end
         
