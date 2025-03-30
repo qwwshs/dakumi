@@ -55,8 +55,6 @@ local function will_do()
     local selectedFile = fileselect.OpenFileDialog(filter)
     if selectedFile ~= nil then
         local filepath = ffi.string(selectedFile)
-        -- 将 ANSI 编码转换为 UTF-8
-        filepath = ansi_to_utf8(filepath)
         local lastSlashIndex = string.find(filepath, "\\[^\\]*$") --找到最后一个斜杠的位置
         local file_name = string.sub(filepath, lastSlashIndex + 1) --从最后一个斜杠之后开始截取字符串
         local file = love.filesystem.newFile("temporary/"..file_name)

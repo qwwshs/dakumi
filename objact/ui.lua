@@ -8,6 +8,7 @@ local ui_play = love.graphics.newImage("asset/ui_play.png")
 local ui_pause = love.graphics.newImage("asset/ui_pause.png")
 local ui_close = love.graphics.newImage("asset/ui_close.png")
 local ui_github = love.graphics.newImage("asset/github-mark.png")
+local ui_dakumi = love.graphics.newImage("asset/icon.png")
 --常用ui
 ui = {}
 function ui:draw(x,y,w,h,ui)
@@ -37,3 +38,4 @@ function ui:save(x,y,w,h) return ui:draw(x,y,w,h,ui_save) end
 function ui:play(x,y,w,h) return ui:draw(x,y,w,h,ui_play) end
 function ui:pause(x,y,w,h) return ui:draw(x,y,w,h,ui_pause) end
 function ui:github(x,y,w,h) return ui:draw(x,y,w,h,ui_github) end
+function ui:dakumi(x,y,w,h) return ui:draw(x,y,w,h,ui_dakumi) end

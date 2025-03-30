@@ -27,15 +27,14 @@ objact_settings = {
         chart_info_pos_y = 0
         setting_type = {
             {'judge_line_y',"input_box"},
-            {'angle',"input_box"},
             {'music_volume',"input_box"},
             {'hit_volume',"input_box"},
             {'hit',"switch1"},
             {'hit_sound',"switch1"},
+            {'track_w_scale',"input_box"},
             {'language',"switch"..(objact_language.get_languages_number() - 1)},
             {'contact_roller',"input_box"},
             {'mouse',"switch1"},
-            {'note_alpha',"input_box"},
             {'note_height',"input_box"},
             {'bg_alpha',"input_box"},
             {'denom_alpha',"input_box"},

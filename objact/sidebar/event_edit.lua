@@ -19,7 +19,10 @@ end
 local function endow() --赋予bezier
     chart.event[tonumber(string.sub(displayed_content,6,#displayed_content))].trans = {default_bezier[bezier_index][1],default_bezier[bezier_index][2],default_bezier[bezier_index][3],default_bezier[bezier_index][4]}
 end
-
+local function input_ed_finish()
+    displayed_content = "nil"
+    event_sort()
+end
 objact_event_edit = {  --编辑界面
     load = function(x1,y1,r1,w1,h1)
         x= x1 --初始化
@@ -37,17 +40,17 @@ objact_event_edit = {  --编辑界面
 
         button_new(get_displayed_content_1_5().."same_as_below",same_as_below,x+300,y+50,100,30,ui:draw(x+300,y+50,100,30,objact_language.get_string_in_languages("same_as_below")),{will_draw = will_draw}) --同下
         button_new(get_displayed_content_1_5().."ditto",ditto,x+300,y+100,100,30,ui:draw(x+300,y+100,100,30,objact_language.get_string_in_languages("ditto")),{will_draw = will_draw}) --同上
-        button_new(get_displayed_content_1_5().."endow",endow,x+125,y+300,100,30,ui:draw(x+125,y+300,100,30,objact_language.get_string_in_languages("endow")),{will_draw = will_draw}) --同下
+        button_new(get_displayed_content_1_5().."endow",endow,x+130,y+300,100,30,ui:draw(x+130,y+300,100,30,objact_language.get_string_in_languages("endow")),{will_draw = will_draw}) --同下
 
         input_box_new(get_displayed_content_1_5().."from","chart.event["..string.sub(displayed_content,6,#displayed_content).."].from",x + 140,y + 50,100,30,{type = "number",will_draw = will_draw})
         input_box_new(get_displayed_content_1_5().."to","chart.event["..string.sub(displayed_content,6,#displayed_content).."].to",x + 140,y + 100,100,30,{type = "number",will_draw = will_draw})
 
-        input_box_new(get_displayed_content_1_5().."beat_start1","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[1]",x + 140,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
-        input_box_new(get_displayed_content_1_5().."beat_start2","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[2]",x + 180,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
-        input_box_new(get_displayed_content_1_5().."beat_start3","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[3]",x + 220,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
-        input_box_new(get_displayed_content_1_5().."beat_end1","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[1]",x + 140,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
-        input_box_new(get_displayed_content_1_5().."beat_end2","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[2]",x + 180,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
-        input_box_new(get_displayed_content_1_5().."beat_end3","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[3]",x + 220,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = event_sort})
+        input_box_new(get_displayed_content_1_5().."beat_start1","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[1]",x + 140,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
+        input_box_new(get_displayed_content_1_5().."beat_start2","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[2]",x + 180,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
+        input_box_new(get_displayed_content_1_5().."beat_start3","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat[3]",x + 220,y + 150,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
+        input_box_new(get_displayed_content_1_5().."beat_end1","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[1]",x + 140,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
+        input_box_new(get_displayed_content_1_5().."beat_end2","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[2]",x + 180,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
+        input_box_new(get_displayed_content_1_5().."beat_end3","chart.event["..string.sub(displayed_content,6,#displayed_content).."].beat2[3]",x + 220,y + 200,30,30,{type = "number",will_draw = will_draw,input_ed_finish = input_ed_finish})
         input_box_new(get_displayed_content_1_5().."trans1","chart.event["..string.sub(displayed_content,6,#displayed_content).."].trans[1]",x + 140,y + 250,30,30,{type = "number",will_draw = will_draw})
         input_box_new(get_displayed_content_1_5().."trans2","chart.event["..string.sub(displayed_content,6,#displayed_content).."].trans[2]",x + 180,y + 250,30,30,{type = "number",will_draw = will_draw})
         input_box_new(get_displayed_content_1_5().."trans3","chart.event["..string.sub(displayed_content,6,#displayed_content).."].trans[3]",x + 220,y + 250,30,30,{type = "number",will_draw = will_draw})
