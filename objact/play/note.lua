@@ -6,7 +6,9 @@ objact_note = {
 
     end,
     keyboard = function(key)
-        if not(mouse.x >= 900 and mouse.x <= 1000 and mouse.y >= 100) then --不在轨道范围内
+        if not (intervals_intersect(mouse.x,mouse.x,info.play.track.x,info.play.track.x + info.play.track.interval) 
+            and mouse.y >= info.edit_tool.h)
+        then --不在轨道范围内 not(mouse.x >= info.play.play_alea.x + info.play.play_alea.w and mouse.x <= 1000 and mouse.y >= 100)
             return
         end
         if key == "q" then -- note

@@ -21,6 +21,7 @@ function copy_add(new_table,type)
         end
     end
     copy_tab[type][#copy_tab[type] + 1] = new_table
+    table.sort(copy_tab[type],function(a,b) return thebeat(a.beat) < thebeat(b.beat) end)
 end
 function copy_exist(new_table,type)
     for i = 1, #copy_tab[type] do
@@ -226,7 +227,7 @@ objact_copy = {
                     isbeat2 = thebeat(chart.note[i].beat2)
                 end
 
-                if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.note[i].track] == true then --这引擎y是向下增长的 服了
+                if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.note[i].track] then --这引擎y是向下增长的 服了
                     copy_tab.note[#copy_tab.note + 1] = copyTable(chart.note[i])
 
                 end
@@ -238,7 +239,7 @@ objact_copy = {
             for i = 1,#chart.event do --用于完全复制
                 local isbeat = thebeat(chart.event[i].beat)
                 local isbeat2 = thebeat(chart.event[i].beat2)
-                if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.event[i].track] == true then
+                if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.event[i].track]  then
                     copy_tab.event[#copy_tab.event + 1] = copyTable(chart.event[i])
                 end
                 if thebeat(chart.event[i].beat) > max_y_beat then
@@ -308,11 +309,11 @@ objact_copy = {
         mouse_start_pos.y = mouse_start_pos.y + beat_to_y(0) - beat_to_y(y_beat)
     end,
     keyboard = function(key)
-        if (iskeyboard.lshift == true or iskeyboard.rshift == true) and mouse.down_state == true then
+        if (iskeyboard.lshift or iskeyboard.rshift) and mouse.down_state then
             objact_copy.mousereleased(mouse.x,mouse.y)
         end
         
-        if not isctrl == true then
+        if not isctrl then
             return
         end
         if key == "c" then
@@ -322,7 +323,7 @@ objact_copy = {
         elseif key == "d" then
             displayed_content = "nil"
             local local_tab = {}
-            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then
+            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then
                 objact_redo.write_revoke("copy delete",copyTable(copy_tab))
                 log(tableToString(copy_tab))
             else
@@ -340,7 +341,7 @@ objact_copy = {
             chart.note = copyTable(local_tab)
 
             local_tab = {}
-            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then -- a完全复制
+            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then -- a完全复制
                 for i = 1,#chart.event do
                     if not tablesEqual(copy_tab.event[1],chart.event[i]) then
                         local_tab[#local_tab + 1] = chart.event[i]
@@ -370,17 +371,19 @@ objact_copy = {
                 min_track = copy_tab2.event[1].track
             end
             for i = 1,#copy_tab2.note do
-                if (not min_track) or min_track > copy_tab2.note[i].track then
+                if min_track > copy_tab2.note[i].track then
                     min_track = copy_tab2.note[i].track
                 end
             end
             for i = 1,#copy_tab2.event do
-                if (not min_track) or min_track > copy_tab2.event[i].track then
+                if min_track > copy_tab2.event[i].track then
                     min_track = copy_tab2.event[i].track
                 end
             end
+
             displayed_content = "nil"
-            
+            local to_beat = to_nearby_Beat(y_to_beat(mouse.y))
+
             local frist_beat = {0,0,4}  --作为基准
             if copy_tab.note[1] and copy_tab.event[1] and thebeat(copy_tab.note[1].beat) <= thebeat(copy_tab.event[1].beat) then
                 frist_beat = copy_tab.note[1].beat
@@ -392,16 +395,16 @@ objact_copy = {
                 frist_beat = copy_tab.note[1].beat
             end
 
-            if copy_tab.note[1] and copy_tab.pos == 'play' and iskeyboard.a == false then --不完全复制
+            if copy_tab.note[1] and copy_tab.pos == 'play' and not iskeyboard.a then --不完全复制
                 frist_beat = copy_tab.note[1].beat
             end
             for i = 1, #copy_tab2.note do --轨道修改
                 if copy_tab.pos ~= 'play' then
                     copy_tab2.note[i].track = track.track
                 end
-                copy_tab2.note[i].beat = beat_add(beat_sub(copy_tab2.note[i].beat,frist_beat),y_to_beat(mouse.y))
+                copy_tab2.note[i].beat = beat_add(beat_sub(copy_tab2.note[i].beat,frist_beat),to_beat)
                 if copy_tab2.note[i].type == "hold" then
-                    copy_tab2.note[i].beat2 = beat_add(beat_sub(copy_tab2.note[i].beat2,frist_beat),y_to_beat(mouse.y))
+                    copy_tab2.note[i].beat2 = beat_add(beat_sub(copy_tab2.note[i].beat2,frist_beat),to_beat)
                 end
                 if key == "n" then --对所有轨道增加
                     local max_track = track_get_max_track() + 1
@@ -412,8 +415,8 @@ objact_copy = {
                 if copy_tab.pos ~= 'play' then
                     copy_tab2.event[i].track = track.track
                 end
-                copy_tab2.event[i].beat = beat_add(beat_sub(copy_tab2.event[i].beat,frist_beat),y_to_beat(mouse.y))
-                copy_tab2.event[i].beat2 = beat_add(beat_sub(copy_tab2.event[i].beat2,frist_beat),y_to_beat(mouse.y))
+                copy_tab2.event[i].beat = beat_add(beat_sub(copy_tab2.event[i].beat,frist_beat),to_beat)
+                copy_tab2.event[i].beat2 = beat_add(beat_sub(copy_tab2.event[i].beat2,frist_beat),to_beat)
                 if key == "b" and copy_tab2.event[i].type == "x" then --取反
                     copy_tab2.event[i].from = 100 - copy_tab2.event[i].from
                     copy_tab2.event[i].to = 100 - copy_tab2.event[i].to
@@ -439,7 +442,7 @@ objact_copy = {
             for i = 1, #copy_tab2.note do
                 chart.note[#chart.note + 1] = copyTable(copy_tab2.note[i])
             end
-            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then -- a完全复制
+            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then -- a完全复制
                 for i = 1, #copy_tab2.event do
                     chart.event[#chart.event + 1] = copyTable(copy_tab2.event[i])
                 end
@@ -448,7 +451,7 @@ objact_copy = {
             note_sort()
 
             if copy_tab.type == "c" then
-                if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then -- a完全复制
+                if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then -- a完全复制
                     objact_redo.write_revoke("copy",copyTable(copy_tab2))
                 else
                     objact_redo.write_revoke("copy",{note = copyTable(copy_tab2.note),event = {}})
@@ -457,7 +460,7 @@ objact_copy = {
             end
 
             --x
-            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then --x
+            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then --x
                 objact_redo.write_revoke("cropping",{copyTable(copy_tab),copyTable(copy_tab2)})
             else
                 objact_redo.write_revoke("cropping",{{note = copyTable(copy_tab.note),event = {}},{note = copyTable(copy_tab2.note),event = {}}} )
@@ -473,7 +476,7 @@ objact_copy = {
             end
             chart.note = copyTable(local_tab)
             local_tab = {}
-            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a == true) then -- a完全复制
+            if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then -- a完全复制
                 for i = 1,#chart.event do
                     if not tablesEqual(copy_tab.event[1],chart.event[i]) then
                         local_tab[#local_tab + 1] = chart.event[i]

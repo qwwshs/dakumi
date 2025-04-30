@@ -91,20 +91,21 @@ function load_select() --刷新
     select_music()
 
 end
+
 room_select = {
     load = function()
 
-            objact_button_todakumi_in_select.load(850,0,0,25,25)
-            objact_button_togithub_in_select.load(850,25,0,25,25)
-            objact_edit_chart.load(0,750,0,100,50)
-            objact_delete_chart.load(100,750,0,100,50)
-            objact_new_chart.load(200,750,0,100,50)
+            objact_button_todakumi_in_select.load(info_to_load(info.select.button_todakumi_in_select))
+            objact_button_togithub_in_select.load(info_to_load(info.select.button_togithub_in_select))
+            objact_edit_chart.load(info_to_load(info.select.edit_chart))
+            objact_delete_chart.load(info_to_load(info.select.delete_chart))
+            objact_new_chart.load(info_to_load(info.select.new_chart))
             
-            objact_file_selection_dialog_box.load(1100,0,0,100,50)
-            objact_flushed.load(1200,0,0,100,50)
-            objact_export.load(1300,0,0,100,50)
-            objact_delete_music.load(1400,0,0,100,50)
-            objact_open_directory.load(1500,0,0,100,50)
+            objact_file_selection_dialog_box.load(info_to_load(info.select.file_selection_dialog_box))
+            objact_flushed.load(info_to_load(info.select.flushed))
+            objact_export.load(info_to_load(info.select.export))
+            objact_delete_music.load(info_to_load(info.select.delete_music))
+            objact_open_directory.load(info_to_load(info.select.open_directory))
             
             --objact_select_file.load(1400,0,0,100,50)
             

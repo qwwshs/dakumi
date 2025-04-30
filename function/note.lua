@@ -14,10 +14,9 @@ function note_click(pos)
     local note_beat_down = y_to_beat(pos + pos_interval)
     for i = 1,#chart.note do
         if chart.note[i].track == track.track and 
-        ((thebeat(chart.note[i].beat) >= note_beat_down and thebeat(chart.note[i].beat) <= note_beat_up)
+        (intervals_intersect(thebeat(chart.note[i].beat),thebeat(chart.note[i].beat),note_beat_down,note_beat_up)
         or (chart.note[i].beat2 and -- 长条
-        (thebeat(chart.note[i].beat) <= note_beat_down and thebeat(chart.note[i].beat2) >= note_beat_down)
-        or (thebeat(chart.note[i].beat) <= note_beat_up and thebeat(chart.note[i].beat2) >= note_beat_up))) then
+        intervals_intersect(thebeat(chart.note[i].beat),thebeat(chart.note[i].beat2),note_beat_down,note_beat_up))) then
             return i
         end
     end
@@ -44,16 +43,10 @@ end
 
 function note_place(note_type,pos)
     --根据距离反推出beat
-    local note_beat = y_to_beat(pos)
-    local note_min_denom = 1 --假设1最近
-    for i = 1, denom.denom do --取分度 哪个近取哪个
-        if math.abs(note_beat - (math.floor(note_beat) + i / denom.denom)) < math.abs(note_beat - (math.floor(note_beat) + note_min_denom / denom.denom)) then
-            note_min_denom = i
-        end
-    end
+    local note_beat = to_nearby_Beat(y_to_beat(pos))
     if note_type ~= "hold" then --不是长条
         --查表 如果重叠不给放
-        local note_correct_beat = {math.floor(note_beat),note_min_denom,denom.denom}
+        local note_correct_beat = {note_beat[1],note_beat[2],note_beat[3]}
         for i = 1,#chart.note do --重叠
             if chart.note[i].track == track.track and thebeat(chart.note[i].beat) == thebeat(note_correct_beat) then
                 objact_message_box.message("overlap")
@@ -63,29 +56,31 @@ function note_place(note_type,pos)
         chart.note[#chart.note + 1] = {
             type = note_type,
             track = track.track,
-            beat = {math.floor(note_beat),note_min_denom,denom.denom},
+            beat = {note_beat[1],note_beat[2],note_beat[3]},
             fake = note_is_fake
         }
         local_tab = {type = note_type,
         track = track.track,
-        beat = {math.floor(note_beat),note_min_denom,denom.denom},fake = note_is_fake}
+        beat = {note_beat[1],note_beat[2],note_beat[3]}
+        ,fake = note_is_fake}
     else
         if hold_type == 0 then --放置头
             local_hold = {
                 type = note_type,
                 track = track.track,
-                beat = {math.floor(note_beat),note_min_denom,denom.denom},
+                beat = {note_beat[1],note_beat[2],note_beat[3]},
                 fake = note_is_fake
             }
             hold_type = 1
             
             local_tab = {type = note_type,
-            track = track.track,
-            beat = {math.floor(note_beat),note_min_denom,denom.denom},fake = note_is_fake}
+                track = track.track,
+                beat = {note_beat[1],note_beat[2],note_beat[3]},
+                fake = note_is_fake}
 
         elseif hold_type == 1 then
-            local_hold.beat2 = {math.floor(note_beat),note_min_denom,denom.denom} 
-            local_tab.beat2 = {math.floor(note_beat),note_min_denom,denom.denom}
+            local_hold.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
+            local_tab.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
             if thebeat(local_hold.beat2) <= thebeat(local_hold.beat) then --尾巴比头早或重叠
                 objact_message_box.message("illegal operation")
                 hold_clean_up()

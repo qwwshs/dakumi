@@ -4,17 +4,17 @@ local tool_canvas
 
 room_edit_tool = {
     load = function()
-        objact_note_fake.load(100,25,0,25,25)
+        objact_note_fake.load(info_to_load(info.edit_tool.note_fake))
         
-        objact_music_speed.load(575,50,0,25,25)
-        objact_denom.load(875,50,0,25,25)
-        objact_track.load(725,50,0,25,25)
-        objact_track_scale.load(800,50,0,25,25)
-        objact_track_fence.load(650,50,0,25,25)
-        objact_music_play.load(400,50,0,50,50)
-        objact_note.load(400,50,0,50,16.6)
-        objact_save.load(50,50,0,50,50)
-        objact_slider.load(0,100,0,20,700)
+        objact_music_speed.load(info_to_load(info.edit_tool.music_speed))
+        objact_denom.load(info_to_load(info.edit_tool.denom))
+        objact_track.load(info_to_load(info.edit_tool.track))
+        objact_track_scale.load(info_to_load(info.edit_tool.track_scale))
+        objact_track_fence.load(info_to_load(info.edit_tool.track_fence))
+        objact_music_play.load(info_to_load(info.edit_tool.music_play))
+        objact_note.load(info_to_load(info.edit_tool.note))
+        objact_save.load(info_to_load(info.edit_tool.save))
+        objact_slider.load(info_to_load(info.edit_tool.slider))
     end,
     update = function(dt)
         if not the_room_pos(pos) then
@@ -33,9 +33,9 @@ room_edit_tool = {
         end
         --顶上的工具栏
         love.graphics.setColor(0.1,0.1,0.1,0.9)
-        love.graphics.rectangle("fill",0,0,1220-5,100)
+        love.graphics.rectangle("fill",info.edit_tool.x,info.edit_tool.y,info.edit_tool.w,info.edit_tool.h)
         love.graphics.setColor(1,1,1,1)
-        love.graphics.rectangle("fill",0,100,1220-5,2)
+        love.graphics.rectangle("fill",info.edit_tool.x,info.edit_tool.y + info.edit_tool.h+info.edit_tool.y,info.edit_tool.w,2)
                     
         --放置假note
         objact_note_fake.draw()

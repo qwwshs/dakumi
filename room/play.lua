@@ -23,7 +23,7 @@ end
 room_play = { -- 最基础的 播放页面
 load = function()
     objact_hit.load()
-    objact_note.load(400,50,0,50,16.6)
+    objact_note.load()
     objact_note_edit_inplay.load(100,50,0,50,16.6)
 end,
 update = function(dt)
@@ -35,26 +35,27 @@ update = function(dt)
     local now_track_line_alpha_ed = false --已经计算
     local now_note_rotate_ed = false --已经计算
     local now_scroll_ed = false --已经计算
-    for i =  #chart.effect,1,-1 do --倒着减小计算量
+    for i = #chart.effect,1,-1 do --倒着减小计算量
         if now_note_alpha_ed and now_track_alpha_ed and now_track_line_alpha_ed and now_note_rotate_ed and now_scroll_ed then --计算完成
             break
         end
-        if chart.effect[i] then
-            if (thebeat(chart.effect[i].beat) <= beat.nowbeat and thebeat(chart.effect[i].beat2) > beat.nowbeat) or (thebeat(chart.effect[i].beat2) <= beat.nowbeat) then
-                if chart.effect[i].type == "note_alpha" and (not now_note_alpha_ed) then
-                    effect.note_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+        local v = chart.effect[i]
+        if v then
+            if (thebeat(v.beat) <= beat.nowbeat and thebeat(v.beat2) > beat.nowbeat) or (thebeat(v.beat2) <= beat.nowbeat) then
+                if v.type == "note_alpha" and (not now_note_alpha_ed) then
+                    effect.note_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_note_alpha_ed = true
-                elseif chart.effect[i].type == "track_alpha" and (not now_track_alpha_ed) then
-                    effect.track_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                elseif v.type == "track_alpha" and (not now_track_alpha_ed) then
+                    effect.track_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_track_alpha_ed = true
-                elseif chart.effect[i].type == "track_line_alpha" and (not now_track_alpha_ed) then
-                    effect.track_line_alpha = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                elseif v.type == "track_line_alpha" and (not now_track_alpha_ed) then
+                    effect.track_line_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_track_line_alpha_ed = true
-                elseif chart.effect[i].type == "note_rotate" and (not now_track_alpha_ed) then
-                    effect.note_rotate = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                elseif v.type == "note_rotate" and (not now_track_alpha_ed) then
+                    effect.note_rotate = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_note_rotate_ed = true
-                elseif chart.effect[i].type == "scroll" and (not now_track_alpha_ed) then
-                    effect.scroll = bezier(thebeat(chart.effect[i].beat),thebeat(chart.effect[i].beat2),chart.effect[i].from,chart.effect[i].to,chart.effect[i].trans,beat.nowbeat)
+                elseif v.type == "scroll" and (not now_track_alpha_ed) then
+                    effect.scroll = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_scroll_ed = true
                 end
             end
@@ -81,18 +82,18 @@ draw = function()
     if bg then -- 背景存在就显示
         --图像范围限制函数
         local function myStencilFunction()
-            love.graphics.rectangle("fill",0,0,900,800)
+            love.graphics.rectangle("fill",info.play.play_alea.x,info.play.play_alea.y,info.play.play_alea.x+info.play.play_alea.w,info.play.play_alea.h)
         end
 
         love.graphics.stencil(myStencilFunction, "replace", 1)
         love.graphics.setStencilTest("greater", 0)
 
         local bg_width, bg_height = bg:getDimensions( ) -- 得到宽高
-            bg_scale_h = 1 / bg_height * 800 
-            bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)
+        local bg_scale_h = 1 / bg_height * 800 
+        local bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)
         if demo_mode then
             bg_scale_h = 1 / bg_height * 800 
-            bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)   / (1 / (900/1600))
+            bg_scale_w = 1 / bg_height * 800 / (window_w_scale / window_h_scale)   / (1 / (info.play.play_alea.w/1600))
         end
 
         love.graphics.draw(bg,450 - (bg_width *bg_scale_w) / 2,0,0,bg_scale_w,bg_scale_h) --居中显示
@@ -108,7 +109,7 @@ draw = function()
     
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
-    love.graphics.print(str,450 - #str * 4 /2,settings.judge_line_y + 60)
+    love.graphics.printf(str,info.play.play_alea.x,settings.judge_line_y + 60,info.play.play_alea.w,"center")
     objact_demo_now_x_pos.draw()
 
     --event渲染
@@ -144,7 +145,7 @@ draw = function()
     --栅栏绘制
     love.graphics.setColor(1,1,1,0.5)
     for i = 1, track.fence do
-        love.graphics.rectangle("fill",900 / track.fence * i,100,2,900)
+        love.graphics.rectangle("fill",(info.play.play_alea.w+info.play.play_alea.x) / track.fence * i,100,2,info.play.play_alea.w)
     end
     if 900 / track.fence * track_get_near_fence() < 900 then
         love.graphics.setColor(0,1,1,0.7)
