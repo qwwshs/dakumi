@@ -96,6 +96,13 @@ function editTool:mousereleased( x, y, button, istouch, presses )
     self('mousereleased', x, y, button, istouch, presses )
 end
 
+function editTool:wheelmoved(x, y)
+    if demo then
+        return
+    end
+    self("wheelmoved",x, y)
+end
+
 function editTool:quit()
     self('quit')
 end

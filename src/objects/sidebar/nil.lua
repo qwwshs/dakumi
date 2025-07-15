@@ -26,7 +26,15 @@ function Gnil:Nui()
         messageBox:add("tracks_edit")
         sidebar.displayed_content = "tracks_edit"
         room_pos = "tracks_edit"
-    object_tracks_edit.load(1250,0,0,400,WINDOW.h)
+        object_tracks_edit.load(1250,0,0,400,WINDOW.h)
+    end
+    if Nui:button(i18n:get("dakumi")) then
+        messageBox:add("dakumi")
+        love.system.openURL("https://dakumi.qwwshs.top")
+    end
+    if Nui:button(i18n:get("github")) then
+        messageBox:add("github")
+        love.system.openURL("https://github.com/qwwshs/daikumi_editor/")
     end
 end
 

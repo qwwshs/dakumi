@@ -13,9 +13,6 @@ end
 function sidebar:load()
     self('load')
     object_events_edit.load(1250,100,0,150,50)
-    object_button_break.load(1570,0,0,30,30)
-    object_button_togithub.load(1565,765,0,25,25)
-    object_button_todakumi.load(1540,765,0,25,25)
 end
 
 function sidebar:update(dt)
@@ -25,6 +22,11 @@ function sidebar:update(dt)
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
         Nui:label(i18n:get(sidebar.displayed_content))
         Nui:label(i18n:get("version")..DAKUMI._VERSION)
+
+        if Nui:button(i18n:get("break")) then
+            messageBox:add("track")
+            sidebar.displayed_content = "nil"
+        end
 
         local g = self:getGroup(self.displayed_content)
         if g then
@@ -58,7 +60,6 @@ function sidebar:keypressed(key)
     object_track_sidebar.keypressed(key)
     object_settings.keypressed(key)
     object_event_edit.keypressed(key)
-    object_button_break.keypressed(key)
 end
 
 function sidebar:wheelmoved(x,y)

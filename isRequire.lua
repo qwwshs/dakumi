@@ -50,13 +50,9 @@ require("src.rooms.edit")
     require('src/objects/play/demo_now_x_pos')
 
     
-    require('src/objects/sidebar/button_break')
-
-    require('src/objects/sidebar/button_chart_info')
         require('src/objects/sidebar/chart_info')
             require('src/objects/sidebar/button_bpm_list')
 
-    require('src/objects/sidebar/button_preference')
     require('src/objects/sidebar/preference')
 
     require('src/objects/sidebar/note_edit')
@@ -67,20 +63,10 @@ require("src.rooms.edit")
 
     require('src/objects/sidebar/events_edit')
 
-    require('src/objects/sidebar/button_settings')
         require('src/objects/sidebar/settings')
-
-    require('src/objects/sidebar/button_to_github')
-
-    require('src/objects/sidebar/button_to_dakumi')
-
-    require('src/objects/sidebar/button_tracks_edit')
         require('src/objects/sidebar/tracks_edit')
 
-    require('src/objects/sidebar/button_track')
         require('src/objects/sidebar/track_sidebar')
-        
-    require('src/objects.editTool.slider')
 
 require("src.rooms.menu")
 
