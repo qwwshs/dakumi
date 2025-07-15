@@ -1,0 +1,11 @@
+*.log
+
+.VSCodeCounter/
+
+users/
+
+update_log.md
+
+settings.json
+
+export/
