@@ -3,7 +3,7 @@ local sidebar =  group:new('sidebar')
 sidebar.layout = require 'config.layouts.sidebar'
 
 sidebar:addGroup(require 'src.objects.sidebar.nil')
-
+sidebar:addGroup(require 'src.objects.sidebar.track')
 sidebar.displayed_content = "nil" --现在所在的界面
 
 function sidebar:room_type(type) -- 房间状态判定
@@ -18,7 +18,8 @@ end
 function sidebar:update(dt)
     self('update',dt)
     local layout = self.layout
-    if Nui:windowBegin('sidebar', layout.x, layout.y, layout.w, layout.h,'border') then
+    local g = self:getGroup(self.displayed_content)
+    if Nui:windowBegin('sidebar', layout.x, layout.y, layout.w, layout.h,'border','scrollbar','background') then
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
         Nui:label(i18n:get(sidebar.displayed_content))
         Nui:label(i18n:get("version")..DAKUMI._VERSION)
@@ -27,14 +28,16 @@ function sidebar:update(dt)
             messageBox:add("track")
             sidebar.displayed_content = "nil"
         end
-
-        local g = self:getGroup(self.displayed_content)
-        if g then
+        if g and g.Nui then
             g:Nui()
         end
 
         Nui:label("FPS:"..love.timer.getFPS( ))
         Nui:windowEnd()
+    end
+
+    if g and g.NuiNext then
+        g:NuiNext()
     end
 
     object_event_edit.update(dt)
@@ -46,7 +49,6 @@ function sidebar:draw()
     object_chart_info.draw()
     object_preference.draw()
     object_settings.draw()
-    object_track_sidebar.draw()
     object_tracks_edit.draw()
     object_event_edit.draw()
     object_note_edit.draw()
@@ -57,7 +59,6 @@ end
 function sidebar:keypressed(key)
     self('keypressed',key)
     object_chart_info.keypressed(key)
-    object_track_sidebar.keypressed(key)
     object_settings.keypressed(key)
     object_event_edit.keypressed(key)
 end
@@ -71,7 +72,6 @@ function sidebar:wheelmoved(x,y)
     object_preference.wheelmoved(x,y)
     object_settings.wheelmoved(x,y)
     object_tracks_edit.wheelmoved(x,y)
-    object_track_sidebar.wheelmoved(x,y)
 end
 
 function sidebar:mousepressed( x, y, button, istouch, presses )
@@ -80,7 +80,6 @@ function sidebar:mousepressed( x, y, button, istouch, presses )
     object_tracks_edit.mousepressed( x, y, button, istouch, presses )
     object_settings.mousepressed( x, y, button, istouch, presses )
     object_event_edit.mousepressed( x, y, button, istouch, presses )
-    object_track_sidebar.mousepressed( x, y, button, istouch, presses )
 end
 
 function sidebar:mousereleased( x, y, button, istouch, presses )
