@@ -66,8 +66,6 @@ require("src.rooms.edit")
         require('src/objects/sidebar/settings')
         require('src/objects/sidebar/tracks_edit')
 
-        require('src/objects/sidebar/track_sidebar')
-
 require("src.rooms.menu")
 
 require("src.rooms.tracks_edit")

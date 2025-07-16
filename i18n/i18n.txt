@@ -23,6 +23,7 @@
 {'false','假'},
 {'true','真'},
 {'perturbation','扰动'},
+{'range','范围'},
 {'trans_expression','缓动表达式'},
 {'quick_adjustments','快速调整'},
 {'easings','缓动'},

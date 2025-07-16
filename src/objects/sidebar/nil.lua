@@ -20,7 +20,6 @@ function Gnil:Nui()
     if Nui:button(i18n:get("track")) then
         messageBox:add("track")
         sidebar.displayed_content = "track"
-        object_track_sidebar.load(1250,100,0,150,50)
     end
     if Nui:button(i18n:get("tracks_edit")) then
         messageBox:add("tracks_edit")

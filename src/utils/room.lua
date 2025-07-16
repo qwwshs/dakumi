@@ -7,7 +7,7 @@ function object:new(name)
     return obj
 end
 
-local container = object:new('')
+container = object:new('')
 
 container.objects = {}
 container.groups = {}
