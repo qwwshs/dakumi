@@ -12,5 +12,9 @@ return {
         h = 100,
         cols = 3,
         uiH = 20,
+    },
+    settings = {
+        cols = 2,
+        uiH = 20,
     }
 }

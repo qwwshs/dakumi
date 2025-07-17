@@ -62,8 +62,7 @@ require("src.rooms.edit")
         require('src/objects/sidebar/button_event_edit_default_bezier')
 
     require('src/objects/sidebar/events_edit')
-
-        require('src/objects/sidebar/settings')
+    
         require('src/objects/sidebar/tracks_edit')
 
 require("src.rooms.menu")
