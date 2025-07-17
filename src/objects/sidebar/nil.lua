@@ -15,7 +15,6 @@ function Gnil:Nui()
     if Nui:button(i18n:get("settings")) then
         messageBox:add("settings")
         sidebar.displayed_content = "settings"
-        object_settings.load(1250,100,0,150,50)
     end
     if Nui:button(i18n:get("track")) then
         messageBox:add("track")
@@ -33,7 +32,7 @@ function Gnil:Nui()
     end
     if Nui:button(i18n:get("github")) then
         messageBox:add("github")
-        love.system.openURL("https://github.com/qwwshs/daikumi_editor/")
+        love.system.openURL("https://github.com/qwwshs/daikumi/")
     end
 end
 
