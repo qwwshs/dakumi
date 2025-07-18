@@ -5,6 +5,7 @@ sidebar.layout = require 'config.layouts.sidebar'
 sidebar:addGroup(require 'src.objects.sidebar.nil')
 sidebar:addGroup(require 'src.objects.sidebar.track')
 sidebar:addGroup(require 'src.objects.sidebar.settings')
+sidebar:addGroup(require 'src.objects.sidebar.preference')
 sidebar.displayed_content = "nil" --现在所在的界面
 
 function sidebar:room_type(type) -- 房间状态判定
@@ -48,7 +49,6 @@ function sidebar:draw()
     self('draw')
 
     object_chart_info.draw()
-    object_preference.draw()
     object_tracks_edit.draw()
     object_event_edit.draw()
     object_note_edit.draw()
@@ -68,7 +68,6 @@ function sidebar:wheelmoved(x,y)
     end
     self('wheelmoved',x,y)
     object_chart_info.wheelmoved(x,y)
-    object_preference.wheelmoved(x,y)
     object_tracks_edit.wheelmoved(x,y)
 end
 
