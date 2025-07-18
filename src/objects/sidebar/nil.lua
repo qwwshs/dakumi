@@ -10,7 +10,6 @@ function Gnil:Nui()
     if Nui:button(i18n:get("preference")) then
         messageBox:add("preference")
         sidebar.displayed_content = "preference"
-        object_preference.load(1250,100,0,150,50)
     end
     if Nui:button(i18n:get("settings")) then
         messageBox:add("settings")

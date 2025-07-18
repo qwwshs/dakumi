@@ -16,5 +16,9 @@ return {
     settings = {
         cols = 2,
         uiH = 20,
+    },
+    preference = {
+        cols = 2,
+        uiH = 20,
     }
 }

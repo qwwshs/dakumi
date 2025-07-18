@@ -53,8 +53,6 @@ require("src.rooms.edit")
         require('src/objects/sidebar/chart_info')
             require('src/objects/sidebar/button_bpm_list')
 
-    require('src/objects/sidebar/preference')
-
     require('src/objects/sidebar/note_edit')
 
     require('src/objects/sidebar/event_edit')
