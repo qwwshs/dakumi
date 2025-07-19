@@ -13,7 +13,6 @@ function Gpreference:Nui()
 
     if Nui:button(i18n:get('save')) then
         local old = chart.preference.x_offset
-        log(tonumber(self.x_offset_v.value))
         chart.preference.x_offset = tonumber(self.x_offset_v.value) or 0
 
         if love.window.showMessageBox( "", i18n:get("Whether to offset the previously written event value"),{'no','yes'} ) == 2 then

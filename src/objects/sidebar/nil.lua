@@ -2,10 +2,9 @@
 local Gnil = group:new('nil')
 Gnil.type = "nil"
 function Gnil:Nui()
-    if Nui:button(i18n:get("info")) then
-        messageBox:add("info")
-        sidebar.displayed_content = "info"
-        object_chart_info.load(1250,100,0,150,50)
+    if Nui:button(i18n:get("chart info")) then
+        messageBox:add("chart info")
+        sidebar.displayed_content = "chart info"
     end
     if Nui:button(i18n:get("preference")) then
         messageBox:add("preference")
