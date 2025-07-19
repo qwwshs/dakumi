@@ -20,5 +20,13 @@ return {
     preference = {
         cols = 2,
         uiH = 20,
+    },
+    chartInfo = {
+        cols = 2,
+        uiH = 20,
+        bpmList = {
+            cols = 6,
+            uiH = 20,
+        }
     }
 }

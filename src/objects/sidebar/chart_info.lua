@@ -1,99 +1,102 @@
---子房间 就写成对象了
-local x = 0
-local y = 0
-local w = 0
-local h = 0
-local r = 0
-local input_type = false --输入状态
-local type = "info"
-local chart_info_pos_y = 0 --位移
-local function will_draw()
-    return sidebar:room_type(type) and the_room_pos({"edit",'tracks_edit'})
-end
-object_chart_info = {
-    bpm_list_load = function() -- 只改变bpmlist
-            --bpmlist表
-            bpm_list_sort()
-            for i = 1, #chart.bpm_list do
-                input_box_new("bpm"..i,"chart.bpm_list["..i.."].bpm",x,y+160+i*30 + chart_info_pos_y,w/2,20,{type ="number",will_draw = will_draw})
-                input_box_new("bpm_beat1"..i,"chart.bpm_list["..i.."].beat[1]",x+w/2+10,y+160+i*30 + chart_info_pos_y,w/2,20,{type ="number",will_draw = will_draw})
-                input_box_new("bpm_beat2"..i,"chart.bpm_list["..i.."].beat[2]",x+w+20,y+160+i*30 + chart_info_pos_y,w/2,20,{type ="number",will_draw = will_draw})
-                input_box_new("bpm_beat3"..i,"chart.bpm_list["..i.."].beat[3]",x+w+w/2+30,y+160+i*30 + chart_info_pos_y,w/2,20,{type ="number",will_draw = will_draw})
-            end
-    end,
-    load = function(x1,y1,r1,w1,h1)
-        x= x1 --初始化
-        y = y1
-        w = w1
-        h = h1
-        r = r1
-        chart_info_pos_y = 0
-        object_bpm_list.load(x,y+500,0,20,20)
-        if not sidebar:room_type(type) then
-            return
-        else
+--chartInfo界面
+local GchartInfo = group:new('chart info')
+GchartInfo.type = "chart info"
+GchartInfo.layout = require('config.layouts.sidebar').chartInfo
 
-            input_box_new("chartor","chart.info.chartor",x+ w + 10,y+40 + chart_info_pos_y,w,20,{type ="string",will_draw = will_draw})
-            input_box_new("artist","chart.info.artist",x + w + 10,y+80 + chart_info_pos_y,w,20,{type ="string",will_draw = will_draw})
+GchartInfo.chartor_v = {value = '0'}
+GchartInfo.artist_v = {value = '0'}
+GchartInfo.chart_name_v = {value = '0'}
+GchartInfo.song_name_v = {value = '0'}
+GchartInfo.offset = {value = '0'}
+GchartInfo.bpmList = {}
 
-            input_box_new("chart","chart.info.chart_name",x,y+40 + chart_info_pos_y,w,20,{type ="string",will_draw = will_draw})
-            input_box_new("music","chart.info.song_name",x,y+80 + chart_info_pos_y,w,20,{type ="string",will_draw = will_draw})
+function GchartInfo:load()
+    self.chartor_v.value = chart.info.chartor or ''
+    self.artist_v.value = chart.info.artist or ''
+    self.chart_name_v.value = chart.info.chart_name or ''
+    self.song_name_v.value = chart.info.song_name or ''
+    self.offset.value = tostring(chart.offset) or "0"
 
-            input_box_new("chart_offset","chart.offset",x,y+120,w,20 + chart_info_pos_y,{type ="number",will_draw = will_draw})
-            object_chart_info.bpm_list_load()
-        end
-
-        
-    end,
-    draw = function()
-        if not sidebar:room_type(type) then
-            return
-        end
-        
-
-        love.graphics.setColor(1,1,1,1)
-        love.graphics.print(i18n:get("chart"),x,y+20 + chart_info_pos_y) 
-        love.graphics.print(i18n:get("music"),x,y+60 + chart_info_pos_y) 
-        love.graphics.print(i18n:get("chartor"),x+w+10,y+20 + chart_info_pos_y) 
-        love.graphics.print(i18n:get("artist"),x+w+10,y+60 + chart_info_pos_y) 
-
-        love.graphics.print(i18n:get("offset(ms)"),x,y+100 + chart_info_pos_y)
-        love.graphics.print(i18n:get("bpm"),x,y+160 + chart_info_pos_y)
-        love.graphics.print(i18n:get("beat"),x+w+20,y+160 + chart_info_pos_y)
-
-        object_bpm_list.draw()
-
-    end,
-    mousepressed = function( x1, y1, button, istouch, presses )
-        if not sidebar:room_type(type) then
-            return
-        end
-        time.alltime = music:getDuration() + chart.offset / 1000 -- 得到音频总时长
-        beat.allbeat = time_to_beat(chart.bpm_list,time.alltime)
-        object_bpm_list.mousepressed(x1,y1)
-        bpm_list_sort()
-    end,
-    keypressed = function(key)
-        if not sidebar:room_type(type) then
-            return
-        end
-
-        
-    end,
-    wheelmoved = function(x,y)
-        if not sidebar:room_type(type) then
-            return
-        end
-        local scroll = 40
-        if y < 0 then
-            scroll = - scroll
-        end
-        input_box_wheelmoved(x,scroll,"chartor")
-        input_box_wheelmoved(x,scroll,"artist")
-        input_box_wheelmoved(x,scroll,"chart")
-        input_box_wheelmoved(x,scroll,"music")
-        input_box_wheelmoved(x,scroll,"chart_offset")
-        chart_info_pos_y = chart_info_pos_y + scroll
-        object_bpm_list.wheelmoved(x,scroll)
+    for i,v in ipairs(chart.bpm_list) do
+        self.bpmList[i] = {
+            bpm = {value = tostring(v.bpm)},
+            beat = {
+                {value = tostring(v.beat[1])},
+                {value = tostring(v.beat[2])},
+                {value = tostring(v.beat[3])}
+            }
+        }
     end
-}
+end
+
+function GchartInfo:Nui()
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    Nui:label(i18n:get'chartor')
+    Nui:edit('field',self.chartor_v)
+    Nui:label(i18n:get'artist')
+    Nui:edit('field',self.artist_v)
+    Nui:label(i18n:get'chart')
+    Nui:edit('field',self.chart_name_v)
+    Nui:label(i18n:get'music')
+    Nui:edit('field',self.song_name_v)
+    Nui:label(i18n:get'offset(ms)')
+    Nui:edit('field',self.offset)
+
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols) --换两行
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    local layout = self.layout.bpmList
+    Nui:label(i18n:get'bpmlist')
+    if Nui:button(i18n:get('add')) then
+        --往当前beat位置添加一个bpm
+        local nearBeat = to_nearby_Beat(beat.nowbeat)
+        self.bpmList[#self.bpmList + 1] = {
+            bpm = {value = '120'},
+            beat = {
+                {value = tostring(nearBeat[1])},
+                {value = tostring(nearBeat[2])},
+                {value = tostring(nearBeat[3])}
+            }
+        }
+        table.sort(self.bpmList,function(a,b)
+            return tonumber(a.beat[1].value) + (tonumber(a.beat[2].value) / tonumber(a.beat[3].value)) < tonumber(b.beat[1].value) + (tonumber(b.beat[2].value) / tonumber(b.beat[3].value))
+        end)
+    end
+
+    Nui:layoutRow('dynamic', self.layout.bpmList.uiH, self.layout.bpmList.cols)
+
+    for i,v in ipairs(self.bpmList) do
+        Nui:label(i)
+        Nui:edit('field',v.bpm)
+        Nui:edit('field',v.beat[1])
+        Nui:edit('field',v.beat[2])
+        Nui:edit('field',v.beat[3])
+        if Nui:button(i18n:get('sub')) then
+            table.remove(self.bpmList,i)
+        end
+    end
+
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    if Nui:button(i18n:get('save')) then
+        chart.info.chartor = self.chartor_v.value or ""
+        chart.info.artist = self.artist_v.value or ""
+        chart.info.chart_name = self.chart_name_v.value or ""
+        chart.info.song_name = self.song_name_v.value or ""
+        chart.offset = tonumber(self.offset.value) or 0
+
+        if #chart.bpm_list ~= #self.bpmList then
+            chart.bpm_list = {}
+        end
+        for i, v in ipairs(self.bpmList) do
+            if not chart.bpm_list[i] then   chart.bpm_list[i] = {}  end
+            chart.bpm_list[i].bpm = tonumber(v.bpm.value) or 120
+            chart.bpm_list[i].beat[1] = tonumber(v.beat[1].value) or 0
+            chart.bpm_list[i].beat[2] = tonumber(v.beat[2].value) or 0
+            chart.bpm_list[i].beat[3] = tonumber(v.beat[3].value) or 1
+        end
+
+        bpm_list_sort()
+    end
+end
+
+
+return GchartInfo

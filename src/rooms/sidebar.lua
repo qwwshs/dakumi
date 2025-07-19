@@ -6,6 +6,7 @@ sidebar:addGroup(require 'src.objects.sidebar.nil')
 sidebar:addGroup(require 'src.objects.sidebar.track')
 sidebar:addGroup(require 'src.objects.sidebar.settings')
 sidebar:addGroup(require 'src.objects.sidebar.preference')
+sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar.displayed_content = "nil" --现在所在的界面
 
 function sidebar:room_type(type) -- 房间状态判定
@@ -48,7 +49,6 @@ end
 function sidebar:draw()
     self('draw')
 
-    object_chart_info.draw()
     object_tracks_edit.draw()
     object_event_edit.draw()
     object_note_edit.draw()
@@ -58,7 +58,6 @@ end
 
 function sidebar:keypressed(key)
     self('keypressed',key)
-    object_chart_info.keypressed(key)
     object_event_edit.keypressed(key)
 end
 
@@ -67,13 +66,11 @@ function sidebar:wheelmoved(x,y)
         return
     end
     self('wheelmoved',x,y)
-    object_chart_info.wheelmoved(x,y)
     object_tracks_edit.wheelmoved(x,y)
 end
 
 function sidebar:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses )
-    object_chart_info.mousepressed( x, y, button, istouch, presses )
     object_tracks_edit.mousepressed( x, y, button, istouch, presses )
     object_event_edit.mousepressed( x, y, button, istouch, presses )
 end
