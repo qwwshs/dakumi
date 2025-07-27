@@ -44,7 +44,7 @@ function event_click(type,pos)  --被点击
         (thebeat(chart.event[i].beat) <= event_beat_down and thebeat(chart.event[i].beat2) >= event_beat_down)
         or (thebeat(chart.event[i].beat) <= event_beat_up and thebeat(chart.event[i].beat2) >= event_beat_up)) then
             sidebar.displayed_content = "event"..i
-            object_event_edit.load(1200,40,0,30,30) --调用编辑界面
+            sidebar:to("event",i)
             event_clean_up()
             return i
         end
@@ -122,7 +122,7 @@ function event_place(type,pos)
         end
         object_redo.write_revoke("event place",local_event)
         sidebar.displayed_content = "event"..int_theevent
-        object_event_edit.load(1200,40,0,30,30) --调用编辑界面
+        sidebar:to("event",int_theevent)
         event_clean_up()
     end
 end
