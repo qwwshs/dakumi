@@ -51,10 +51,6 @@ require("src.rooms.edit")
 
     require('src/objects/sidebar/note_edit')
 
-    require('src/objects/sidebar/event_edit')
-        require('src/objects/sidebar/event_edit_bezier')
-        require('src/objects/sidebar/button_event_edit_default_bezier')
-
     require('src/objects/sidebar/events_edit')
     
         require('src/objects/sidebar/tracks_edit')

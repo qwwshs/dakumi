@@ -156,8 +156,8 @@ object_note_play_in_edit = {
                 end
             end
             
-            local event_index = tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content)) --选中的event
-            if string.sub(sidebar.displayed_content,1,5) == "event" and --选中event框绘制
+            local event_index = sidebar.incoming[1] --选中的event
+            if sidebar.displayed_content == "event" and chart.event[event_index] and --选中event框绘制
             chart.event[event_index].track == track.track then --框出现在编辑的event
                 local y = beat_to_y(chart.event[event_index].beat)
                 local y2 = beat_to_y(chart.event[event_index].beat2)

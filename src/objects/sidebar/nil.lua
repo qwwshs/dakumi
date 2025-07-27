@@ -4,23 +4,23 @@ Gnil.type = "nil"
 function Gnil:Nui()
     if Nui:button(i18n:get("chart info")) then
         messageBox:add("chart info")
-        sidebar.displayed_content = "chart info"
+        sidebar:to("chart info")
     end
     if Nui:button(i18n:get("preference")) then
         messageBox:add("preference")
-        sidebar.displayed_content = "preference"
+        sidebar:to("preference")
     end
     if Nui:button(i18n:get("settings")) then
         messageBox:add("settings")
-        sidebar.displayed_content = "settings"
+        sidebar:to("settings")
     end
     if Nui:button(i18n:get("track")) then
         messageBox:add("track")
-        sidebar.displayed_content = "track"
+        sidebar:to("track")
     end
     if Nui:button(i18n:get("tracks_edit")) then
         messageBox:add("tracks_edit")
-        sidebar.displayed_content = "tracks_edit"
+        sidebar:to("tracks_edit")
         room_pos = "tracks_edit"
         object_tracks_edit.load(1250,0,0,400,WINDOW.h)
     end

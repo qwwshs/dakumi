@@ -7,7 +7,18 @@ sidebar:addGroup(require 'src.objects.sidebar.track')
 sidebar:addGroup(require 'src.objects.sidebar.settings')
 sidebar:addGroup(require 'src.objects.sidebar.preference')
 sidebar:addGroup(require 'src.objects.sidebar.chart_info')
+sidebar:addGroup(require 'src.objects.sidebar.event')
+
 sidebar.displayed_content = "nil" --现在所在的界面
+sidebar.incoming = {} --传入的参数
+function sidebar:to(type,...) -- 更变房间
+    self.incoming = {...}
+    self.displayed_content = type
+    local g = self:getGroup(self.displayed_content)
+    if g.to then
+        g:to(...)
+    end
+end
 
 function sidebar:room_type(type) -- 房间状态判定
     return type == sidebar.displayed_content
@@ -43,14 +54,12 @@ function sidebar:update(dt)
         g:NuiNext()
     end
 
-    object_event_edit.update(dt)
 end
 
 function sidebar:draw()
     self('draw')
 
     object_tracks_edit.draw()
-    object_event_edit.draw()
     object_note_edit.draw()
     object_events_edit.draw()
 
@@ -58,7 +67,6 @@ end
 
 function sidebar:keypressed(key)
     self('keypressed',key)
-    object_event_edit.keypressed(key)
 end
 
 function sidebar:wheelmoved(x,y)
@@ -72,12 +80,10 @@ end
 function sidebar:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses )
     object_tracks_edit.mousepressed( x, y, button, istouch, presses )
-    object_event_edit.mousepressed( x, y, button, istouch, presses )
 end
 
 function sidebar:mousereleased( x, y, button, istouch, presses )
     self('mousereleased', x, y, button, istouch, presses )
-    object_event_edit.mousereleased( x, y, button, istouch, presses )
 end
 
 return sidebar
