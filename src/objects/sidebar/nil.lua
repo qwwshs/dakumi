@@ -18,12 +18,6 @@ function Gnil:Nui()
         messageBox:add("track")
         sidebar:to("track")
     end
-    if Nui:button(i18n:get("tracks_edit")) then
-        messageBox:add("tracks_edit")
-        sidebar:to("tracks_edit")
-        room_pos = "tracks_edit"
-        object_tracks_edit.load(1250,0,0,400,WINDOW.h)
-    end
     if Nui:button(i18n:get("dakumi")) then
         messageBox:add("dakumi")
         love.system.openURL("https://dakumi.qwwshs.top")
