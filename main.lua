@@ -128,10 +128,6 @@ function love.draw()
 
     room("draw")
     Nui:draw()
-    
-    input_box_draw_all()
-    switch_draw_all()
-    button_draw_all()
 
 end
 
@@ -152,8 +148,6 @@ function love.keypressed(key, scancode, isrepeat)
     if string.sub(key,1,2) == "kp" then
         key = string.sub(key,3,3)
     end
-
-    input_box_key(key) --所有键入内容都照样读的 直接塞主函数
 
     room("keypressed",key, scancode, isrepeat)
 end
@@ -193,8 +187,6 @@ function love.mousepressed( x, y, button, istouch, presses )
     x = mouse.x  --对缩放进行处理
     y = mouse.y
     mouse.down = true
-    
-
     room("mousepressed", x, y, button, istouch, presses )
 end
 
@@ -208,10 +200,6 @@ function love.mousereleased( x, y, button, istouch, presses )
     y = mouse.y
     mouse.down = false
     
-    input_box_mousepressed(x, y)
-    button_mousepressed(x,y)
-    switch_mousepressed(x,y)
-
     room("mousereleased", x, y, button, istouch, presses )
 end
 
@@ -224,7 +212,6 @@ function love.mousemoved(x, y, dx, dy, istouch)
     x = mouse.x  --对缩放进行处理
     y = mouse.y
 
-    
     room("mousemoved",x, y, dx, dy, istouch)
 end
 
@@ -233,8 +220,6 @@ function love.textinput(input)
     if r then
         return
     end
-
-    input_box_textinput(input)
 
     room("textinput",input)
 end
@@ -251,13 +236,10 @@ end
 
 
 function love.directorydropped( path ) --文件夹拖入
-
     room("directorydropped", path )
-
 end
 
 function love.filedropped( file ) --文件拖入
-
     room("filedropped", file )
 end
 
