@@ -9,14 +9,16 @@ sidebar:addGroup(require 'src.objects.sidebar.preference')
 sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar:addGroup(require 'src.objects.sidebar.event')
 sidebar:addGroup(require 'src.objects.sidebar.note')
+sidebar:addGroup(require 'src.objects.sidebar.events')
 
 sidebar.displayed_content = "nil" --现在所在的界面
 sidebar.incoming = {} --传入的参数
-function sidebar:to(type,...) -- 更变房间
+
+function sidebar:to(ty,...) -- 更变房间
     self.incoming = {...}
-    self.displayed_content = type
+    self.displayed_content = ty
     local g = self:getGroup(self.displayed_content)
-    if g.to then
+    if type(g.to) == 'function' then
         g:to(...)
     end
 end
@@ -27,7 +29,6 @@ end
 
 function sidebar:load()
     self('load')
-    object_events_edit.load(1250,100,0,150,50)
 end
 
 function sidebar:update(dt)
@@ -61,7 +62,6 @@ function sidebar:draw()
     self('draw')
 
     object_tracks_edit.draw()
-    object_events_edit.draw()
 
 end
 

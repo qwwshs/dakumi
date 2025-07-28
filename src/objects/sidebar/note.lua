@@ -1,14 +1,8 @@
---event界面
+--note界面
 local Gnote = group:new('note')
 Gnote.type = "note"
 Gnote.layout = require 'config.layouts.sidebar'.note
 Gnote.fakev = {value = true}
-local meta_default_bezier = {
-    __index ={
-        {1,1,1,1}
-    
-    }
-}
 
 function Gnote:to(index)
     local v = chart.note[index]
