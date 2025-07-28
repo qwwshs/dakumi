@@ -90,8 +90,8 @@ object_note_play_in_edit = {
                 end
         end
         
-        local note_index = tonumber(string.sub(sidebar.displayed_content,5,#sidebar.displayed_content)) --选中的note
-        if string.sub(sidebar.displayed_content,1,4) == "note" and --选中note框绘制
+        local note_index = sidebar.incoming[1] --选中的note
+        if sidebar.displayed_content == "note" and --选中note框绘制
             chart.note[note_index] and
             chart.note[note_index].track == track.track then --框出现在编辑的note
                 local y = beat_to_y(chart.note[note_index].beat)
