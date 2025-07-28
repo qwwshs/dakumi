@@ -8,6 +8,7 @@ sidebar:addGroup(require 'src.objects.sidebar.settings')
 sidebar:addGroup(require 'src.objects.sidebar.preference')
 sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar:addGroup(require 'src.objects.sidebar.event')
+sidebar:addGroup(require 'src.objects.sidebar.note')
 
 sidebar.displayed_content = "nil" --现在所在的界面
 sidebar.incoming = {} --传入的参数
@@ -60,7 +61,6 @@ function sidebar:draw()
     self('draw')
 
     object_tracks_edit.draw()
-    object_note_edit.draw()
     object_events_edit.draw()
 
 end

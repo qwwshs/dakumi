@@ -34,8 +34,7 @@ object_note = {
         if  mouse.x >= 900 and mouse.x <= 1000 then -- 选择note
             local pos = note_click(mouse.y)
             if pos then
-                sidebar.displayed_content = 'note'..pos
-                object_note_edit.load(1200,40,0,30,30) --调用编辑界面
+                sidebar:to('note',pos)
             else
                 sidebar.displayed_content = 'nil'
             end

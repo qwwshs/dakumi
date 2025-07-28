@@ -49,8 +49,6 @@ require("src.rooms.edit")
     require('src/objects/play/note_play_in_edit')
     require('src/objects/play/demo_now_x_pos')
 
-    require('src/objects/sidebar/note_edit')
-
     require('src/objects/sidebar/events_edit')
     
         require('src/objects/sidebar/tracks_edit')
