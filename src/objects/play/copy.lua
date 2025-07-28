@@ -54,8 +54,8 @@ object_copy = {
         if room_pos == 'tracks_edit' then
             for i=1,#copy_tab.note do
                 local pos = {} --默认不显示
-                for k = 1,#tracks_table do
-                    if tracks_table[k] ==copy_tab.note[i].track then
+                for k = 1,#Gtracks.table do
+                    if Gtracks.table[k] ==copy_tab.note[i].track then
                         pos[#pos + 1] =  20+(k-1 + tracks_edit_x_move)*300
                     end
                 end
@@ -74,8 +74,8 @@ object_copy = {
 
             for i=1,#copy_tab.event do
                 local pos = {} --默认不显示
-                for k = 1,#tracks_table do
-                    if tracks_table[k] ==copy_tab.event[i].track then
+                for k = 1,#Gtracks.table do
+                    if Gtracks.table[k] ==copy_tab.event[i].track then
                         pos[#pos + 1] =  20+(k-1 + tracks_edit_x_move)*300
                     end
                 end
