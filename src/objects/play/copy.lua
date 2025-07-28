@@ -186,7 +186,7 @@ object_copy = {
             messageBox:add("add copy")
 
             if #copy_tab.event >0 then
-                sidebar.displayed_content = 'multiple_events_edit' --跳转到多事件编辑界面
+                sidebar:to('events')
             end
         end
 
@@ -291,7 +291,7 @@ object_copy = {
             end
         end
         if #copy_tab.event >0 then
-            sidebar.displayed_content = 'multiple_events_edit' --跳转到多事件编辑界面
+            sidebar:to('events')
         end
     end,
     wheelmoved = function(x,y)

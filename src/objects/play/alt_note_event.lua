@@ -86,7 +86,7 @@ object_alt_note_event = {
                 object_redo.write_revoke("event delete",chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))])
                     table.remove(chart.event,tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))) --删除    
                 event_sort()
-                sidebar.displayed_content = "multiple_events_edit" --界面清除
+                sidebar:to('events')
             end
         end
         if key == 'b' then --翻转
