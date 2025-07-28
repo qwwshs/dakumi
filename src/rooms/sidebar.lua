@@ -60,9 +60,6 @@ end
 
 function sidebar:draw()
     self('draw')
-
-    object_tracks_edit.draw()
-
 end
 
 function sidebar:keypressed(key)
@@ -70,16 +67,14 @@ function sidebar:keypressed(key)
 end
 
 function sidebar:wheelmoved(x,y)
-    if mouse.x < 1200 then --限制范围
+    if mouse.x < self.layout.x then --限制范围
         return
     end
     self('wheelmoved',x,y)
-    object_tracks_edit.wheelmoved(x,y)
 end
 
 function sidebar:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses )
-    object_tracks_edit.mousepressed( x, y, button, istouch, presses )
 end
 
 function sidebar:mousereleased( x, y, button, istouch, presses )
