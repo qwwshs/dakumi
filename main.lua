@@ -117,8 +117,6 @@ function love.update(dt)
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale)
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale)
 
-    room_tracks_edit.update(dt)
-
     room("update",dt)
 
     Nui:frameEnd()
@@ -127,8 +125,6 @@ function love.draw()
     love.graphics.setScissor((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2,WINDOW.w * WINDOW.scale, WINDOW.h * WINDOW.scale)
     love.graphics.translate((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2)
     love.graphics.scale(WINDOW.scale,WINDOW.scale)
-
-    room_tracks_edit.draw()
 
     room("draw")
     Nui:draw()
@@ -157,7 +153,6 @@ function love.keypressed(key, scancode, isrepeat)
         key = string.sub(key,3,3)
     end
 
-    room_tracks_edit.keypressed(key)
     input_box_key(key) --所有键入内容都照样读的 直接塞主函数
 
     room("keypressed",key, scancode, isrepeat)
@@ -176,7 +171,6 @@ function love.keyreleased(key,scancode)
         isalt = false
     end
     iskeyboard[key] = false
-    room_tracks_edit.keyreleased(key)
 
     room("keyreleased",key, scancode)
 end
@@ -186,7 +180,6 @@ function love.wheelmoved(x, y)
     if r then
         return
     end
-    room_tracks_edit.wheelmoved(x,y)
 
     room("wheelmoved",x, y)
 end
@@ -202,8 +195,6 @@ function love.mousepressed( x, y, button, istouch, presses )
     mouse.down = true
     
 
-
-    room_tracks_edit.mousepressed( x, y, button, istouch, presses )
     room("mousepressed", x, y, button, istouch, presses )
 end
 
@@ -216,9 +207,6 @@ function love.mousereleased( x, y, button, istouch, presses )
     x = mouse.x  --对缩放进行处理
     y = mouse.y
     mouse.down = false
-    
-    
-    room_tracks_edit.mousereleased( x, y, button, istouch, presses )
     
     input_box_mousepressed(x, y)
     button_mousepressed(x,y)

@@ -21,10 +21,8 @@ end
 
 function start:update(dt)
     if elapsed_time > 0 then 
-        room_tracks_edit.load()
         love.resize( settings.window_width, settings.window_height )  --缩放窗口
         love.window.setMode(settings.window_width, settings.window_height, {resizable = true})
-
         room:to('menu')
     end
 
