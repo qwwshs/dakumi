@@ -7,7 +7,7 @@ object_denom_play = {
 
             for i = 0, beat.allbeat * denom.denom do
                 local isbeat = i/denom.denom
-                beat_y = beat_to_y(isbeat)
+                beat_y = beat:toY(isbeat)
                 if beat_y > WINDOW.h then
                     goto next
                 elseif beat_y < 0 then
@@ -50,8 +50,8 @@ object_denom_play = {
             --鼠标指针所在位置所对应的beat渲染
             if mouse.x < 1200 then--在play里面
                 --根据距离反推出beat
-                local mouse_beat = thebeat(to_nearby_Beat(y_to_beat(mouse.y)))
-                local mouse_y = beat_to_y(mouse_beat)
+                local mouse_beat = beat:get(beat:toNearby(beat:yToBeat(mouse.y)))
+                local mouse_y = beat:toY(mouse_beat)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.rectangle("fill",0,mouse_y,1175,2)
             end

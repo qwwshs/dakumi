@@ -84,13 +84,13 @@ function Gevents:eventsDo() --执行
                 local from_to_random = math.random(-self.perturbation,self.perturbation)
                 copy_table.event[i].from = copy_table.event[i].from + from_to_random + self.from + 
                 ((self.to - self.from) *
-                self.expression(((thebeat(copy_table.event[i].beat) - thebeat(copy_table.event[1].beat))/
-                (thebeat(copy_table.event[#copy_table.event].beat2) - thebeat(copy_table.event[1].beat) ) )) )--一起修改 保证copy_tab与chart的event一致
+                self.expression(((beat:get(copy_table.event[i].beat) - beat:get(copy_table.event[1].beat))/
+                (beat:get(copy_table.event[#copy_table.event].beat2) - beat:get(copy_table.event[1].beat) ) )) )--一起修改 保证copy_tab与chart的event一致
                 
                 copy_table.event[i].to = copy_table.event[i].to + from_to_random + self.from +
                 ((self.to - self.from) *
-                self.expression(((thebeat(copy_table.event[i].beat2) - thebeat(copy_table.event[1].beat))/
-                (thebeat(copy_table.event[#copy_table.event].beat2) - thebeat(copy_table.event[1].beat) ))) )
+                self.expression(((beat:get(copy_table.event[i].beat2) - beat:get(copy_table.event[1].beat))/
+                (beat:get(copy_table.event[#copy_table.event].beat2) - beat:get(copy_table.event[1].beat) ))) )
                 chart.event[k].from = copy_table.event[i].from
                 chart.event[k].to = copy_table.event[i].to
             end

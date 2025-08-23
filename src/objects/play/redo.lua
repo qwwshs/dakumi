@@ -28,21 +28,21 @@ object_redo = { --用于实现撤销和重做
                 sidebar.displayed_content = "nil"
             elseif revoke[#revoke].type == "note delete" then
                 chart.note[#chart.note + 1] = table.copy(revoke[#revoke].tab)
-                note_sort()
+                note:sort()
             elseif revoke[#revoke].type == "event delete" then
                 chart.event[#chart.event + 1] = table.copy(revoke[#revoke].tab)
-                event_sort()
+                event:sort()
             elseif revoke[#revoke].type == "copy delete" then
 
                 for i = 1,#revoke[#revoke].tab.note do
                     chart.note[#chart.note + 1] = table.copy(revoke[#revoke].tab.note[i])
                 end
-                note_sort()
+                note:sort()
 
                 for i = 1,#revoke[#revoke].tab.event do
                     chart.event[#chart.event + 1] = table.copy(revoke[#revoke].tab.event[i])
                 end
-                event_sort()
+                event:sort()
 
                 sidebar.displayed_content = "nil"
 
@@ -61,7 +61,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.note = table.copy(local_tab)
-                note_sort()
+                note:sort()
                 local_tab = {}
                 for i = 1, #chart.event do
                     local no_have_this_event = true --表里没有这个event
@@ -75,7 +75,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.event = table.copy(local_tab)
-                event_sort()
+                event:sort()
 
                 sidebar.displayed_content = "nil"
 
@@ -84,11 +84,11 @@ object_redo = { --用于实现撤销和重做
                 for i = 1,#revoke[#revoke].tab[1].note do
                     chart.note[#chart.note + 1] = table.copy(revoke[#revoke].tab[1].note[i])
                 end
-                note_sort()
+                note:sort()
                 for i = 1,#revoke[#revoke].tab[1].event do
                     chart.event[#chart.event + 1] = table.copy(revoke[#revoke].tab[1].event[i])
                 end
-                event_sort()
+                event:sort()
 
                 local local_tab = {}
                 for i = 1, #chart.note do
@@ -103,7 +103,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.note = table.copy(local_tab)
-                note_sort()
+                note:sort()
                 local_tab = {}
                 for i = 1, #chart.event do
                     local no_have_this_event = true --表里没有这个event
@@ -117,7 +117,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.event = table.copy(local_tab)
-                event_sort()
+                event:sort()
 
                 sidebar.displayed_content = "nil"
             end
@@ -142,10 +142,10 @@ object_redo = { --用于实现撤销和重做
                 sidebar.displayed_content = "nil"
             elseif redo[#redo].type == "note place" then
                 chart.note[#chart.note + 1] = table.copy(redo[#redo].tab)
-                note_sort()
+                note:sort()
             elseif redo[#redo].type == "event place" then
                 chart.event[#chart.event + 1] = table.copy(redo[#redo].tab)
-                event_sort()
+                event:sort()
 
                 sidebar.displayed_content = "nil"
             elseif redo[#redo].type == "copy delete" then
@@ -175,11 +175,11 @@ object_redo = { --用于实现撤销和重做
                 for i = 1,#revoke[#revoke].tab.note do
                     chart.note[#chart.note + 1] = table.copy(revoke[#revoke].tab.note[i])
                 end
-                note_sort()
+                note:sort()
                 for i = 1,#revoke[#revoke].tab.event do
                     chart.event[#chart.event + 1] = table.copy(revoke[#revoke].tab.event[i])
                 end
-                event_sort()
+                event:sort()
                 sidebar.displayed_content = "nil"
 
             elseif redo[#redo].type == "cropping" then --裁剪
@@ -187,11 +187,11 @@ object_redo = { --用于实现撤销和重做
                 for i = 1,#revoke[#revoke].tab[2].note do
                     chart.note[#chart.note + 1] = table.copy(revoke[#revoke].tab[2].note[i])
                 end
-                note_sort()
+                note:sort()
                 for i = 1,#revoke[#revoke].tab[2].event do
                     chart.event[#chart.event + 1] = table.copy(revoke[#revoke].tab[2].event[i])
                 end
-                event_sort()
+                event:sort()
 
                 local local_tab = {}
                 for i = 1, #chart.note do
@@ -206,7 +206,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.note = table.copy(local_tab)
-                note_sort()
+                note:sort()
                 local_tab = {}
                 for i = 1, #chart.event do
                     local no_have_this_event = true --表里没有这个event
@@ -220,7 +220,7 @@ object_redo = { --用于实现撤销和重做
                     end
                 end
                 chart.event = table.copy(local_tab)
-                event_sort()
+                event:sort()
 
                 sidebar.displayed_content = "nil"
             end

@@ -48,7 +48,7 @@ function GchartInfo:Nui()
     Nui:label(i18n:get'bpmlist')
     if Nui:button(i18n:get('add')) then
         --往当前beat位置添加一个bpm
-        local nearBeat = to_nearby_Beat(beat.nowbeat)
+        local nearBeat = beat:toNearby(beat.nowbeat)
         self.bpmList[#self.bpmList + 1] = {
             bpm = {value = '120'},
             beat = {
@@ -94,7 +94,7 @@ function GchartInfo:Nui()
             chart.bpm_list[i].beat[3] = tonumber(v.beat[3].value) or 1
         end
 
-        bpm_list_sort()
+        bpmListSort()
     end
 end
 

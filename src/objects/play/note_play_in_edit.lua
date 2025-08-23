@@ -43,10 +43,10 @@ object_note_play_in_edit = {
         for i=1,#chart.note do
             if chart.note[i].track == istrack then
                 
-                local y = beat_to_y(chart.note[i].beat)
+                local y = beat:toY(chart.note[i].beat)
                 local y2 = y
                 if chart.note[i].type == "hold" then
-                    y2 = beat_to_y(chart.note[i].beat2)
+                    y2 = beat:toY(chart.note[i].beat2)
                 end
                 if not (y2 > WINDOW.h + note_h or y < -note_h) then
             
@@ -76,11 +76,11 @@ object_note_play_in_edit = {
             
         end
         --放置一半的长条渲染
-        local thelocal_hold = get_hold_table()
+        local thelocal_hold = note:getHoldTable()
         if thelocal_hold.beat and thelocal_hold.track == istrack then -- 存在
             love.graphics.setColor(1,1,1,1)
-            local y = beat_to_y(thelocal_hold.beat)
-            local y2 = beat_to_y(to_nearby_Beat(y_to_beat(mouse.y)))
+            local y = beat:toY(thelocal_hold.beat)
+            local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
             local note_h2 = y - y2 -note_h  * 2
             local _scale_h2 = 1 / _height * note_h2
                 if not (y2 > track_info.y + track_info.h + note_h or y < -note_h) then
@@ -94,10 +94,10 @@ object_note_play_in_edit = {
         if sidebar.displayed_content == "note" and --选中note框绘制
             chart.note[note_index] and
             chart.note[note_index].track == track.track then --框出现在编辑的note
-                local y = beat_to_y(chart.note[note_index].beat)
+                local y = beat:toY(chart.note[note_index].beat)
                 local y2 = y - note_h
                 if chart.note[note_index].type == 'hold' then
-                    y2 = beat_to_y(chart.note[note_index].beat2)
+                    y2 = beat:toY(chart.note[note_index].beat2)
                 end
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.rectangle("fill",pos,y2,track_info.one_track_w,y - y2)
@@ -110,8 +110,8 @@ object_note_play_in_edit = {
             for i=1,#chart.event do
                 if chart.event[i].track == istrack then
                     love.graphics.setColor(1,1,1,1)
-                    local y = beat_to_y(chart.event[i].beat)
-                    local y2 = beat_to_y(chart.event[i].beat2)
+                    local y = beat:toY(chart.event[i].beat)
+                    local y2 = beat:toY(chart.event[i].beat2)
                     local event_h2 = y - y2 - event_h * 2
                     local _scale_h2 = 1 / _height * event_h2
                     local x_pos = pos + track_info.interval
@@ -137,11 +137,11 @@ object_note_play_in_edit = {
                 end
             end
             --放置一半的event渲染
-            local thelocal_event = get_event_table()
+            local thelocal_event = event:getHoldTable()
             if thelocal_event.beat and thelocal_event.track == istrack then -- 存在
                 love.graphics.setColor(1,1,1,1)
-                local y = beat_to_y(thelocal_event.beat)
-                local y2 = beat_to_y(to_nearby_Beat(y_to_beat(mouse.y)))
+                local y = beat:toY(thelocal_event.beat)
+                local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
                 local event_h2 = y - y2 - event_h * 2
                 local _scale_h2 = 1 / _height * event_h2
                 local x_pos = pos + track_info.interval
@@ -159,8 +159,8 @@ object_note_play_in_edit = {
             local event_index = sidebar.incoming[1] --选中的event
             if sidebar.displayed_content == "event" and chart.event[event_index] and --选中event框绘制
             chart.event[event_index].track == track.track then --框出现在编辑的event
-                local y = beat_to_y(chart.event[event_index].beat)
-                local y2 = beat_to_y(chart.event[event_index].beat2)
+                local y = beat:toY(chart.event[event_index].beat)
+                local y2 = beat:toY(chart.event[event_index].beat2)
                 love.graphics.setColor(1,1,1,0.5)
                 if chart.event[event_index].type == "x" then
                     love.graphics.rectangle("fill",pos + track_info.interval,y2,track_info.one_track_w,y - y2)

@@ -1,8 +1,8 @@
 -- Copyright (C) 2010-2024 qwwshs
 
 DAKUMI = {_VERSION = "0.4.0"}
-beat = {nowbeat = 0,allbeat = 100}
-time = {nowtime = 0 ,alltime = 100}
+beat = beat
+time = {nowtime = 0 ,alltime = 1}
 chart = {}
 bg = nil
 music = nil

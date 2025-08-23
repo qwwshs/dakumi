@@ -22,7 +22,7 @@ end
 function buttonMusicPlay:update(dt)
     if music_play then
         time.nowtime = time.nowtime + dt * musicSpeed.speed
-        beat.nowbeat = time_to_beat(chart.bpm_list,time.nowtime)
+        beat.nowbeat = beat:toBeat(chart.bpm_list,time.nowtime)
         
         if not music then return end
         

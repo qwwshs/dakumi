@@ -3,11 +3,14 @@ socket = require("socket") --网络通信
 ffi = require("ffi") --调用C语言库
 nuklear = require 'nuklear' --图形界面
 fileselect = ffi.load("fileselect")
-
 serpent = require("src.utils.serpent") --lua序列化
 require("src.utils.room")
+
 require("src.utils.music")
-require("src.utils.beat_and_time")
+beat = require("src.utils.beat")
+event = require("src.utils.event")
+note = require("src.utils.note")
+
 require("src.utils.log")
 require("src.utils.string")
 require("src.utils.table")
@@ -19,8 +22,8 @@ easings = require('src.utils.easings')
 require("src.utils.bezier")
 require("src.utils.math")
 require("src.utils.track")
-require("src.utils.note")
-require("src.utils.event")
+
+
 
 --属于main
 require('src.objects.messageBox')

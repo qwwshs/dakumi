@@ -19,20 +19,20 @@ object_note_edit_inplay = {
             return
         end
         if key == "q" then -- note
-            note_place("note",mouse.y)
+            note:place("note",mouse.y)
             messageBox:add("note place")
             sidebar.displayed_content = 'nil'
         elseif key == "w" then --wipe
-            note_place("wipe",mouse.y)
+            note:place("wipe",mouse.y)
             messageBox:add("wipe place")
             sidebar.displayed_content = 'nil'
         elseif key == "e" then --hold
             hold_place = not hold_place
-            note_place("hold",mouse.y)
+            note:place("hold",mouse.y)
             messageBox:add("hold place")
             sidebar.displayed_content = 'nil'
         elseif key == "d" then --delete
-            note_delete(mouse.y)
+            note:delete(mouse.y)
             messageBox:add("note delete")
             sidebar.displayed_content = 'nil'
         end
@@ -45,13 +45,13 @@ object_note_edit_inplay = {
         local local_track = {}
         for i = 1,#chart.event do --点击轨道进入轨道的编辑事件
             if not table.find(local_track,chart.event[i].track) then --不存在 记录
-                local track_x,track_w = event_get(chart.event[i].track,beat.nowbeat)
+                local track_x,track_w = event:get(chart.event[i].track,beat.nowbeat)
                 track_x,track_w = to_play_track(track_x,track_w)
                 if x >= track_x and x <= track_w + track_x then
                     local_track[#local_track + 1] = chart.event[i].track
                 end
             end
-            if thebeat(chart.event[i].beat) > beat.nowbeat then
+            if beat:get(chart.event[i].beat) > beat.nowbeat then
                 break
             end
         end

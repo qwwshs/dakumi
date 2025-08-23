@@ -42,21 +42,21 @@ function play:update(dt)
         end
         local v = chart.effect[i]
         if v then
-            if (thebeat(v.beat) <= beat.nowbeat and thebeat(v.beat2) > beat.nowbeat) or (thebeat(v.beat2) <= beat.nowbeat) then
+            if (beat:get(v.beat) <= beat.nowbeat and beat:get(v.beat2) > beat.nowbeat) or (beat:get(v.beat2) <= beat.nowbeat) then
                 if v.type == "note_alpha" and (not now_note_alpha_ed) then
-                    play.effect.note_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
+                    play.effect.note_alpha = bezier(beat:get(v.beat),beat:get(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_note_alpha_ed = true
                 elseif v.type == "track_alpha" and (not now_track_alpha_ed) then
-                    play.effect.track_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
+                    play.effect.track_alpha = bezier(beat:get(v.beat),beat:get(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_track_alpha_ed = true
                 elseif v.type == "track_line_alpha" and (not now_track_alpha_ed) then
-                    play.effect.track_line_alpha = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
+                    play.effect.track_line_alpha = bezier(beat:get(v.beat),beat:get(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_track_line_alpha_ed = true
                 elseif v.type == "note_rotate" and (not now_track_alpha_ed) then
-                    play.effect.note_rotate = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
+                    play.effect.note_rotate = bezier(beat:get(v.beat),beat:get(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_note_rotate_ed = true
                 elseif v.type == "scroll" and (not now_track_alpha_ed) then
-                    play.effect.scroll = bezier(thebeat(v.beat),thebeat(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
+                    play.effect.scroll = bezier(beat:get(v.beat),beat:get(v.beat2),v.from,v.to,v.trans,beat.nowbeat)
                     now_scroll_ed = true
                 end
             end
@@ -66,7 +66,7 @@ function play:update(dt)
 
     local all_track = track_get_all_track()
     for i = 1,#all_track do
-        local x,w = event_get(all_track[i],beat.nowbeat)
+        local x,w = event:get(all_track[i],beat.nowbeat)
         play.now_all_track_pos[all_track[i]] = {x = x,w = w}
     end
 
@@ -121,8 +121,8 @@ function play:draw()
             elseif chart.event[i].type == "x" then
                 love.graphics.setColor(0,1,1,1)
             end
-            local y = beat_to_y(chart.event[i].beat)
-            local y2 = beat_to_y(chart.event[i].beat2)
+            local y = beat:toY(chart.event[i].beat)
+            local y2 = beat:toY(chart.event[i].beat2)
             local event_h2 = y - y2 - event_h * 2
             if not (y2 > WINDOW.h or y < 0) then
             -- beizer曲线
