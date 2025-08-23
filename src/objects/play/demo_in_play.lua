@@ -107,10 +107,10 @@ object_demo_inplay = {
                 w = 30
             end
             x = x - w /2
-            local y = beat_to_y(chart.note[i].beat)
+            local y = beat:toY(chart.note[i].beat)
             local y2 = y
             if chart.note[i].type == "hold" then
-                y2 = beat_to_y(chart.note[i].beat2)
+                y2 = beat:toY(chart.note[i].beat2)
             end
 
             local _scale_w = 1 / _width * w

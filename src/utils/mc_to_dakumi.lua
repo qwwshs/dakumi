@@ -29,7 +29,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.bpm_list > 0 do
             local bpm_beat_min = 1
             for i = 1,  #chart_tab.bpm_list  do
-                if thebeat(chart_tab.bpm_list[i].beat) < thebeat(chart_tab.bpm_list[bpm_beat_min].beat) then
+                if beat:get(chart_tab.bpm_list[i].beat) < beat:get(chart_tab.bpm_list[bpm_beat_min].beat) then
                     bpm_beat_min = i
                 end
             end
@@ -66,7 +66,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.event > 0 do
             local min = 1 --设1 event大小最小
             for i = 1 ,#chart_tab.event do
-                if thebeat(chart_tab.event[i].beat) < thebeat(chart_tab.event[min].beat) then
+                if beat:get(chart_tab.event[i].beat) < beat:get(chart_tab.event[min].beat) then
                     min = i
                 end
             end
@@ -99,7 +99,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.note > 0 do
             local min = 1 --设1 note大小最小
             for i = 1 ,#chart_tab.note do
-                if thebeat(chart_tab.note[i].beat) < thebeat(chart_tab.note[min].beat) then
+                if beat:get(chart_tab.note[i].beat) < beat:get(chart_tab.note[min].beat) then
                     min = i
                 end
             end
@@ -125,7 +125,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.bpm_list > 0 do
             local bpm_beat_min = 1
             for i = 1,  #chart_tab.bpm_list  do
-                if thebeat(chart_tab.bpm_list[i].beat) < thebeat(chart_tab.bpm_list[bpm_beat_min].beat) then
+                if beat:get(chart_tab.bpm_list[i].beat) < beat:get(chart_tab.bpm_list[bpm_beat_min].beat) then
                     bpm_beat_min = i
                 end
             end
@@ -175,7 +175,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.event > 0 do
             local min = 1 --设1 event大小最小
             for i = 1 ,#chart_tab.event do
-                if thebeat(chart_tab.event[i].beat) < thebeat(chart_tab.event[min].beat) then
+                if beat:get(chart_tab.event[i].beat) < beat:get(chart_tab.event[min].beat) then
                     min = i
                 end
             end
@@ -194,7 +194,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
                     beat = {mc_tab.note[i].beat[1],mc_tab.note[i].beat[2],mc_tab.note[i].beat[3]},
                 }
             elseif type(mc_tab.note[i].seg) == 'table' then --slide
-                local seg_beat = beat_add(mc_tab.note[i].beat,mc_tab.note[i].seg[#mc_tab.note[i].seg].beat) --beat2
+                local seg_beat = beat:add(mc_tab.note[i].beat,mc_tab.note[i].seg[#mc_tab.note[i].seg].beat) --beat2
                 chart_tab.note[#chart_tab.note + 1] = {
                     type = "hold",
                     track = track[mc_tab.note[i].x..","..mc_tab.note[i].w][3],
@@ -216,7 +216,7 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
         while #chart_tab.note > 0 do
             local min = 1 --设1 note大小最小
             for i = 1 ,#chart_tab.note do
-                if thebeat(chart_tab.note[i].beat) < thebeat(chart_tab.note[min].beat) then
+                if beat:get(chart_tab.note[i].beat) < beat:get(chart_tab.note[min].beat) then
                     min = i
                 end
             end

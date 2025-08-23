@@ -20,17 +20,17 @@ object_hit = {
     end,
     update = function(dt)
         for i = 1,#chart.note do
-            if not hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] and not( chart.note[i].fake == 1) then --不存在 记录
-                if thebeat(chart.note[i].beat) <= beat.nowbeat then
-                    hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = false
+            if not hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] and not( chart.note[i].fake == 1) then --不存在 记录
+                if beat:get(chart.note[i].beat) <= beat.nowbeat then
+                    hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = false
                 else
-                    hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = true
+                    hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = true
                 end
             end
-            if thebeat(chart.note[i].beat) < beat.nowbeat and --播放
-            hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] then
-                local x,w = event_get(chart.note[i].track,beat.nowbeat)
-                hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = false --播放完成
+            if beat:get(chart.note[i].beat) < beat.nowbeat and --播放
+            hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] then
+                local x,w = event:get(chart.note[i].track,beat.nowbeat)
+                hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = false --播放完成
 
                 if hit_sound and settings.hit_sound == 1 and music_play and w > 0 and not( chart.note[i].fake == 1) then --播放
                     love.audio.setVolume( settings.hit_volume / 100 ) --设置音量大小
@@ -42,8 +42,8 @@ object_hit = {
                     hit_tab[#hit_tab + 1] = {x = to_play_track_original_x(x),time = time.nowtime,track = chart.note[i].track}
                 end
             end
-            if thebeat(chart.note[i].beat) >= beat.nowbeat then
-                hit_sound_tab["b"..thebeat(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = true --未播放
+            if beat:get(chart.note[i].beat) >= beat.nowbeat then
+                hit_sound_tab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = true --未播放
             end
 
         end
@@ -86,7 +86,7 @@ object_hit = {
             --光效
             if not (hit_light_alpha >= 19 or hit_light_alpha <= 1) then --防止暂停时滞留
                 love.graphics.setColor(1,1,1,(19-hit_light_alpha)/(19*3)) --只要1/4的alpha
-                local x,w = to_play_track(event_get(hit_tab[i].track,beat.nowbeat))
+                local x,w = to_play_track(event:get(hit_tab[i].track,beat.nowbeat))
                 love.graphics.draw(hit_light,x,settings.judge_line_y-300  / (WINDOW.scale / WINDOW.scale),0,hit_light_scale_w*w,hit_light_scale_h*300)
             end
 

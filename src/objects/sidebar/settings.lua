@@ -24,7 +24,7 @@ Gsettings.setting_type = { --输入类型
     {'hit',"switch",1},
     {'hit_sound',"switch",1},
     {'track_w_scale',"edit"},
-    {'language',"switch",i18n:get_languages_number() - 1},
+    {'language',"combobox",i18n:get_languages_table(),i18n:get_now_language_in_table(settings.language)},
     {'contact_roller',"edit"},
     {'note_height',"edit"},
     {'bg_alpha',"edit"},
@@ -38,6 +38,9 @@ for i,v in ipairs(Gsettings.setting_type) do
         v.value = tostring(settings[v[1]])
     elseif v[2] == "switch" then
         v.value = settings[v[1]]
+    elseif v[2] == "combobox" then
+        v.items = v[3]
+        v.value = v[4]
     end
 end
 
@@ -49,14 +52,20 @@ function Gsettings:Nui()
             Nui:edit('field',v)
         elseif v[2] == "switch" then
             Nui:slider(0,v, v[3], 1)
+        elseif v[2] == "combobox" then
+            Nui:combobox(v,v.items)
         end
     end
 
     if Nui:button(i18n:get('save')) then
-        save(dkjson.encode(settings, { indent = true }),PATH.usersPath.settings..'settings.json')
         for i,v in ipairs(self.setting_type) do
             settings[v[1]] = tonumber(v.value) or 0
+            --特殊处理
+            if v[1] == "language" then
+                settings[v[1]] = v.items[v.value]
+            end
         end
+        save(dkjson.encode(settings, { indent = true }),PATH.usersPath.settings..'settings.json')
     end
 end
 

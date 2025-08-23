@@ -19,17 +19,17 @@ object_event = {
             return
         end
         if key == "e" and mouse.x >= 1000 and mouse.x <= 1100 then -- x
-            event_place("x",mouse.y)
+            event:place("x",mouse.y)
             messageBox:add("event x place")
         elseif key == "e" and mouse.x >= 1100 and mouse.x <= 1175 then -- w
-            event_place("w",mouse.y)
+            event:place("w",mouse.y)
             messageBox:add("event w place")
 
         elseif key == "d" and mouse.x >= 1000 and mouse.x <= 1100 then -- x delete
-                event_delete("x",mouse.y)
+                event:delete("x",mouse.y)
                 messageBox:add("event x place")
         elseif key == "d" and mouse.x >= 1100 and mouse.x <= 1175 then -- w delete
-                event_delete("w",mouse.y)
+                event:delete("w",mouse.y)
                 messageBox:add("event w place")
         end
     end,
@@ -38,10 +38,10 @@ object_event = {
             return
         end
         if  mouse.x >= 1000 and mouse.x <= 1100 then -- x
-            event_click("x",mouse.y)
+            event:click("x",mouse.y)
             messageBox:add("event x click")
         elseif  mouse.x >= 1100 and mouse.x <= 1175 then -- w
-            event_click("w",mouse.y)
+            event:click("w",mouse.y)
             messageBox:add("event w click")
         end
     end

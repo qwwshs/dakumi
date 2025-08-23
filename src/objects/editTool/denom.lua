@@ -38,7 +38,7 @@ function denom:wheelmoved(x,y)
         end
         beat.nowbeat = math.floor(beat.nowbeat) + min_denom / denom.denom --更正位置
 
-        time.nowtime = beat_to_time(chart.bpm_list,beat.nowbeat)
+        time.nowtime = beat:toTime(chart.bpm_list,beat.nowbeat)
         music_play = false
 end
 

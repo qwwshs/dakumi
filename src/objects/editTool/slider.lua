@@ -22,7 +22,7 @@ function slider:draw()
     end
     --全谱平均note密度表示 分成100部分
     for i = 1, #chart.note do
-        local pos = math.floor(beat_to_time(chart.bpm_list,thebeat(chart.note[i].beat)) / time.alltime * 100)
+        local pos = math.floor(beat:toTime(chart.bpm_list,beat:get(chart.note[i].beat)) / time.alltime * 100)
         if not local_tab[pos] then --超界
             local_tab[pos] = 1 
         end
@@ -68,7 +68,7 @@ function slider:update(dt)
         music_play = false
         self.now_y = y1
         time.nowtime = -(self.now_y-self.y - self.h) / self.h  * time.alltime
-        beat.nowbeat = time_to_beat(chart.bpm_list,time.nowtime)
+        beat.nowbeat = beat:toBeat(chart.bpm_list,time.nowtime)
     end
 end
 function slider:mousepressed(x1,y1)

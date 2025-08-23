@@ -61,7 +61,7 @@ function menu:select_music()
                 --读取音频信息
                 music = menu.chartInfo.song
                 time.alltime = music:getDuration() + chart.offset / 1000 -- 得到音频总时长
-                beat.allbeat = time_to_beat(chart.bpm_list,time.alltime)
+                beat.allbeat = beat:toBeat(chart.bpm_list,time.alltime)
             end
         end
         love.audio.stop( ) --停止上一个歌曲
@@ -192,11 +192,7 @@ function menu:wheelmoved(x,y)
             menu.selectMusicPos = menu.selectMusicPos - 1
         end
 
-        if menu.selectMusicPos > #menu.chartTab then
-            menu.selectMusicPos = #menu.chartTab
-        elseif menu.selectMusicPos < 1 then 
-            menu.selectMusicPos = 1
-        end
+        menu.selectMusicPos = math.max(1,math.min(#menu.chartTab,menu.selectMusicPos))
 
         menu.selectChartPos = 1 --归位
         menu:select_music()
@@ -208,11 +204,7 @@ function menu:wheelmoved(x,y)
             menu.selectChartPos = menu.selectChartPos - 1
         end
 
-        if menu.selectChartPos > #menu.chartInfo.chart_name then
-            menu.selectChartPos = #menu.chartInfo.chart_name
-        elseif menu.selectChartPos < 1 then 
-            menu.selectChartPos = 1
-        end
+        menu.selectChartPos = math.max(1,math.min(#menu.chartInfo.chart_name,menu.selectChartPos))
 
         menu.path = menu.chartInfo.chart_name[menu.selectChartPos].path
         local info = love.filesystem.read(menu.path)

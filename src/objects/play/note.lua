@@ -12,27 +12,27 @@ object_note = {
             return
         end
         if key == "q" then -- note
-            note_place("note",mouse.y)
+            note:place("note",mouse.y)
             messageBox:add("note place")
             sidebar.displayed_content = 'nil'
         elseif key == "w" then --wipe
-            note_place("wipe",mouse.y)
+            note:place("wipe",mouse.y)
             messageBox:add("wipe place")
             sidebar.displayed_content = 'nil'
         elseif key == "e" then --hold
             hold_place = not hold_place
-            note_place("hold",mouse.y)
+            note:place("hold",mouse.y)
             messageBox:add("hold place")
             sidebar.displayed_content = 'nil'
         elseif key == "d" then --delete
-            note_delete(mouse.y)
+            note:delete(mouse.y)
             messageBox:add("note delete")
             sidebar.displayed_content = 'nil'
         end
     end,
     mousepressed = function(x,y,button)
         if  mouse.x >= 900 and mouse.x <= 1000 then -- 选择note
-            local pos = note_click(mouse.y)
+            local pos = note:click(mouse.y)
             if pos then
                 sidebar:to('note',pos)
             else
