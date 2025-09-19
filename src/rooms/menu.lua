@@ -206,18 +206,19 @@ function menu:wheelmoved(x,y)
 
         menu.selectChartPos = math.max(1,math.min(#menu.chartInfo.chart_name,menu.selectChartPos))
 
-        menu.path = menu.chartInfo.chart_name[menu.selectChartPos].path
-        local info = love.filesystem.read(menu.path)
-        
-        pcall(function() info = loadstring("return "..info)() end)
-        if type(info) ~= "table" then
-            log("It is "..type(info))
-            info = {}
-        end
-        setmetatable(info,meta_chart) --防谱报废
-        table.fill(info,meta_chart.__index)
+        if menu.chartInfo.chart_name[menu.selectChartPos] then
+            menu.path = menu.chartInfo.chart_name[menu.selectChartPos].path
+            local info = love.filesystem.read(menu.path)
 
-        chart = table.copy(info) --读取谱面
+            pcall(function() info = loadstring("return "..info)() end)
+            if type(info) ~= "table" then
+                log("It is "..type(info))
+                info = {}
+            end
+            setmetatable(info,meta_chart) --防谱报废
+            table.fill(info,meta_chart.__index)
+            chart = table.copy(info) --读取谱面
+        end
     end 
 
 end

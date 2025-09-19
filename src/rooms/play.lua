@@ -21,7 +21,7 @@ function play:get_init_effect()
     note_rotate = 0,
 } --影响效果
 end
-
+play:addObject(require 'src.objects.play.denomPlay')
 function play:load()
     self('load')
     object_hit.load()
@@ -136,9 +136,6 @@ function play:draw()
             end
         end
     end
-    
-    
-    object_denom_play.draw()
     object_note_play_in_edit.draw()
 
     --栅栏绘制
