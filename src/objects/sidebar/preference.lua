@@ -9,6 +9,7 @@ function Gpreference:load()
 end
 function Gpreference:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    Nui:label(i18n:get"x_offset")
     Nui:edit('field',self.x_offset_v)
 
     if Nui:button(i18n:get('save')) then

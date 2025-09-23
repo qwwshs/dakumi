@@ -79,10 +79,10 @@ end
 
 function denom:update(dt)
     if tonumber(self.useToDenom.value) then
-        denom.denom = tonumber(self.useToDenom.value)
+        denom.denom = math.max(math.floor(tonumber(self.useToDenom.value)),1)
     end
     if tonumber(self.useToScale.value) then
-        denom.scale = tonumber(self.useToScale.value)
+        denom.scale = math.max(tonumber(self.useToScale.value),0.1)
     end
 end
 
