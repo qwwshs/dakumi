@@ -39,13 +39,13 @@ function track:Nui() --渲染
         Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
         Nui:label(i18n:get(self.text2))
         if Nui:button("",isImage.up) then
-            track.fence = track.fence + 0.1
+            track.fence = track.fence + 1
             self.useToFence.value = tostring(track.fence)
         end
         Nui:edit('field', self.useToFence)
 
         if Nui:button("",isImage.down) then
-            track.fence = math.max(track.fence - 0.1,0.1)
+            track.fence = math.max(track.fence - 1,1)
             self.useToFence.value = tostring(track.fence)
         end
         
@@ -55,10 +55,10 @@ end
 
 function track:update(dt)
     if tonumber(self.useToTrack.value) then
-        self.track = tonumber(self.useToTrack.value)
+        self.track = math.max(math.floor(tonumber(self.useToTrack.value)),1)
     end
     if tonumber(self.useToFence.value) then
-        self.fence = tonumber(self.useToFence.value)
+        self.fence = math.max(math.floor(tonumber(self.useToFence.value)),0)
     end
 end
 

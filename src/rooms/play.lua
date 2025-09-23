@@ -7,6 +7,7 @@ play.effect = {
     track_line_alpha = 100,
     note_rotate = 0,
     } --影响效果
+play.layout = require 'config.layouts.play'
 
 function play:get_all_track_pos()
     return play.now_all_track_pos
@@ -15,20 +16,30 @@ function play:get_effect()
     return play.effect
 end
 function play:get_init_effect()
-    return {note_alpha = 100,
+    return {
+    note_alpha = 100,
     track_alpha = 100,
     track_line_alpha = 100,
     note_rotate = 0,
-} --影响效果
+    } --影响效果
 end
 play:addObject(require 'src.objects.play.denomPlay')
+play:addObject(require 'src.objects.play.demoNowX')
 function play:load()
     self('load')
     object_hit.load()
     object_note.load()
     object_note_edit_inplay.load(100,50,0,50,16.6)
 end
-
+function play:mouseInPlay()
+    return math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) and math.intersect(mouse.y,mouse.y,self.layout.y,self.layout.y + self.layout.h)
+end
+function play:mouseInEdit()
+    return math.intersect(mouse.x,mouse.x,self.layout.edit.x,self.layout.edit.x + self.layout.edit.w) and math.intersect(mouse.y,mouse.y,self.layout.edit.y,self.layout.edit.y + self.layout.edit.h)
+end
+function play:mouseInDemo()
+    return math.intersect(mouse.x,mouse.x,self.layout.demo.x,self.layout.demo.x + self.layout.demo.w) and math.intersect(mouse.y,mouse.y,self.layout.demo.y,self.layout.demo.y + self.layout.demo.h)
+end
 function play:update(dt)
     self('update',dt)
     local now_note_alpha_ed = false --已经计算
@@ -74,7 +85,7 @@ function play:update(dt)
 end
 
 function play:draw()
-    self('draw')
+
     object_demo_mode.draw()
     love.graphics.setColor(1,1,1,settings.bg_alpha / 100)
 
@@ -109,7 +120,6 @@ function play:draw()
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
     love.graphics.printf(str,info.play.play_alea.x,settings.judge_line_y + 60,info.play.play_alea.w,"center")
-    object_demo_now_x_pos.draw()
 
     --event渲染
     local event_h = settings.note_height
@@ -152,6 +162,7 @@ function play:draw()
     object_note.draw()
     --复制粘贴相关
     object_copy.draw()
+    self('draw')
 end
 
 function play:keypressed(key)

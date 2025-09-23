@@ -92,6 +92,9 @@ function GchartInfo:Nui()
             chart.bpm_list[i].beat[1] = tonumber(v.beat[1].value) or 0
             chart.bpm_list[i].beat[2] = tonumber(v.beat[2].value) or 0
             chart.bpm_list[i].beat[3] = tonumber(v.beat[3].value) or 1
+            if chart.bpm_list[i].bpm <= 0 then
+                chart.bpm_list[i].bpm = 120
+            end
         end
 
         bpmListSort()

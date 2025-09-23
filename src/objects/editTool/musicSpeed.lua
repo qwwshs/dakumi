@@ -26,7 +26,7 @@ end
 
 function speed:update(dt)
     if tonumber(self.useToSpeed.value) then
-        self.speed = tonumber(self.useToSpeed.value)
+        self.speed = math.max(tonumber(self.useToSpeed.value),0.1)
     end
 end
 

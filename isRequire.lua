@@ -45,7 +45,6 @@ require("src.rooms.edit")
     require('src/objects/play/redo')
     require('src/objects/play/demo_mode')
     require('src/objects/play/note_play_in_edit')
-    require('src/objects/play/demo_now_x_pos')
 
 require("src.rooms.menu")
 
