@@ -108,7 +108,7 @@ function event:place(type,pos)
     elseif event.hold_type == 1 then
         event.local_event.beat2 = {math.floor(event_beat),event_min_denom,denom.denom} 
         if beat:get(event.local_event.beat2) <= beat:get(event.local_event.beat) then --尾巴比头早或重叠
-            messageBox:addMessage("illegal operation")
+            messageBox:add("illegal operation")
             event:cleanUp()
             return false
         else -- 合法操作

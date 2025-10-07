@@ -9,12 +9,10 @@ track.useToTrack = {value = "4"}
 track.useToFence = {value = "10"}
 
 function track:keypressed(key)
-    if mouse.x >= 1200 then return end
-
     if key == "right" then
-        track.track = track.track + 1
+        self:to(self.track + 1)
     elseif key == "left" then
-        track.track = math.max(track.track-1,1)
+        self:to(math.max(self.track-1,1))
     end
 end
 

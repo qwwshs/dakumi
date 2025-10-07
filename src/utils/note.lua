@@ -58,7 +58,7 @@ function note:place(note_type,pos)
         local note_correct_beat = {note_beat[1],note_beat[2],note_beat[3]}
         for i = 1,#chart.note do --重叠
             if chart.note[i].track == track.track and beat:get(chart.note[i].beat) == beat:get(note_correct_beat) then
-                messageBox:addMessage("overlap")
+                messageBox:add("overlap")
                 return false
             end
         end
@@ -91,7 +91,7 @@ function note:place(note_type,pos)
             note.local_hold.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
             note.local_tab.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
             if beat:get(note.local_hold.beat2) <= beat:get(note.local_hold.beat) then --尾巴比头早或重叠
-                messageBox:addMessage("illegal operation")
+                messageBox:add("illegal operation")
                 note:holdCleanUp()
                 return false
             else -- 合法操作

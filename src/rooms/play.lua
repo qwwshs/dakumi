@@ -29,7 +29,6 @@ play:addObject(require 'src.objects.play.note')
 function play:load()
     self('load')
     object_hit.load()
-    object_note_edit_inplay.load(100,50,0,50,16.6)
 end
 function play:mouseInPlay()
     return math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) and math.intersect(mouse.y,mouse.y,self.layout.y,self.layout.y + self.layout.h)
@@ -170,7 +169,6 @@ function play:keypressed(key)
     self('keypressed',key)
     object_demo_mode.keyboard(key)
     object_alt_note_event.keyboard(key)
-    object_note_edit_inplay.keyboard(key)
     object_event.keyboard(key)
 
     object_copy.keyboard(key)
@@ -193,7 +191,6 @@ function play:mousepressed( x, y, button, istouch, presses )
 
     object_event.mousepressed( x, y, button, istouch, presses )
     object_copy.mousepressed(x, y, button, istouch, presses)
-    object_note_edit_inplay.mousepressed(x, y, button, istouch, presses)
 end
 
 function play:mousereleased( x, y, button, istouch, presses )
