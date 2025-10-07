@@ -9,16 +9,13 @@ denom.useToDenom = {value = "4"}
 denom.useToScale = {value = "1"}
 function denom:keypressed(key)
     if key == "up" then
-        denom.denom = denom.denom + 1
+        self:to('denom',denom.denom + 1)
     elseif key == "down" then
-        denom.denom = math.max(denom.denom-1,1)
+        self:to('denom',math.max(denom.denom-1,1))
     end
 end
 
 function denom:wheelmoved(x,y)
-    if mouse.x > 1200 then  --限制范围
-        return
-    end
     --beat更改
         local temp = settings.contact_roller--临时数值
 
@@ -86,4 +83,13 @@ function denom:update(dt)
     end
 end
 
+function denom:to(type,num)
+    if type == 'denom' then
+        denom.denom = num
+        self.useToDenom.value = tostring(denom.denom)
+    elseif type == 'scale' then
+         denom.scale = num
+        self.useToScale.value = tostring(denom.scale)
+    end
+end
 return denom

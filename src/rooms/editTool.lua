@@ -68,6 +68,7 @@ function editTool:keypressed(key)
     if demo then
         return
     end
+    if mouse.x >= self.layout.x + self.layout.w then return end
     self('keypressed',key)
 
 
@@ -91,6 +92,7 @@ function editTool:mousereleased( x, y, button, istouch, presses )
     if demo then
         return
     end
+    
     self('mousereleased', x, y, button, istouch, presses )
 end
 
@@ -98,6 +100,7 @@ function editTool:wheelmoved(x, y)
     if demo then
         return
     end
+    if mouse.x >= self.layout.x + self.layout.w then return end
     self("wheelmoved",x, y)
 end
 

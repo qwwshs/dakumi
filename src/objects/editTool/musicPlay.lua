@@ -14,7 +14,7 @@ function buttonMusicPlay:click()
 end
 
 function buttonMusicPlay:keypressed(key)
-    if key == "space" and mouse.x < 1200 then
+    if key == "space" then
         self:click()
     end
 end
