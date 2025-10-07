@@ -14,8 +14,6 @@ editTool:addObject(noteFake)
 editTool:addObject(require 'src.objects.editTool.slider')
 function editTool:load()
     self('load')
-
-    object_note.load(info_to_load(info.edit_tool.note))
 end
 
 function editTool:update(dt)

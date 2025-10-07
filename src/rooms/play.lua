@@ -25,10 +25,10 @@ function play:get_init_effect()
 end
 play:addObject(require 'src.objects.play.denomPlay')
 play:addObject(require 'src.objects.play.demoNowX')
+play:addObject(require 'src.objects.play.note')
 function play:load()
     self('load')
     object_hit.load()
-    object_note.load()
     object_note_edit_inplay.load(100,50,0,50,16.6)
 end
 function play:mouseInPlay()
@@ -158,8 +158,6 @@ function play:draw()
     love.graphics.rectangle("fill",900 / track.fence * track_get_near_fence(),100,2,900)
     end
 
-    --note放置相关
-    object_note.draw()
     --复制粘贴相关
     object_copy.draw()
     self('draw')
@@ -172,7 +170,6 @@ function play:keypressed(key)
     self('keypressed',key)
     object_demo_mode.keyboard(key)
     object_alt_note_event.keyboard(key)
-    object_note.keyboard(key)
     object_note_edit_inplay.keyboard(key)
     object_event.keyboard(key)
 
@@ -195,7 +192,6 @@ function play:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses)
 
     object_event.mousepressed( x, y, button, istouch, presses )
-    object_note.mousepressed( x, y, button, istouch, presses )
     object_copy.mousepressed(x, y, button, istouch, presses)
     object_note_edit_inplay.mousepressed(x, y, button, istouch, presses)
 end
