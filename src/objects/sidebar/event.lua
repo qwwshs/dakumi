@@ -67,10 +67,12 @@ function Gevent:Nui()
     if Nui:button("",isImage.add) then
         self.bezier_index.value = math.min(self.bezier_index.value + 1,#self.bezier)
         self.transv.value = table.concat(self.bezier[self.bezier_index.value],',')
+        bezier_index = self.bezier_index.value
     end
     if Nui:button("",isImage.sub) then
         self.bezier_index.value = math.max(self.bezier_index.value - 1,1)
         self.transv.value = table.concat(self.bezier[self.bezier_index.value],',')
+        bezier_index = self.bezier_index.value
     end
 
     local x = self.layout.bezier.x
