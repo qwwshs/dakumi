@@ -10,6 +10,7 @@ return {
         y = 100,
         w = 900,
         h = 700,
+        hitSzie = 300,
     },
     edit = {
         x = 900,
