@@ -9,6 +9,7 @@ edit:addGroup(play)
 edit:addGroup(sidebar)
 edit:addGroup(editTool)
 
+bezier_index = 1 --默认贝塞尔索引
 function edit:load()
     self('load')
 end

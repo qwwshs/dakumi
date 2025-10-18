@@ -1,5 +1,4 @@
 local sidebar =  group:new('sidebar')
-
 sidebar.layout = require 'config.layouts.sidebar'
 
 sidebar:addGroup(require 'src.objects.sidebar.nil')
