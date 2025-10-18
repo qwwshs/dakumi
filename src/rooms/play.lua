@@ -26,10 +26,11 @@ end
 play:addObject(require 'src.objects.play.denomPlay')
 play:addObject(require 'src.objects.play.demoNowX')
 play:addObject(require 'src.objects.play.note')
-play:addObject(require 'src.objects.paly.event')
+play:addObject(require 'src.objects.play.event')
+hit = require'src.objects.play.hit'
+play:addObject(hit)
 function play:load()
     self('load')
-    object_hit.load()
 end
 function play:mouseInPlay()
     return math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) and math.intersect(mouse.y,mouse.y,self.layout.y,self.layout.y + self.layout.h)
@@ -80,8 +81,6 @@ function play:update(dt)
         local x,w = event:get(all_track[i],beat.nowbeat)
         play.now_all_track_pos[all_track[i]] = {x = x,w = w}
     end
-
-    object_hit.update(dt)
 end
 
 function play:draw()
