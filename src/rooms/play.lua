@@ -26,6 +26,7 @@ end
 play:addObject(require 'src.objects.play.denomPlay')
 play:addObject(require 'src.objects.play.demoNowX')
 play:addObject(require 'src.objects.play.note')
+play:addObject(require 'src.objects.paly.event')
 function play:load()
     self('load')
     object_hit.load()
@@ -169,7 +170,6 @@ function play:keypressed(key)
     self('keypressed',key)
     object_demo_mode.keyboard(key)
     object_alt_note_event.keyboard(key)
-    object_event.keyboard(key)
 
     object_copy.keyboard(key)
     object_redo.keyboard(key)
@@ -188,8 +188,6 @@ end
 
 function play:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses)
-
-    object_event.mousepressed( x, y, button, istouch, presses )
     object_copy.mousepressed(x, y, button, istouch, presses)
 end
 

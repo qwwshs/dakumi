@@ -1,48 +1,41 @@
-local x = 0
-local y = 0
-local r = 0
-local w = 0
-local h = 0
-object_event = {
-    load = function(x1,y1,r1,w1,h1)
-        x= x1 --初始化
-        y = y1
-        w = w1
-        h = h1
-        r = r1
-    end,
-    draw = function()
-
-    end,
-    keyboard = function(key)
-        if not(mouse.x >= 1000 and mouse.x <= 1175 and mouse.y >= 100) then --不在轨道范围内
-            return
-        end
-        if key == "e" and mouse.x >= 1000 and mouse.x <= 1100 then -- x
-            event:place("x",mouse.y)
-            messageBox:add("event x place")
-        elseif key == "e" and mouse.x >= 1100 and mouse.x <= 1175 then -- w
-            event:place("w",mouse.y)
-            messageBox:add("event w place")
-
-        elseif key == "d" and mouse.x >= 1000 and mouse.x <= 1100 then -- x delete
-                event:delete("x",mouse.y)
-                messageBox:add("event x place")
-        elseif key == "d" and mouse.x >= 1100 and mouse.x <= 1175 then -- w delete
-                event:delete("w",mouse.y)
-                messageBox:add("event w place")
-        end
-    end,
-    mousepressed = function(x,y)
-        if not(mouse.x >= 1000 and mouse.x <= 1175 and mouse.y >= 100) then --不在轨道范围内
-            return
-        end
-        if  mouse.x >= 1000 and mouse.x <= 1100 then -- x
-            event:click("x",mouse.y)
-            messageBox:add("event x click")
-        elseif  mouse.x >= 1100 and mouse.x <= 1175 then -- w
-            event:click("w",mouse.y)
-            messageBox:add("event w click")
-        end
+local eventEdit = object:new('eventEdit')
+eventEdit.layout = require 'config.layouts.play'.edit
+function eventEdit:keypressed(key)
+    if not(mouse.y >= self.layout.y) then
+        return
     end
-}
+    local isEdit = key == "e"
+    local isDelete = key == "d"
+    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW,self.layout.x + self.layout.oneTrackW * 2)
+    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW * 2,self.layout.x + self.layout.oneTrackW * 3)
+    if isEdit and isXEvent then
+       event:place("x",mouse.y)
+        messageBox:add("event x place")
+    elseif isEdit and isWEvent then -- w
+        event:place("w",mouse.y)
+        messageBox:add("event w place")
+    elseif isDelete and isXEvent then -- x delete
+            event:delete("x",mouse.y)
+            messageBox:add("event x place")
+    elseif isDelete and misWEvent then -- w delete
+            event:delete("w",mouse.y)
+            messageBox:add("event w place")
+    end
+end
+
+function eventEdit:mousepressed(x,y)
+    if not(mouse.y >= self.layout.y) then
+        return
+    end
+    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW,self.layout.x + self.layout.oneTrackW * 2)
+    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW * 2,self.layout.x + self.layout.oneTrackW * 3)
+    if isXEvent then
+        event:click("x",mouse.y)
+        messageBox:add("event x click")
+    elseif isWEvent then
+        event:click("w",mouse.y)
+        messageBox:add("event w click")
+    end
+end
+
+return eventEdit
