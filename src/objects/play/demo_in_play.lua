@@ -160,9 +160,6 @@ object_demo_inplay = {
 
     love.graphics.rectangle("line",start_x,settings.judge_line_y-8,end_x - start_x,16) --8是为了对其中心
 
-    
-    --hit
-    object_hit.draw()
     love.graphics.pop()
 end
 }

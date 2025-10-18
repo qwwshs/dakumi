@@ -1,4 +1,13 @@
 local event = object:new('event')
+local bezier_file = io.open("defaultBezier.txt", "r")  -- 以只读模式打开文件
+if bezier_file then
+    local content = bezier_file:read("*a")  -- 读取整个文件内容
+    bezier_file:close()  -- 关闭文件
+    event.bezier = loadstring("return "..content)()
+end
+if type(event.bezier) ~= "table" then
+    event.bezier = {}
+end
 
 event.local_event = {} -- 局部event表
 event.hold_type = 0 --长条状态 0没放 1头 2尾
@@ -96,7 +105,7 @@ function event:place(type,pos)
                 beat = {math.floor(event_beat),event_min_denom,denom.denom},
                 from = 0,
                 to = 0,
-                trans = {[1] = default_bezier[bezier_index][1],[2] = default_bezier[bezier_index][2],[3] = default_bezier[bezier_index][3],[4] = default_bezier[bezier_index][4]}
+                trans = {[1] = event.bezier[bezier_index][1],[2] = event.bezier[bezier_index][2],[3] = event.bezier[bezier_index][3],[4] = event.bezier[bezier_index][4]}
             }
             event.hold_type = 1
             local x,w = event:get(event.local_event.track,beat:get(event.local_event.beat)) --把数值设定为上次event结尾的数值
