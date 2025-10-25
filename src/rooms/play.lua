@@ -27,7 +27,8 @@ play:addObject(require 'src.objects.play.denomPlay')
 play:addObject(require 'src.objects.play.demoNowX')
 play:addObject(require 'src.objects.play.note')
 play:addObject(require 'src.objects.play.event')
-play:addObject(require'src.objects.play.demoPlay')
+play:addObject(require 'src.objects.play.demoPlay')
+play:addObject(require 'src.objects.play.demoInEdit')
 redo = require('src/objects/play/redo')
 play:addObject(redo)
 hit = require'src.objects.play.hit'
@@ -147,7 +148,6 @@ function play:draw()
             end
         end
     end
-    object_note_play_in_edit.draw()
 
     --栅栏绘制
     love.graphics.setColor(1,1,1,0.5)
