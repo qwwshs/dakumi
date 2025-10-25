@@ -35,10 +35,8 @@ require('src/objects/meta')
 
 
 require("src.rooms.edit")
-    require('src/objects/play/demo_in_play')
-    require("src/objects/play/alt_note_event")
-    require('src/objects/play/copy')
-    require('src/objects/play/redo')
+    require("src.objects.play.alt")
+    require('src.objects.play.ctrl')
     require('src/objects/play/demo_mode')
     require('src/objects/play/note_play_in_edit')
 

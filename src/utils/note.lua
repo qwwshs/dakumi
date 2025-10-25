@@ -42,7 +42,7 @@ function note:delete(pos)
         ((beat:get(chart.note[i].beat) >= note_beat_down and beat:get(chart.note[i].beat) <= note_beat_up)
         or (chart.note[i].beat2 and -- 长条
         math.intersect(beat:get(chart.note[i].beat), beat:get(chart.note[i].beat2), note_beat_up, note_beat_down))) then
-            object_redo.write_revoke("note delete",chart.note[i])
+            redo:writeRevoke("note delete",chart.note[i])
             table.remove(chart.note, i)
             sidebar.displayed_content = 'nil'
             return
@@ -102,7 +102,7 @@ function note:place(note_type,pos)
         end
     end
     if note_type ~= "hold" or note.hold_type == 2 then --长条尾放置完成
-        object_redo.write_revoke("note place",note.local_tab)
+        redo:writeRevoke("note place",note.local_tab)
         note:sort()
     end
 end
