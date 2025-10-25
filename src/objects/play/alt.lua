@@ -8,12 +8,12 @@ object_alt_note_event = {
             if string.sub(sidebar.displayed_content,1,4) == "note" then
                 chart.note[tonumber(string.sub(sidebar.displayed_content,5,#sidebar.displayed_content))].beat = beat:toNearby(beat:yToBeat(mouse.y))
                 note:sort()
-                sidebar.displayed_content = "nil"
+                sidebar:to("nil")
             end
             if string.sub(sidebar.displayed_content,1,5) == "event" then
                 chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))].beat = beat:toNearby(beat:yToBeat(mouse.y))
                 event:sort()
-                sidebar.displayed_content = "nil"
+                sidebar:to("nil")
             end
         end
         if key == 'x' then --拖尾
@@ -23,7 +23,7 @@ object_alt_note_event = {
                 end
                 chart.note[tonumber(string.sub(sidebar.displayed_content,5,#sidebar.displayed_content))].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
                 note:sort()
-                sidebar.displayed_content = "nil"
+                sidebar:to("nil")
             end
             if string.sub(sidebar.displayed_content,1,5) == "event" then
                 if beat:get(beat:toNearby(beat:yToBeat(mouse.y))) <= beat:get(chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))].beat) then
@@ -31,7 +31,7 @@ object_alt_note_event = {
                 end
                 chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
                 event:sort()
-                sidebar.displayed_content = "nil"
+                sidebar:to("nil")
             end
         end
         if key == "c"  then --裁切
@@ -80,10 +80,10 @@ object_alt_note_event = {
                         local_event.beat2 = temp_event.beat2
                     end
                     chart.event[#chart.event + 1] = local_event --添加
-                    object_redo.write_revoke("event place",local_event)
+                    redo:writeRevoke("event place",local_event)
                     copy_add(local_event,'event')
                 end
-                object_redo.write_revoke("event delete",chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))])
+                redo:writeRevoke("event delete",chart.event[tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))])
                     table.remove(chart.event,tonumber(string.sub(sidebar.displayed_content,6,#sidebar.displayed_content))) --删除    
                 event:sort()
                 sidebar:to('events')

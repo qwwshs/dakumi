@@ -69,8 +69,6 @@ Nui:styleLoadColors({
     })
 room:load("start")
 
-room:addObject(messageBox)
-
 function the_room_pos(pos) -- 房间状态判定
     local isroom = false
     if type(pos) == 'table' then
@@ -127,6 +125,7 @@ function love.draw()
     love.graphics.scale(WINDOW.scale,WINDOW.scale)
 
     room("draw")
+    messageBox:draw()
     Nui:draw()
 
 end

@@ -52,7 +52,7 @@ end
 
 -- event函数
 function event:click(type,pos)  --被点击
-    sidebar.displayed_content = "nil" --界面清除
+    sidebar:to("nil") --界面清除
     --检测区间
     local pos_interval = 20 * denom.scale
     --根据距离反推出beat
@@ -71,7 +71,7 @@ function event:click(type,pos)  --被点击
     end
 end
 function event:delete(type,pos)
-    sidebar.displayed_content = "nil" --界面清除
+    sidebar:to("nil") --界面清除
     --删除检测区间
     local pos_interval = 20 * denom.scale
     --根据距离反推出beat
@@ -81,7 +81,7 @@ function event:delete(type,pos)
         if chart.event[i].track == track.track and chart.event[i].type == type and
         (chart.event[i].beat2 and -- 长条
         math.intersect(beat:get(chart.event[i].beat), beat:get(chart.event[i].beat2), event_beat_down, event_beat_up)) then
-            object_redo.write_revoke("event delete",chart.event[i])
+            redo:writeRevoke("event delete",chart.event[i])
             table.remove(chart.event, i)
             return
         end
@@ -140,7 +140,7 @@ function event:place(type,pos)
             end
 
         end
-        object_redo.write_revoke("event place",event.local_event)
+        redo:writeRevoke("event place",event.local_event)
         sidebar.displayed_content = "event"..int_theevent
         sidebar:to("event",int_theevent)
         event:cleanUp()

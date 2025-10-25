@@ -321,12 +321,12 @@ object_copy = {
         elseif key == "x" then
             copy_tab.type = "x"
         elseif key == "d" then
-            sidebar.displayed_content = "nil"
+            sidebar:to("nil")
             local local_tab = {}
             if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then
-                object_redo.write_revoke("copy delete",table.copy(copy_tab))
+                redo:writeRevoke("copy delete",table.copy(copy_tab))
             else
-                object_redo.write_revoke("copy delete",{note = table.copy(copy_tab.note),event = {}})
+                redo:writeRevoke("copy delete",{note = table.copy(copy_tab.note),event = {}})
 
             end
 
@@ -380,7 +380,7 @@ object_copy = {
                 end
             end
 
-            sidebar.displayed_content = "nil"
+            sidebar:to("nil")
             local to_beat = beat:toNearby(beat:yToBeat(mouse.y))
 
             local frist_beat = {0,0,4}  --作为基准
@@ -451,18 +451,18 @@ object_copy = {
 
             if copy_tab.type == "c" then
                 if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then -- a完全复制
-                    object_redo.write_revoke("copy",table.copy(copy_tab2))
+                    redo:writeRevoke("copy",table.copy(copy_tab2))
                 else
-                    object_redo.write_revoke("copy",{note = table.copy(copy_tab2.note),event = {}})
+                    redo:writeRevoke("copy",{note = table.copy(copy_tab2.note),event = {}})
                 end
                 return
             end
 
             --x
             if copy_tab.pos ~= 'play' or (copy_tab.pos == 'play' and iskeyboard.a) then --x
-                object_redo.write_revoke("cropping",{table.copy(copy_tab),table.copy(copy_tab2)})
+                redo:writeRevoke("cropping",{table.copy(copy_tab),table.copy(copy_tab2)})
             else
-                object_redo.write_revoke("cropping",{{note = table.copy(copy_tab.note),event = {}},{note = table.copy(copy_tab2.note),event = {}}} )
+                redo:writeRevoke("cropping",{{note = table.copy(copy_tab.note),event = {}},{note = table.copy(copy_tab2.note),event = {}}} )
             end
             --x 删除原来的
             local local_tab = {}

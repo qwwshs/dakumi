@@ -27,8 +27,12 @@ play:addObject(require 'src.objects.play.denomPlay')
 play:addObject(require 'src.objects.play.demoNowX')
 play:addObject(require 'src.objects.play.note')
 play:addObject(require 'src.objects.play.event')
+play:addObject(require'src.objects.play.demoPlay')
+redo = require('src/objects/play/redo')
+play:addObject(redo)
 hit = require'src.objects.play.hit'
 play:addObject(hit)
+
 function play:load()
     self('load')
 end
@@ -109,8 +113,6 @@ function play:draw()
         
         love.graphics.setStencilTest()
     end
-    
-    object_demo_inplay.draw()
 
     if demo then
         return
@@ -171,7 +173,6 @@ function play:keypressed(key)
     object_alt_note_event.keyboard(key)
 
     object_copy.keyboard(key)
-    object_redo.keyboard(key)
 
 end
 function play:wheelmoved(x,y)

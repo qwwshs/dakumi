@@ -41,7 +41,7 @@ function sidebar:update(dt)
 
         if Nui:button(i18n:get("break")) then
             messageBox:add("track")
-            sidebar.displayed_content = "nil"
+            sidebar:to("nil")
         end
         if g and g.Nui then
             g:Nui()
