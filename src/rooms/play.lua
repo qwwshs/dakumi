@@ -31,6 +31,7 @@ play:addObject(require 'src.objects.play.demoPlay')
 play:addObject(require 'src.objects.play.demoInEdit')
 redo = require('src/objects/play/redo')
 play:addObject(redo)
+play:addObject(require 'src.objects.play.alt')
 hit = require'src.objects.play.hit'
 play:addObject(hit)
 
@@ -170,7 +171,6 @@ function play:keypressed(key)
     end
     self('keypressed',key)
     object_demo_mode.keyboard(key)
-    object_alt_note_event.keyboard(key)
 
     object_copy.keyboard(key)
 
