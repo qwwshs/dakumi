@@ -38,13 +38,13 @@ function Gevent:Nui()
     Nui:label(i18n:get("from"))
     Nui:edit('field',self.fromv)
     if Nui:button(i18n:get("same_as_below")) then --同下
-    
+        self.fromv.value = self.tov.value
     end
 
     Nui:label(i18n:get("to"))
     Nui:edit('field',self.tov)
     if Nui:button(i18n:get("ditto")) then --同上
-    
+        self.tov.value = self.fromv.value
     end
     
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)
@@ -86,7 +86,7 @@ function Gevent:Nui()
         local value = tonumber(i) or 0
         table.insert(istrans,value)
     end
-    
+    love.graphics.setColor(1,1,1)
     for i = 1,100 do --曲线绘制
         bezier_y = bezier(1,100,y + h,y,istrans,i)
         bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1)
