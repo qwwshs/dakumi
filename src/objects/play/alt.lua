@@ -81,7 +81,7 @@ function alt:keypressed(key)
                 end
                 chart.event[#chart.event + 1] = local_event --添加
                 redo:writeRevoke("event place",local_event)
-                copy_add(local_event,'event')
+                ctrl:copy_add(local_event,'event')
             end
             redo:writeRevoke("event delete",chart.event[note_or_event_index])
                 table.remove(chart.event,note_or_event_index) --删除    

@@ -72,7 +72,7 @@ function Gevents:transDo() --写出表达式
     end
 end
 function Gevents:eventsDo() --执行
-    local copy_table = get_copy()
+    local copy_table = ctrl:get_copy()
     for i = 1,#copy_table.event do
         for k = 1,#chart.event do
             if table.eq(copy_table.event[i],chart.event[k]) then
