@@ -32,6 +32,8 @@ play:addObject(require 'src.objects.play.demoInEdit')
 redo = require('src/objects/play/redo')
 play:addObject(redo)
 play:addObject(require 'src.objects.play.alt')
+ctrl = require('src.objects.play.ctrl')
+play:addObject(ctrl)
 hit = require'src.objects.play.hit'
 play:addObject(hit)
 
@@ -90,8 +92,6 @@ function play:update(dt)
 end
 
 function play:draw()
-
-    object_demo_mode.draw()
     love.graphics.setColor(1,1,1,settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
@@ -160,8 +160,6 @@ function play:draw()
     love.graphics.rectangle("fill",900 / track.fence * track_get_near_fence(),100,2,900)
     end
 
-    --复制粘贴相关
-    object_copy.draw()
     self('draw')
 end
 
@@ -170,9 +168,6 @@ function play:keypressed(key)
         return
     end
     self('keypressed',key)
-    object_demo_mode.keyboard(key)
-
-    object_copy.keyboard(key)
 
 end
 function play:wheelmoved(x,y)
@@ -181,20 +176,15 @@ function play:wheelmoved(x,y)
     end
     self('wheelmoved',x,y)
 
-    object_copy.wheelmoved(x,y)
-
         
 end
 
 function play:mousepressed( x, y, button, istouch, presses )
     self('mousepressed', x, y, button, istouch, presses)
-    object_copy.mousepressed(x, y, button, istouch, presses)
 end
 
 function play:mousereleased( x, y, button, istouch, presses )
     self('mousereleased', x, y, button, istouch, presses)
-
-    object_copy.mousereleased(x, y, button, istouch, presses)
 end
 
 return play
