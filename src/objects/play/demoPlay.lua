@@ -38,7 +38,7 @@ function demoPlay:draw()
 
     local all_track_pos = play:get_all_track_pos()
 
-    local all_track = track_get_all_track()
+    local all_track = fTrack:track_get_all_track()
     
     if next(all_track_pos) == nil then --没有轨道
         return
@@ -48,7 +48,7 @@ function demoPlay:draw()
 
     for i=1 ,#all_track do --轨道底板绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
-            x,w = to_play_track(x,w) --为了居中
+            x,w = fTrack:to_play_track(x,w) --为了居中
         if w ~= 0 then
             love.graphics.rectangle("fill",x,0,w,settings.judge_line_y)
         end
@@ -56,7 +56,7 @@ function demoPlay:draw()
 
     for i=1 ,#all_track do --轨道侧线绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
-            x,w = to_play_track(x,w) --为了居中
+            x,w = fTrack:to_play_track(x,w) --为了居中
             --倾斜计算
             if track.track == all_track[i] and (not demo ) then --选择到的底板
                 love.graphics.setColor(1,1,1,0.2) 
@@ -77,15 +77,15 @@ function demoPlay:draw()
 
     --游玩区域侧线
     love.graphics.setColor(1,1,1,0.5)
-    local x,w = to_play_original_track(0,0.2)
+    local x,w = fTrack:to_play_original_track(0,0.2)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
-    x,w = to_play_original_track(100,0.2)
+    x,w = fTrack:to_play_original_track(100,0.2)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
     love.graphics.setColor(1,1,1,1)
-    x,w = to_play_original_track(-1,0.5)
+    x,w = fTrack:to_play_original_track(-1,0.5)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
-    x,w = to_play_original_track(101,0.5)
+    x,w = fTrack:to_play_original_track(101,0.5)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
     local note_h = settings.note_height --25 * denom.scale
@@ -96,7 +96,7 @@ function demoPlay:draw()
     --展示侧note渲染
     local spacing = 20 --note和track的间距
         for i = 1,#chart.note do
-            local x,w = to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
+            local x,w = fTrack:to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
             x = x + w /2
             if w > spacing*2 then --增加间隙
                 w = w - spacing
@@ -132,13 +132,13 @@ function demoPlay:draw()
         end
 
     --遮挡板
-    local start_x = to_play_original_track(0,0)
-    local end_x = to_play_original_track(100,0)
+    local start_x = fTrack:to_play_original_track(0,0)
+    local end_x = fTrack:to_play_original_track(100,0)
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",start_x,settings.judge_line_y,end_x - start_x,WINDOW.h - settings.judge_line_y)
 
     --进度条
-    local progress_bar = to_play_original_track(20,0)
+    local progress_bar = fTrack:to_play_original_track(20,0)
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-(progress_bar*time.nowtime/time.alltime) / 2,settings.judge_line_y+30,time.nowtime/time.alltime * progress_bar,5)
 

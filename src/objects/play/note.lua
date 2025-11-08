@@ -39,7 +39,7 @@ function noteEdit:mousepressed(x,y,button)
         for i = 1,#chart.event do --点击轨道进入轨道的编辑事件
             if not table.find(local_track,chart.event[i].track) then --不存在 记录
                 local track_x,track_w = event:get(chart.event[i].track,beat.nowbeat)
-                track_x,track_w = to_play_track(track_x,track_w)
+                track_x,track_w = fTrack:to_play_track(track_x,track_w)
                 if x >= track_x and x <= track_w + track_x then
                     local_track[#local_track + 1] = chart.event[i].track
                 end

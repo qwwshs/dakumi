@@ -21,7 +21,7 @@ require("src.utils.mc_to_dakumi")
 easings = require('src.utils.easings')
 require("src.utils.bezier")
 require("src.utils.math")
-require("src.utils.track")
+fTrack = require("src.utils.track")
 
 
 

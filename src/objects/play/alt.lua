@@ -99,7 +99,7 @@ function alt:keypressed(key)
     end
     if key == "t" then --快速调整
         if is_event and chart.event[note_or_event_index] then
-            local fence_x = track_get_near_fence_x()
+            local fence_x = fTrack:track_get_near_fence_x()
             if beat:yToBeat(mouse.y) < beat:get(chart.event[note_or_event_index].beat) then --在event之前
                 chart.event[note_or_event_index].from = fence_x
             else

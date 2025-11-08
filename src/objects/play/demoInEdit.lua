@@ -20,7 +20,7 @@ function demoInEdit:draw(pos,istrack)
     local track_x,track_y,track_w,track_h = self.layout.x,self.layout.y,self.layout.w,self.layout.h
 
     local all_track_pos = play:get_all_track_pos()
-    local all_track = track_get_all_track()
+    local all_track = fTrack:track_get_all_track()
     local note_h = settings.note_height --25 * denom.scale
     local _scale_h = 1 / self._height * note_h
     pos = pos or track_x
