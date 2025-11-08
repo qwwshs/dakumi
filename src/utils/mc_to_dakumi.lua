@@ -1,17 +1,6 @@
 function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
     local mc_tab,pos,err = dkjson.decode(mc, 1, nil) 
-    local chart_tab = {bpm_list = {
-        },
-        note = {},
-        event = {},
-        effect = {},
-        offset = 0 ,
-        info = {
-            song_name = [[]],
-            chart_name = [[]],
-            chartor = [[]],
-            artist = [[]],
-        }}
+    local chart_tab = table.copy(meta_chart.__index)
     if (not err) and mc_tab.meta.mode == 0 then --key
         chart_tab.info.chartor = mc_tab.meta.chartor
         chart_tab.info.artist = mc_tab.meta.song.artist

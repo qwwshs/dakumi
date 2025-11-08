@@ -23,12 +23,13 @@ function play:get_init_effect()
     note_rotate = 0,
     } --影响效果
 end
-play:addObject(require 'src.objects.play.denomPlay')
-play:addObject(require 'src.objects.play.demoNowX')
+
 play:addObject(require 'src.objects.play.note')
 play:addObject(require 'src.objects.play.event')
 play:addObject(require 'src.objects.play.demoPlay')
 play:addObject(require 'src.objects.play.demoInEdit')
+play:addObject(require 'src.objects.play.denomPlay')
+play:addObject(require 'src.objects.play.demoNowX')
 redo = require('src/objects/play/redo')
 play:addObject(redo)
 play:addObject(require 'src.objects.play.alt')
