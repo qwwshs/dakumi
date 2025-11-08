@@ -41,7 +41,7 @@ function hit:update(dt)
             end
             if settings.hit == 1 and music_play  and w > 0 and not( chart.note[i].fake == 1) then
                 
-                self.tab[#self.tab + 1] = {x = to_play_track_original_x(x),time = time.nowtime,track = chart.note[i].track}
+                self.tab[#self.tab + 1] = {x = fTrack:to_play_track_original_x(x),time = time.nowtime,track = chart.note[i].track}
             end
         end
         if beat:get(chart.note[i].beat) >= beat.nowbeat then
@@ -91,7 +91,7 @@ function hit:draw()
         --光效
         if not (hit_light_alpha >= hitlight_frame or hit_light_alpha <= 1) then --防止暂停时滞留
             love.graphics.setColor(1,1,1,(hitlight_frame-hit_light_alpha)/(hitlight_frame*3)) --只要1/4的alpha
-            local x,w = to_play_track(event:get(self.tab[i].track,beat.nowbeat))
+            local x,w = fTrack:to_play_track(event:get(self.tab[i].track,beat.nowbeat))
             love.graphics.draw(self.light,x,settings.judge_line_y-hit.size  / (WINDOW.scale / WINDOW.scale),0,hit_light_scale_w*w,hit_light_scale_h*hit.size)
         end
     end

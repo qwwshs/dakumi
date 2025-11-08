@@ -85,7 +85,7 @@ function play:update(dt)
     end
 
 
-    local all_track = track_get_all_track()
+    local all_track = fTrack:track_get_all_track()
     for i = 1,#all_track do
         local x,w = event:get(all_track[i],beat.nowbeat)
         play.now_all_track_pos[all_track[i]] = {x = x,w = w}
@@ -141,7 +141,7 @@ function play:draw()
             if not (y2 > WINDOW.h or y < 0) then
             -- beizer曲线
                 for k = 1,10 do
-                    local nowx = low_bezier(1,10,to_play_track_original_x(chart.event[i].from),to_play_track_original_x(chart.event[i].to),chart.event[i].trans,k) --减去50是为了使50居中
+                    local nowx = low_bezier(1,10,fTrack:to_play_track_original_x(chart.event[i].from),fTrack:to_play_track_original_x(chart.event[i].to),chart.event[i].trans,k) --减去50是为了使50居中
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill",nowx,nowy -  (y2 - y)/10,5, (y2 - y)/10) --减去一个 (y2 - y)/10是为了与头对齐
                 end
@@ -154,11 +154,11 @@ function play:draw()
     --栅栏绘制
     love.graphics.setColor(1,1,1,0.5)
     for i = 1, track.fence do
-        love.graphics.rectangle("fill",(self.layout.demo.w+self.layout.demo.x) / track.fence * i,100,2,self.layout.demo.w)
+        love.graphics.rectangle("fill",(self.layout.demo.w+self.layout.demo.x) / track.fence * i,self.layout.demo.y,2,self.layout.demo.h)
     end
-    if 900 / track.fence * track_get_near_fence() < 900 then
+    if self.layout.demo.w / track.fence * fTrack:track_get_near_fence() < self.layout.demo.w then
         love.graphics.setColor(0,1,1,0.7)
-    love.graphics.rectangle("fill",900 / track.fence * track_get_near_fence(),100,2,900)
+        love.graphics.rectangle("fill",self.layout.demo.w / track.fence * fTrack:track_get_near_fence(),self.layout.demo.y,2,self.layout.demo.h)
     end
 
     self('draw')

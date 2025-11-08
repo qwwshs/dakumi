@@ -5,7 +5,7 @@ Gtrack.range = {x = {from = {value = '0'},to = {value = '0'}},w = {from = {value
 Gtrack.layout = require 'config.layouts.sidebar'.track
 
 function Gtrack:Nui()
-    local allTrack = track_get_all_track()
+    local allTrack = fTrack:track_get_all_track()
     local allTrackPos = play:get_all_track_pos()
     local xf = tonumber(self.range.x.from.value)
     local xt = tonumber(self.range.x.to.value)

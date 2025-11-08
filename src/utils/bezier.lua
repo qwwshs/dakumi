@@ -33,7 +33,7 @@ function GetBezier(startTime, endTime, startValue, endValue,nowtime,bezierTable,
     timePercent = math.max(0, math.min(1, timePercent))
 
     if #bezierTable % 2 ~= 0 then
-        return false
+        return 0
     end
 
     local bezier_tab = {{0,0}}

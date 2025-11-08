@@ -72,7 +72,7 @@ function ctrl:draw()
     if self.copy_tab.pos == "play" then
         local all_track_pos = play:get_all_track_pos()
         for i = 1, #self.copy_tab.note do
-            local x, w = to_play_track(all_track_pos[self.copy_tab.note[i].track].x,
+            local x, w = fTrack:to_play_track(all_track_pos[self.copy_tab.note[i].track].x,
                 all_track_pos[self.copy_tab.note[i].track].w)
 
             local y = beat:toY(self.copy_tab.note[i].beat)
@@ -147,8 +147,8 @@ function ctrl:mousereleased(x, y)
         return
     end
     self.copy_tab = { note = {}, event = {} }
-    local min_x = to_play_track(to_chart_track(math.min(x, self.mouse_start_pos.x)), 1)
-    local max_x = to_play_track(to_chart_track(math.max(x, self.mouse_start_pos.x)), 1)
+    local min_x = fTrack:to_play_track(fTrack:to_chart_track(math.min(x, self.mouse_start_pos.x)), 1)
+    local max_x = fTrack:to_play_track(fTrack:to_chart_track(math.max(x, self.mouse_start_pos.x)), 1)
     local min_y_beat = beat:yToBeat(math.max(y, self.mouse_start_pos.y))
     local max_y_beat = beat:yToBeat(math.min(y, self.mouse_start_pos.y)) --这引擎y是向下增长的 服了 beat是向上增长的 所以要取反
 
@@ -157,7 +157,7 @@ function ctrl:mousereleased(x, y)
         --先for循环记录此刻在游玩区域的轨道
         local local_track = {}     --记录表
         for i = 1, #chart.event do --点击轨道进入轨道的编辑事件
-            local track_x, track_w = to_play_track(event:get(chart.event[i].track, beat.nowbeat))
+            local track_x, track_w = fTrack:to_play_track(event:get(chart.event[i].track, beat.nowbeat))
             if math.intersect(min_x,max_x,track_x,track_x + track_w) then
                 local_track[chart.event[i].track] = true
             end
@@ -348,7 +348,7 @@ function ctrl:keypressed(key)
                 copy_tab2.note[i].beat2 = beat:add(beat:sub(copy_tab2.note[i].beat2, frist_beat), to_beat)
             end
             if key == "n" then     --对所有轨道增加
-                local max_track = track_get_max_track() + 1
+                local max_track = fTrack:track_get_max_track() + 1
                 copy_tab2.note[i].track = max_track + copy_tab2.note[i].track - min_track
             end
         end
@@ -363,13 +363,13 @@ function ctrl:keypressed(key)
                 copy_tab2.event[i].to = 100 - copy_tab2.event[i].to
             end
             if key == "n" then     --对所有轨道增加
-                local max_track = track_get_max_track() + 1
+                local max_track = fTrack:track_get_max_track() + 1
                 copy_tab2.event[i].track = max_track + copy_tab2.event[i].track - min_track
             end
         end
         if key == "n" or key == "m" then
             local pos = 0     --鼠标所在位置
-            pos = track_get_near_fence_x()
+            pos = fTrack:track_get_near_fence_x()
 
             for i = 1, #copy_tab2.event do
                 --处理一下位置

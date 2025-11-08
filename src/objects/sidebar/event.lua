@@ -75,10 +75,10 @@ function Gevent:Nui()
         bezier_index = self.bezier_index.value
     end
 
-    local x = self.layout.bezier.x
-    local y = self.layout.bezier.y
-    local w = self.layout.bezier.w
-    local h = self.layout.bezier.h
+    local x = self.layout.bezier.x or 0
+    local y = self.layout.bezier.y or 0
+    local w = self.layout.bezier.w or 0
+    local h = self.layout.bezier.h or 0
     local istrans = {}
     local bezier_y
     local bezier_y_end
@@ -88,8 +88,8 @@ function Gevent:Nui()
     end
     love.graphics.setColor(1,1,1)
     for i = 1,100 do --曲线绘制
-        bezier_y = bezier(1,100,y + h,y,istrans,i)
-        bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1)
+        bezier_y = bezier(1,100,y + h,y,istrans,i) or 0
+        bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1) or 0
         Nui:line(w/100 * i +x,bezier_y,w/100 * (i+1) +x,bezier_y_end)
     end
     --底线
