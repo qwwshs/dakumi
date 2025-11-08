@@ -100,6 +100,7 @@ end
 
 function Gevent:NuiNext() --更新信息
     local v = chart.event[sidebar.incoming[1]]
+    if not v then return end
     v.from = tonumber(self.fromv.value) or 0
     v.to = tonumber(self.tov.value) or 0
     v.trans = {}

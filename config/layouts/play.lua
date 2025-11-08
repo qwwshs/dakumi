@@ -20,5 +20,6 @@ return {
         h = 700,
         oneTrackW = 75,
         interval = 100,
+        noteW = 75,
     }
 }

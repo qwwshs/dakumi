@@ -97,7 +97,7 @@ function play:draw()
     if bg then -- 背景存在就显示
         --图像范围限制函数
         local function myStencilFunction()
-            love.graphics.rectangle("fill",info.play.play_alea.x,info.play.play_alea.y,info.play.play_alea.x+info.play.play_alea.w,info.play.play_alea.h)
+            love.graphics.rectangle("fill",self.layout.demo.x,self.layout.demo.y,self.layout.demo.x+self.layout.demo.w,self.layout.demo.h)
         end
 
         love.graphics.stencil(myStencilFunction, "replace", 1)
@@ -108,7 +108,7 @@ function play:draw()
         local bg_scale_w = 1 / bg_height * WINDOW.h / (WINDOW.scale / WINDOW.scale)
         if demo then
             bg_scale_h = 1 / bg_height * WINDOW.h 
-            bg_scale_w = 1 / bg_height * WINDOW.h / (WINDOW.scale / WINDOW.scale)   / (1 / (info.play.play_alea.w/WINDOW.w))
+            bg_scale_w = 1 / bg_height * WINDOW.h / (WINDOW.scale / WINDOW.scale)   / (1 / (self.layout.demo.w/WINDOW.w))
         end
 
         love.graphics.draw(bg,450 - (bg_width *bg_scale_w) / 2,0,0,bg_scale_w,bg_scale_h) --居中显示
@@ -122,7 +122,7 @@ function play:draw()
     
     love.graphics.setColor(1,1,1,1) --总note event 数
     local str = 'note: '..#chart.note..'  event: '..#chart.event
-    love.graphics.printf(str,info.play.play_alea.x,settings.judge_line_y + 60,info.play.play_alea.w,"center")
+    love.graphics.printf(str,self.layout.demo.x,settings.judge_line_y + 60,self.layout.demo.w,"center")
 
     --event渲染
     local event_h = settings.note_height
@@ -153,7 +153,7 @@ function play:draw()
     --栅栏绘制
     love.graphics.setColor(1,1,1,0.5)
     for i = 1, track.fence do
-        love.graphics.rectangle("fill",(info.play.play_alea.w+info.play.play_alea.x) / track.fence * i,100,2,info.play.play_alea.w)
+        love.graphics.rectangle("fill",(self.layout.demo.w+self.layout.demo.x) / track.fence * i,100,2,self.layout.demo.w)
     end
     if 900 / track.fence * track_get_near_fence() < 900 then
         love.graphics.setColor(0,1,1,0.7)
@@ -164,14 +164,14 @@ function play:draw()
 end
 
 function play:keypressed(key)
-    if mouse.x > 1200 then  --限制范围
+    if not math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) then  --限制范围
         return
     end
     self('keypressed',key)
 
 end
 function play:wheelmoved(x,y)
-    if mouse.x > 1200 then  --限制范围
+    if not math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) then  --限制范围
         return
     end
     self('wheelmoved',x,y)

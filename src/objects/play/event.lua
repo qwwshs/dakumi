@@ -6,8 +6,8 @@ function eventEdit:keypressed(key)
     end
     local isEdit = key == "e"
     local isDelete = key == "d"
-    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW,self.layout.x + self.layout.oneTrackW * 2)
-    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW * 2,self.layout.x + self.layout.oneTrackW * 3)
+    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
+    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
     if isEdit and isXEvent then
        event:place("x",mouse.y)
         messageBox:add("event x place")
@@ -27,8 +27,8 @@ function eventEdit:mousepressed(x,y)
     if not(mouse.y >= self.layout.y) then
         return
     end
-    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW,self.layout.x + self.layout.oneTrackW * 2)
-    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.oneTrackW * 2,self.layout.x + self.layout.oneTrackW * 3)
+    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
+    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
     if isXEvent then
         event:click("x",mouse.y)
         messageBox:add("event x click")
