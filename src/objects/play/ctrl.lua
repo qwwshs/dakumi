@@ -39,64 +39,21 @@ function ctrl:get_copy()
     return self.copy_tab
 end
 
-function ctrl:draw(posx)                --偏移值
-    posx = posx or 900
+function ctrl:draw()
     local note_h = settings.note_height --25 * denom.scale
-    local note_w = 75
+    local note_w = play.layout.edit.noteW
     if love.mouse.isDown(1) then        --复制框
         love.graphics.setColor(0, 1, 1, 0.4)
-        love.graphics.rectangle("fill", self.mouse_start_pos.x - 900 + posx, self.mouse_start_pos.y,
+        love.graphics.rectangle("fill", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
         love.graphics.setColor(0, 1, 1, 1)
-        love.graphics.rectangle("line", self.mouse_start_pos.x - 900 + posx, self.mouse_start_pos.y,
+        love.graphics.rectangle("line", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
     end
     if self.copy_tab.type ~= "x" then
         love.graphics.setColor(0, 1, 1, 0.5)
     else
         love.graphics.setColor(1, 1, 1, 0.5)
-    end
-    if room_pos == 'tracks_edit' then
-        for i = 1, #self.copy_tab.note do
-            local pos = {} --默认不显示
-            for k = 1, #Gtracks.table do
-                if Gtracks.table[k] == self.copy_tab.note[i].track then
-                    pos[#pos + 1] = 20 + (k - 1 + tracks_edit_x_move) * 300
-                end
-            end
-            local y = beat:toY(self.copy_tab.note[i].beat)
-            local y2 = y - note_h
-            if self.copy_tab.note[i].type == "hold" then
-                y2 = beat:toY(self.copy_tab.note[i].beat2)
-            end
-            if y > 0 - note_h and y2 < WINDOW.h + note_h then
-                for k = 1, #pos do
-                    love.graphics.rectangle("fill", pos[k], y2, 75, y - y2)
-                end
-            end
-        end
-
-        for i = 1, #self.copy_tab.event do
-            local pos = {} --默认不显示
-            for k = 1, #Gtracks.table do
-                if Gtracks.table[k] == self.copy_tab.event[i].track then
-                    pos[#pos + 1] = 20 + (k - 1 + tracks_edit_x_move) * 300
-                end
-            end
-            local y = beat:toY(self.copy_tab.event[i].beat)
-            local y2 = beat:toY(self.copy_tab.event[i].beat2)
-            local x_pos = 100
-            if self.copy_tab.event[i].type == "w" then
-                x_pos = 200
-            end
-            if y > 0 - note_h and y2 < WINDOW.h + note_h then
-                for k = 1, #pos do
-                    love.graphics.rectangle("fill", pos[k] + x_pos, y2, 75, y - y2)
-                end
-            end
-        end
-
-        return
     end
     --对所选标记
     for i = 1, #self.copy_tab.note do
@@ -108,25 +65,16 @@ function ctrl:draw(posx)                --偏移值
 
         if self.copy_tab.note[i].track == track.track then
             if y > 0 - note_h and y2 < WINDOW.h + note_h then
-                love.graphics.rectangle("fill", posx, y2, 75, y - y2)
+                love.graphics.rectangle("fill", play.layout.edit.x, y2, note_w, y - y2)
             end
         end
     end
     if self.copy_tab.pos == "play" then
+        local all_track_pos = play:get_all_track_pos()
         for i = 1, #self.copy_tab.note do
             local x, w = to_play_track(all_track_pos[self.copy_tab.note[i].track].x,
                 all_track_pos[self.copy_tab.note[i].track].w)
-            x = x + w / 2
-            if w > 40 and self.copy_tab.note[i].type ~= "wipe" then --增加间隙
-                w = w - 20
-            elseif w <= 40 and w > 20 and self.copy_tab.note[i].type ~= "wipe" then
-                w = 20
-            elseif w > 60 and self.copy_tab.note[i].type == "wipe" then --增加间隙
-                w = w - 30
-            elseif w <= 60 and w > 30 and self.copy_tab.note[i].type == "wipe" then
-                w = 30
-            end
-            x = x - w / 2
+
             local y = beat:toY(self.copy_tab.note[i].beat)
             local y2 = y
             if self.copy_tab.note[i].type == "hold" then
@@ -147,14 +95,14 @@ function ctrl:draw(posx)                --偏移值
     for i = 1, #self.copy_tab.event do
         local y = beat:toY(self.copy_tab.event[i].beat)
         local y2 = beat:toY(self.copy_tab.event[i].beat2)
-        local x_pos = posx + 100
+        local x_pos = play.layout.edit.x + play.layout.edit.interval
         if self.copy_tab.event[i].type == "w" then
-            x_pos = posx + 200
+            x_pos = play.layout.edit.x + play.layout.edit.interval * 2
         end
 
         if self.copy_tab.event[i].track == track.track then
-            if y > 0 - note_h and y2 < WINDOW.h + note_h then
-                love.graphics.rectangle("fill", x_pos, y2, 75, y - y2)
+            if math.intersect(y,y2,0 - note_h,WINDOW.h + note_h) then
+                love.graphics.rectangle("fill", x_pos, y2, note_w, y - y2)
             end
         end
     end
@@ -162,19 +110,19 @@ end
 
 function ctrl:mousepressed(x, y, button)
     if love.mouse.isDown(2) then                                                     --单选
-        if x > 900 + 100 and x <= 900 + 200 then
+        if math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval *2) then --event x
             if self:copy_exist(chart.event[event:click("x", mouse.y)], "event") then --存在就取消勾选
                 self:copy_sub(chart.event[event:click("x", mouse.y)], "event")
             else
                 self:copy_add(chart.event[event:click("x", mouse.y)], "event")
             end
-        elseif x > 900 + 200 and x <= 1200 then
+        elseif math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval * 2,play.layout.edit.x + play.layout.edit.interval *3) then --event w
             if self:copy_exist(chart.event[event:click("w", mouse.y)], "event") then --存在就取消勾选
                 self:copy_sub(chart.event[event:click("w", mouse.y)], "event")
             else
                 self:copy_add(chart.event[event:click("w", mouse.y)], "event")
             end
-        elseif x <= 900 + 100 then
+        elseif math.intersect(x,x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --note
             if self:copy_exist(chart.note[note:click(mouse.y)], "note") then --存在就取消勾选
                 self:copy_sub(chart.note[note:click(mouse.y)], "note")
             else
@@ -188,10 +136,9 @@ function ctrl:mousepressed(x, y, button)
         end
     end
 
-    if not love.mouse.isDown(1) then
-        return
+    if love.mouse.isDown(1) then
+        self.mouse_start_pos = { x = mouse.x, y = mouse.y }
     end
-    self.mouse_start_pos = { x = mouse.x, y = mouse.y }
 end
 
 function ctrl:mousereleased(x, y)
@@ -205,13 +152,13 @@ function ctrl:mousereleased(x, y)
     local min_y_beat = beat:yToBeat(math.max(y, self.mouse_start_pos.y))
     local max_y_beat = beat:yToBeat(math.min(y, self.mouse_start_pos.y)) --这引擎y是向下增长的 服了 beat是向上增长的 所以要取反
 
-    if x < 900 or self.mouse_start_pos.x < 900 then                      --在note轨道 play区域
+    if not math.intersect(x,self.mouse_start_pos.x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval*3) then                      --在play区域
         self.copy_tab.pos = 'play'
         --先for循环记录此刻在游玩区域的轨道
         local local_track = {}     --记录表
         for i = 1, #chart.event do --点击轨道进入轨道的编辑事件
             local track_x, track_w = to_play_track(event:get(chart.event[i].track, beat.nowbeat))
-            if not (max_x < track_x or track_x + track_w < min_x) then
+            if math.intersect(min_x,max_x,track_x,track_x + track_w) then
                 local_track[chart.event[i].track] = true
             end
             if beat:get(chart.event[i].beat) > max_y_beat then
@@ -226,7 +173,7 @@ function ctrl:mousereleased(x, y)
                 isbeat2 = beat:get(chart.note[i].beat2)
             end
 
-            if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.note[i].track] then --这引擎y是向下增长的 服了
+            if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and local_track[chart.note[i].track] then --这引擎y是向下增长的 服了
                 self.copy_tab.note[#self.copy_tab.note + 1] = table.copy(chart.note[i])
             end
             if isbeat > max_y_beat then
@@ -237,7 +184,7 @@ function ctrl:mousereleased(x, y)
         for i = 1, #chart.event do --用于完全复制
             local isbeat = beat:get(chart.event[i].beat)
             local isbeat2 = beat:get(chart.event[i].beat2)
-            if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and local_track[chart.event[i].track] then
+            if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and local_track[chart.event[i].track] then
                 self.copy_tab.event[#self.copy_tab.event + 1] = table.copy(chart.event[i])
             end
             if beat:get(chart.event[i].beat) > max_y_beat then
@@ -247,8 +194,8 @@ function ctrl:mousereleased(x, y)
 
         return
     end
-
-    if not (max_x < 900 or 900 + 100 < min_x) then --在note轨道
+    
+    if math.intersect(min_x,max_x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --在note轨道
         for i = 1, #chart.note do
             local isbeat = beat:get(chart.note[i].beat)
             local isbeat2 = isbeat
@@ -256,7 +203,7 @@ function ctrl:mousereleased(x, y)
                 isbeat2 = beat:get(chart.note[i].beat2)
             end
 
-            if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and track.track == chart.note[i].track then --这引擎y是向下增长的 服了
+            if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and track.track == chart.note[i].track then --这引擎y是向下增长的 服了
                 self.copy_tab.note[#self.copy_tab.note + 1] = table.copy(chart.note[i])
             end
             if isbeat > max_y_beat then
@@ -265,18 +212,18 @@ function ctrl:mousereleased(x, y)
         end
     end
 
-    if not (max_x < 900 + 100 or 1200 < min_x) then --在event轨道
+    if math.intersect(min_x,max_x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval * 3) then --在event轨道
         for i = 1, #chart.event do
-            local event_x_min = 900 + 100
-            local event_x_max = 900 + 200
+            local event_x_min = play.layout.edit.x + play.layout.edit.interval
+            local event_x_max = play.layout.edit.x + play.layout.edit.interval * 2
             if chart.event[i].type == "w" then
-                event_x_min = 900 + 200
-                event_x_max = 1200
+                event_x_min = play.layout.edit.x + play.layout.edit.interval * 2
+                event_x_max = play.layout.edit.x + play.layout.edit.interval * 3
             end
-            if not (max_x < event_x_min or event_x_max < min_x) then
+            if math.intersect(min_x,max_x,event_x_min,event_x_max) then
                 local isbeat = beat:get(chart.event[i].beat)
                 local isbeat2 = beat:get(chart.event[i].beat2)
-                if (not (max_y_beat < isbeat or isbeat2 < min_y_beat)) and track.track == chart.event[i].track then
+                if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and track.track == chart.event[i].track then
                     self.copy_tab.event[#self.copy_tab.event + 1] = table.copy(chart.event[i])
                 end
             end
