@@ -266,30 +266,25 @@ function menu:filedropped(file) -- 文件拖入
     end
     local content = file:read()
     local flie_name = string.sub(flie_name, lastSlashIndex + 1)
-    if string.find(flie_name,"hit") then
-        love.filesystem.newFile(flie_name,"w")
-        love.filesystem.write(flie_name,
-        content) --复制到目录
-        return
-    
     nativefs.mount(PATH.base)
 
-    elseif string.find(flie_name,".jpg") or string.find(flie_name,".jpeg") or 
-    string.find(flie_name,".png") or string.find(flie_name,".json") then --bg/谱面文件
-        love.filesystem.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..flie_name,"w") --复制到当前文件夹下
-        love.filesystem.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..flie_name,
+    if string.find(flie_name,".jpg") or string.find(flie_name,".jpeg") or 
+        string.find(flie_name,".png") or string.find(flie_name,".json") then --bg/谱面文件
+        nativefs.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..flie_name,"w") --复制到当前文件夹下
+        nativefs.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..flie_name,
         content) --复制到新的文件夹
+
     elseif string.find(flie_name,".mc") then --mc文件
         local json_name= string.sub(flie_name,1, string.find(flie_name, ".[^.]*$")).."json" --更改后缀
-        love.filesystem.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,"w") --复制到当前文件夹下
-        love.filesystem.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,
-        tableToString(mc_to_takumi(content))) --复制到新的文件夹
+        nativefs.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,"w") --复制到当前文件夹下
+        nativefs.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,
+        dkjson.encode(mc_to_takumi(content))) --复制到新的文件夹
 
-    elseif string.find(flie_name,".json") then
-        local json_name= flie_name --更改后缀
-        love.filesystem.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,"w") --复制到当前文件夹下
-        love.filesystem.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,
-        content) --复制到新的文件夹
+    elseif string.find(flie_name,".d3") then
+        local json_name= string.sub(flie_name,1, string.find(flie_name, ".[^.]*$")).."json" --更改后缀
+        nativefs.newFile(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,"w") --复制到当前文件夹下
+        log(nativefs.write(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..json_name,
+        dkjson.encode(loadstring('return '..content)()))) --复制到新的文件夹
 
     elseif string.find(flie_name,".ogg") or string.find(flie_name,".mp3") or string.find(flie_name,".wav") then --音频文件
         --创建新文件夹

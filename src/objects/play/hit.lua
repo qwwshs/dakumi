@@ -76,7 +76,7 @@ function hit:draw()
         else
             local_hit_tab[#local_hit_tab + 1] = self.tab[i]
         end
-        hit_alpha = easings.easings_use_string.out_quart(hit_alpha)
+        hit_alpha = easings.out_quart(hit_alpha)
         love.graphics.setColor(1,1,1,1 - hit_alpha)
         
         if demo then

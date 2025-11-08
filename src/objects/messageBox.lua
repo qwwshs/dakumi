@@ -3,7 +3,7 @@ messageBox.message = {} -- 消息列表
 
 function messageBox:draw()
     for i = 1,#self.message do
-        local alpha = 0.75 - 0.75 * easings.easings_use_string.out_cubic((elapsed_time-self.message[i][2]) /3) --透明度
+        local alpha = 0.75 - 0.75 * easings.out_cubic((elapsed_time-self.message[i][2]) /3) --透明度
         local y = 300 +  (#self.message - i) * 35
         local w = love.graphics.getFont():getWidth(self.message[i][1]) + 10
         love.graphics.setColor(0.3,0.3,0.3,alpha)  -- 背景板

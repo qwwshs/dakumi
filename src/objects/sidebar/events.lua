@@ -44,9 +44,9 @@ function Gevents:transDo() --写出表达式
         temp_string = self.trans_expression.value:gsub('easing','')
         temp_string = temp_string:gsub(' ','')
         if string.match(temp_string, "%d") then --有数字用数字确定easings
-            self.expression = loadstring ('x = ... return easings.easings_use_number['..temp_string..'](x)')
+            self.expression = loadstring ('x = ... return easings['..temp_string..'](x)')
         else
-            self.expression = loadstring ('x = ... return easings.easings_use_string.'..temp_string..'(x)')
+            self.expression = loadstring ('x = ... return easings.'..temp_string..'(x)')
         end
         return
     elseif self.trans_expression.value:find("bezier") then
@@ -125,7 +125,7 @@ function Gevents:up() --快速调整bezier和easing
     ::easing:: 
     --删除到只剩下数字
     self.trans_expression.value = tonumber(string.match(self.trans_expression.value,"%d+") ) or 1
-    if not easings.easings_use_number[self.trans_expression.value] then self.trans_expression.value = 1 end
+    if not easings[self.trans_expression.value] then self.trans_expression.value = 1 end
     self.trans_expression.value = 'easing '..self.trans_expression.value + 1
     self:transDo()
     if true then return end
@@ -148,7 +148,7 @@ function Gevents:down() --快速调整bezier和easing
     ::easing:: 
     --删除到只剩下数字
     self.trans_expression.value = tonumber(string.match(self.trans_expression.value,"%d+") ) or 2
-    if not easings.easings_use_number[self.trans_expression.value] then self.trans_expression.value = #easings.easings_use_number end
+    if not easings[self.trans_expression.value] then self.trans_expression.value = #easings end
     self.trans_expression.value = 'easing '..self.trans_expression.value - 1
     self:transDo()
     if true then return end
