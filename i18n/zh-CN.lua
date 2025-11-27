@@ -58,6 +58,7 @@ return {
     ['endow'] = '赋予',
     ['add'] = '添加',
     ['sub'] = '删减',
+    ['trans_type'] = '过渡类型',
     ['delete chart?'] = '删除谱面?',
     ['delete music?'] = '删除歌曲?',
     ['chart'] = '谱面',

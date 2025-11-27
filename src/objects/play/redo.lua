@@ -28,21 +28,21 @@ function redo:keypressed(key)
            sidebar:to("nil")
         elseif self.revoke[#self.revoke].type == "note delete" then
             chart.note[#chart.note + 1] = table.copy(self.revoke[#self.revoke].tab)
-            note:sort()
+            fNote:sort()
         elseif self.revoke[#self.revoke].type == "event delete" then
             chart.event[#chart.event + 1] = table.copy(self.revoke[#self.revoke].tab)
-            event:sort()
+            fEvent:sort()
         elseif self.revoke[#self.revoke].type == "copy delete" then
 
             for i = 1,#self.revoke[#self.revoke].tab.note do
                 chart.note[#chart.note + 1] = table.copy(self.revoke[#self.revoke].tab.note[i])
             end
-            note:sort()
+            fNote:sort()
 
             for i = 1,#self.revoke[#self.revoke].tab.event do
                 chart.event[#chart.event + 1] = table.copy(self.revoke[#self.revoke].tab.event[i])
             end
-            event:sort()
+            fEvent:sort()
 
             sidebar:to("nil")
 
@@ -61,7 +61,7 @@ function redo:keypressed(key)
                 end
             end
             chart.note = table.copy(local_tab)
-            note:sort()
+            fNote:sort()
                local_tab = {}
             for i = 1, #chart.event do
                 local no_have_this_event = true --表里没有这个event
@@ -75,7 +75,7 @@ function redo:keypressed(key)
                 end
             end
             chart.event = table.copy(local_tab)
-            event:sort()
+            fEvent:sort()
 
             sidebar:to("nil")
 
@@ -84,11 +84,11 @@ function redo:keypressed(key)
             for i = 1,#self.revoke[#self.revoke].tab[1].note do
                 chart.note[#chart.note + 1] = table.copy(self.revoke[#self.revoke].tab[1].note[i])
             end
-            note:sort()
+            fNote:sort()
             for i = 1,#self.revoke[#self.revoke].tab[1].event do
                 chart.event[#chart.event + 1] = table.copy(self.revoke[#self.revoke].tab[1].event[i])
             end
-            event:sort()
+            fEvent:sort()
 
             local local_tab = {}
             for i = 1, #chart.note do
@@ -103,7 +103,7 @@ function redo:keypressed(key)
                 end
             end
             chart.note = table.copy(local_tab)
-            note:sort()
+            fNote:sort()
             local_tab = {}
             for i = 1, #chart.event do
                 local no_have_this_event = true --表里没有这个event
@@ -117,7 +117,7 @@ function redo:keypressed(key)
                 end
             end
             chart.event = table.copy(local_tab)
-            event:sort()
+            fEvent:sort()
 
             sidebar:to("nil")
         end
@@ -142,10 +142,10 @@ function redo:keypressed(key)
             sidebar:to("nil")
         elseif self.redo[#self.redo].type == "note place" then
             chart.note[#chart.note + 1] = table.copy(self.redo[#self.redo].tab)
-            note:sort()
+            fNote:sort()
         elseif self.redo[#self.redo].type == "event place" then
             chart.event[#chart.event + 1] = table.copy(self.redo[#self.redo].tab)
-            event:sort()
+            fEvent:sort()
 
             sidebar:to("nil")
         elseif self.redo[#self.redo].type == "copy delete" then
@@ -175,11 +175,11 @@ function redo:keypressed(key)
             for i = 1,#self.revoke[#self.revoke].tab.note do
                 chart.note[#chart.note + 1] = table.copy(self.revoke[#self.revoke].tab.note[i])
             end
-            note:sort()
+            fNote:sort()
             for i = 1,#self.revoke[#self.revoke].tab.event do
                 chart.event[#chart.event + 1] = table.copy(self.revoke[#self.revoke].tab.event[i])
             end
-            event:sort()
+            fEvent:sort()
             sidebar:to("nil")
 
         elseif self.redo[#self.redo].type == "cropping" then --裁剪
@@ -187,11 +187,11 @@ function redo:keypressed(key)
             for i = 1,#self.revoke[#self.revoke].tab[2].note do
                 chart.note[#chart.note + 1] = table.copy(self.revoke[#self.revoke].tab[2].note[i])
             end
-            note:sort()
+            fNote:sort()
             for i = 1,#self.revoke[#self.revoke].tab[2].event do
                 chart.event[#chart.event + 1] = table.copy(self.revoke[#self.revoke].tab[2].event[i])
             end
-            event:sort()
+            fEvent:sort()
 
             local local_tab = {}
             for i = 1, #chart.note do
@@ -206,7 +206,7 @@ function redo:keypressed(key)
                 end
             end
             chart.note = table.copy(local_tab)
-            note:sort()
+            fNote:sort()
             local_tab = {}
             for i = 1, #chart.event do
                 local no_have_this_event = true --表里没有这个event
@@ -220,7 +220,7 @@ function redo:keypressed(key)
                 end
             end
             chart.event = table.copy(local_tab)
-            event:sort()
+            fEvent:sort()
 
             sidebar:to("nil")
         end

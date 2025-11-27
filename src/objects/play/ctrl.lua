@@ -111,22 +111,22 @@ end
 function ctrl:mousepressed(x, y, button)
     if love.mouse.isDown(2) then                                                     --单选
         if math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval *2) then --event x
-            if self:copy_exist(chart.event[event:click("x", mouse.y)], "event") then --存在就取消勾选
-                self:copy_sub(chart.event[event:click("x", mouse.y)], "event")
+            if self:copy_exist(chart.event[fEvent:click("x", mouse.y)], "event") then --存在就取消勾选
+                self:copy_sub(chart.event[fEvent:click("x", mouse.y)], "event")
             else
-                self:copy_add(chart.event[event:click("x", mouse.y)], "event")
+                self:copy_add(chart.event[fEvent:click("x", mouse.y)], "event")
             end
         elseif math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval * 2,play.layout.edit.x + play.layout.edit.interval *3) then --event w
-            if self:copy_exist(chart.event[event:click("w", mouse.y)], "event") then --存在就取消勾选
-                self:copy_sub(chart.event[event:click("w", mouse.y)], "event")
+            if self:copy_exist(chart.event[fEvent:click("w", mouse.y)], "event") then --存在就取消勾选
+                self:copy_sub(chart.event[fEvent:click("w", mouse.y)], "event")
             else
-                self:copy_add(chart.event[event:click("w", mouse.y)], "event")
+                self:copy_add(chart.event[fEvent:click("w", mouse.y)], "event")
             end
         elseif math.intersect(x,x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --note
-            if self:copy_exist(chart.note[note:click(mouse.y)], "note") then --存在就取消勾选
-                self:copy_sub(chart.note[note:click(mouse.y)], "note")
+            if self:copy_exist(chart.note[fNote:click(mouse.y)], "note") then --存在就取消勾选
+                self:copy_sub(chart.note[fNote:click(mouse.y)], "note")
             else
-                self:copy_add(chart.note[note:click(mouse.y)], "note")
+                self:copy_add(chart.note[fNote:click(mouse.y)], "note")
             end
         end
         messageBox:add("add copy")
@@ -157,7 +157,7 @@ function ctrl:mousereleased(x, y)
         --先for循环记录此刻在游玩区域的轨道
         local local_track = {}     --记录表
         for i = 1, #chart.event do --点击轨道进入轨道的编辑事件
-            local track_x, track_w = fTrack:to_play_track(event:get(chart.event[i].track, beat.nowbeat))
+            local track_x, track_w = fTrack:to_play_track(fEvent:get(chart.event[i].track, beat.nowbeat))
             if math.intersect(min_x,max_x,track_x,track_x + track_w) then
                 local_track[chart.event[i].track] = true
             end
@@ -388,8 +388,8 @@ function ctrl:keypressed(key)
                 chart.event[#chart.event + 1] = table.copy(copy_tab2.event[i])
             end
         end
-        event:sort()
-        note:sort()
+        fEvent:sort()
+        fNote:sort()
 
         if self.copy_tab.type == "c" then
             if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     -- a完全复制

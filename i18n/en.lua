@@ -88,4 +88,5 @@ return {
     ['track_w_scale'] = 'track w scale',
     ['x_offset'] = 'x offset',
     ["Whether to offset the previously written event value"] = "Whether to offset the previously written event value",
+    ['trans_type'] = 'trans type',
 }

@@ -33,7 +33,7 @@ return {
         cols = 3,
         uiH = 20,
         trans = {cols = 2,uiH = 20},
-        bezier = {
+        transFunc = {
             x = 1220,
             y = 800- 400+20 - 40,
             w = 400-20-30,

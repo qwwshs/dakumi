@@ -1,24 +1,25 @@
 local noteEdit = object:new('noteEdit') --避免重名
 noteEdit.layout = require 'config.layouts.play'
 function noteEdit:keypressed(key)
-    if not ((math.intersect(mouse.x,mouse.x,self.layout.edit.x,self.layout.edit.x + self.layout.edit.interval) or math.intersect(mouse.x,mouse.x,self.layout.demo.x,self.layout.demo.x + self.layout.demo.w)) and mouse.y >= self.layout.y) then 
+    if not ((math.intersect(mouse.x,mouse.x,self.layout.edit.x,self.layout.edit.x + self.layout.edit.interval) or
+         math.intersect(mouse.x,mouse.x,self.layout.demo.x,self.layout.demo.x + self.layout.demo.w)) and mouse.y >= self.layout.y) then 
         return
     end
     if key == "q" then -- note
-        note:place("note",mouse.y)
+        fNote:place("note",mouse.y)
         messageBox:add("note place")
         sidebar.displayed_content = 'nil'
     elseif key == "w" then --wipe
-        note:place("wipe",mouse.y)
+        fNote:place("wipe",mouse.y)
         messageBox:add("wipe place")
         sidebar.displayed_content = 'nil'
     elseif key == "e" then --hold
         hold_place = not hold_place
-        note:place("hold",mouse.y)
+        fNote:place("hold",mouse.y)
         messageBox:add("hold place")
         sidebar.displayed_content = 'nil'
     elseif key == "d" then --delete
-        note:delete(mouse.y)
+        fNote:delete(mouse.y)
         messageBox:add("note delete")
         sidebar.displayed_content = 'nil'
     end
@@ -26,7 +27,7 @@ end
 
 function noteEdit:mousepressed(x,y,button)
     if math.intersect(mouse.x,mouse.x,self.layout.edit.x,self.layout.edit.x + self.layout.edit.interval) and love.mouse.isDown(1) then -- 选择note 在edit区域
-        local pos = note:click(mouse.y)
+        local pos = fNote:click(mouse.y)
         if pos then
             sidebar:to('note',pos)
         else
@@ -38,7 +39,7 @@ function noteEdit:mousepressed(x,y,button)
         local local_track = {}
         for i = 1,#chart.event do --点击轨道进入轨道的编辑事件
             if not table.find(local_track,chart.event[i].track) then --不存在 记录
-                local track_x,track_w = event:get(chart.event[i].track,beat.nowbeat)
+                local track_x,track_w = fEvent:get(chart.event[i].track,beat.nowbeat)
                 track_x,track_w = fTrack:to_play_track(track_x,track_w)
                 if x >= track_x and x <= track_w + track_x then
                     local_track[#local_track + 1] = chart.event[i].track
