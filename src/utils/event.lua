@@ -13,17 +13,25 @@ event.local_event = {} -- 局部event表
 event.hold_type = 0 --长条状态 0没放 1头 2尾
 event.__index = {
     type = 'x',
-    transtype = 'bezier',
     track = 0,
     beat = {0,0,1},
     beat2 = {0,0,2},
     from = 0,
     to = 0,
-    trans = {1,1,1,1}
+    trans = {1,1,1,1,type='bezier'}
 }
 function event:cleanUp() --长条清除
     event.local_event = {}
     event.hold_type = 0
+end
+
+function event:getTrans(isevent,t)
+    if isevent.trans.type == 'bezier' then
+        return bezier(0,1,0,1,isevent.trans,t)
+    elseif isevent.trans.type == 'easings' then
+        return easings[isevent.trans.easings](t)
+    else return 1
+    end
 end
 
 function event:get(track,isbeat) --得到event此时的宽和高
@@ -36,12 +44,15 @@ function event:get(track,isbeat) --得到event此时的宽和高
             break
         end
         if chart.event[i].track == track then
-            if (beat:get(chart.event[i].beat) <= isbeat and beat:get(chart.event[i].beat2) > isbeat) or beat:get(chart.event[i].beat2) <= isbeat then
-                if chart.event[i].type == "x" and (not now_x_ed) then
-                    now_x = bezier(beat:get(chart.event[i].beat),beat:get(chart.event[i].beat2),chart.event[i].from,chart.event[i].to,chart.event[i].trans,isbeat)
+            local beat1 = beat:get(chart.event[i].beat)
+            local beat2 = beat:get(chart.event[i].beat2) or beat1
+            local isevent = chart.event[i]
+            if (beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat then
+                if isevent.type == "x" and (not now_x_ed) then
+                    now_x = isevent.from + (isevent.to-isevent.from) * self:getTrans(isevent,(isbeat-beat1)/(beat2-beat1))
                     now_x_ed = true
-                elseif chart.event[i].type == "w" and (not now_w_ed) then
-                    now_w = bezier(beat:get(chart.event[i].beat),beat:get(chart.event[i].beat2),chart.event[i].from,chart.event[i].to,chart.event[i].trans,isbeat)
+                elseif isevent.type == "w" and (not now_w_ed) then
+                    now_w = isevent.from + (isevent.to-isevent.from) * self:getTrans(isevent,(isbeat-beat1)/(beat2-beat1))
                     now_w_ed = true
                 end
             end
@@ -54,15 +65,16 @@ end
 function event:click(type,pos)  --被点击
     sidebar:to("nil") --界面清除
     --检测区间
-    local pos_interval = 20 * denom.scale
+    local pos_interval = 20 * math.min(denom.scale,1)
     --根据距离反推出beat
     local event_beat_up = beat:yToBeat(pos - pos_interval)
     local event_beat_down = beat:yToBeat(pos + pos_interval)
     for i = 1,#chart.event do
-        if chart.event[i].type == type and chart.event[i].track == track.track and
-        (chart.event[i].beat2 and -- 长条
-        (beat:get(chart.event[i].beat) <= event_beat_down and beat:get(chart.event[i].beat2) >= event_beat_down)
-        or (beat:get(chart.event[i].beat) <= event_beat_up and beat:get(chart.event[i].beat2) >= event_beat_up)) then
+        local isevent = chart.event[i]
+        local beat1 = beat:get(isevent.beat)
+        local beat2 = beat:get(isevent.beat2) or beat1
+        if isevent.type == type and isevent.track == track.track and
+        (math.intersect(beat1,beat2, event_beat_down, event_beat_up)) then
             sidebar.displayed_content = "event"..i
             sidebar:to("event",i)
             event:cleanUp()
@@ -73,15 +85,17 @@ end
 function event:delete(type,pos)
     sidebar:to("nil") --界面清除
     --删除检测区间
-    local pos_interval = 20 * denom.scale
+    local pos_interval = 20 * math.min(denom.scale,1)
     --根据距离反推出beat
     local event_beat_up = beat:yToBeat(pos - pos_interval)
     local event_beat_down = beat:yToBeat(pos + pos_interval)
     for i = 1,#chart.event do
-        if chart.event[i].track == track.track and chart.event[i].type == type and
-        (chart.event[i].beat2 and -- 长条
-        math.intersect(beat:get(chart.event[i].beat), beat:get(chart.event[i].beat2), event_beat_down, event_beat_up)) then
-            redo:writeRevoke("event delete",chart.event[i])
+        local isevent = chart.event[i]
+        local beat1 = beat:get(isevent.beat)
+        local beat2 = beat:get(isevent.beat2) or beat1
+        if isevent.track == track.track and isevent.type == type and
+        (math.intersect(beat1,beat2, event_beat_down, event_beat_up)) then
+            redo:writeRevoke("event delete",isevent)
             table.remove(chart.event, i)
             return
         end
@@ -105,7 +119,7 @@ function event:place(type,pos)
                 beat = {math.floor(event_beat),event_min_denom,denom.denom},
                 from = 0,
                 to = 0,
-                trans = {[1] = event.bezier[bezier_index][1],[2] = event.bezier[bezier_index][2],[3] = event.bezier[bezier_index][3],[4] = event.bezier[bezier_index][4]}
+                trans = {type = 'easings',easings = easings_index}
             }
             event.hold_type = 1
             local x,w = event:get(event.local_event.track,beat:get(event.local_event.beat)) --把数值设定为上次event结尾的数值

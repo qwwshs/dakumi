@@ -20,17 +20,7 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
         love.window.showMessageBox('Create a chart first',i18n:get('Create a chart first'))
         return
     end
-    local find_form = false
-    for i = 1,#chart.event do
-        if chart.event[i].form then --遗留问题 当时打错字了
-            chart.event[i].from = chart.event[i].form --更新
-            chart.event[i].form = nil
-            find_form = true
-        end
-    end
-    if find_form then
-        save(chart,'chart.json')
-    end
+    chart:load() --初始化
 
     room_pos = 'edit' --进入编辑
     room:to('edit')
@@ -94,6 +84,7 @@ end
 menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'file select'}
 
 menuUI.fileTool[#menuUI.fileTool].func = function()
+    local fileselect = ffi.load("fileselect")
     -- 定义函数原型
     ffi.cdef[[
         const char* OpenFileDialog(const char* filter);

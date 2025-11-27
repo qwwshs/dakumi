@@ -10,12 +10,12 @@ function alt:keypressed(key)
     if key == 'z' then --拖头
         if is_note then
             chart.note[note_or_event_index].beat = beat:toNearby(beat:yToBeat(mouse.y))
-            note:sort()
+            fNote:sort()
             sidebar:to("nil")
         end
         if is_event then
             chart.event[note_or_event_index].beat = beat:toNearby(beat:yToBeat(mouse.y))
-            event:sort()
+            fEvent:sort()
             sidebar:to("nil")
         end
     end
@@ -25,7 +25,7 @@ function alt:keypressed(key)
                 return
             end
             chart.note[note_or_event_index].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
-            note:sort()
+            fNote:sort()
             sidebar:to("nil")
         end
         if is_event then
@@ -33,7 +33,7 @@ function alt:keypressed(key)
                 return
             end
             chart.event[note_or_event_index].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
-            event:sort()
+            fEvent:sort()
             sidebar:to("nil")
         end
     end
@@ -49,7 +49,7 @@ function alt:keypressed(key)
             do
                 local isnow_beat = (i/(denom.denom * 2)) + 
                 beat:get(chart.event[note_or_event_index].beat)
-                local temp_now = {event:get(chart.event[note_or_event_index].track,
+                local temp_now = {fEvent:get(chart.event[note_or_event_index].track,
                 isnow_beat)}
                 temp_event_int[i] = temp_now[1]
                 if temp_event.type == "w" then
@@ -85,7 +85,7 @@ function alt:keypressed(key)
             end
             redo:writeRevoke("event delete",chart.event[note_or_event_index])
                 table.remove(chart.event,note_or_event_index) --删除    
-            event:sort()
+            fEvent:sort()
             sidebar:to('events')
         end
     end

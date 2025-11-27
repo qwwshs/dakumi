@@ -2,14 +2,13 @@ utf8 = require("utf8")
 socket = require("socket") --网络通信
 ffi = require("ffi") --调用C语言库
 nuklear = require 'nuklear' --图形界面
-fileselect = ffi.load("fileselect")
 serpent = require("src.utils.serpent") --lua序列化
 require("src.utils.room")
 
 require("src.utils.music")
 beat = require("src.utils.beat")
-event = require("src.utils.event")
-note = require("src.utils.note")
+fEvent = require("src.utils.event")
+fNote = require("src.utils.note")
 
 require("src.utils.log")
 require("src.utils.string")

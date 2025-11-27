@@ -66,11 +66,16 @@ function table.find(array, element)  --元素查询
     return false  
 end  
 
-function table.fill(tbl, metatable) --补充元素
+function table.fill(tbl, metatable,func) --补充元素
+    func = func or false --是否补充函数
     for key, value in pairs(metatable) do
         if type(value) == "table" then
             tbl[key] = tbl[key] or {}
             table.fill(tbl[key], value)
+        elseif type(value) == "function" then
+            if func then
+                tbl[key] = tbl[key] or value
+            end
         else
             tbl[key] = tbl[key] or value
         end

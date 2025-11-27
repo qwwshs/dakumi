@@ -31,7 +31,7 @@ function hit:update(dt)
         end
         if beat:get(chart.note[i].beat) < beat.nowbeat and --播放
         self.soundTab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] then
-            local x,w = event:get(chart.note[i].track,beat.nowbeat)
+            local x,w = fEvent:get(chart.note[i].track,beat.nowbeat)
             self.soundTab["b"..beat:get(chart.note[i].beat).."tk"..chart.note[i].track.."ty"..chart.note[i].type] = false --播放完成
 
             if self.sound and settings.hit_sound == 1 and music_play and w > 0 and not( chart.note[i].fake == 1) then --播放
@@ -91,7 +91,7 @@ function hit:draw()
         --光效
         if not (hit_light_alpha >= hitlight_frame or hit_light_alpha <= 1) then --防止暂停时滞留
             love.graphics.setColor(1,1,1,(hitlight_frame-hit_light_alpha)/(hitlight_frame*3)) --只要1/4的alpha
-            local x,w = fTrack:to_play_track(event:get(self.tab[i].track,beat.nowbeat))
+            local x,w = fTrack:to_play_track(fEvent:get(self.tab[i].track,beat.nowbeat))
             love.graphics.draw(self.light,x,settings.judge_line_y-hit.size  / (WINDOW.scale / WINDOW.scale),0,hit_light_scale_w*w,hit_light_scale_h*hit.size)
         end
     end

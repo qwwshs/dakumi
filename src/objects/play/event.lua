@@ -9,16 +9,16 @@ function eventEdit:keypressed(key)
     local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
     local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
     if isEdit and isXEvent then
-       event:place("x",mouse.y)
+       fEvent:place("x",mouse.y)
         messageBox:add("event x place")
     elseif isEdit and isWEvent then -- w
-        event:place("w",mouse.y)
+        fEvent:place("w",mouse.y)
         messageBox:add("event w place")
     elseif isDelete and isXEvent then -- x delete
-            event:delete("x",mouse.y)
+            fEvent:delete("x",mouse.y)
             messageBox:add("event x place")
     elseif isDelete and misWEvent then -- w delete
-            event:delete("w",mouse.y)
+            fEvent:delete("w",mouse.y)
             messageBox:add("event w place")
     end
 end
@@ -30,10 +30,10 @@ function eventEdit:mousepressed(x,y)
     local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
     local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
     if isXEvent then
-        event:click("x",mouse.y)
+        fEvent:click("x",mouse.y)
         messageBox:add("event x click")
     elseif isWEvent then
-        event:click("w",mouse.y)
+        fEvent:click("w",mouse.y)
         messageBox:add("event w click")
     end
 end
