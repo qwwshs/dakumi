@@ -359,8 +359,8 @@ function ctrl:keypressed(key)
             copy_tab2.event[i].beat = beat:add(beat:sub(copy_tab2.event[i].beat, frist_beat), to_beat)
             copy_tab2.event[i].beat2 = beat:add(beat:sub(copy_tab2.event[i].beat2, frist_beat), to_beat)
             if key == "b" and copy_tab2.event[i].type == "x" then     --取反
-                copy_tab2.event[i].from = 100 - copy_tab2.event[i].from
-                copy_tab2.event[i].to = 100 - copy_tab2.event[i].to
+                copy_tab2.event[i].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].from
+                copy_tab2.event[i].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].to
             end
             if key == "n" then     --对所有轨道增加
                 local max_track = fTrack:track_get_max_track() + 1

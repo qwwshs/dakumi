@@ -41,7 +41,7 @@ function hit:update(dt)
             end
             if settings.hit == 1 and music_play  and w > 0 and not( chart.note[i].fake == 1) then
                 
-                self.tab[#self.tab + 1] = {x = fTrack:to_play_track_original_x(x),time = time.nowtime,track = chart.note[i].track}
+                self.tab[#self.tab + 1] = {x = fTrack:to_play_track_x(x),time = time.nowtime,track = chart.note[i].track}
             end
         end
         if beat:get(chart.note[i].beat) >= beat.nowbeat then

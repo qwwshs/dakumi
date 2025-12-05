@@ -77,15 +77,15 @@ function demoPlay:draw()
 
     --游玩区域侧线
     love.graphics.setColor(1,1,1,0.5)
-    local x,w = fTrack:to_play_original_track(0,0.2)
+    local x,w = fTrack:to_play_track(-chart.preference.x_offset,0.002*chart.preference.event_scale)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
-    x,w = fTrack:to_play_original_track(100,0.2)
+    x,w = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0.002*chart.preference.event_scale)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
     love.graphics.setColor(1,1,1,1)
-    x,w = fTrack:to_play_original_track(-1,0.5)
+    x,w = fTrack:to_play_track(-chart.preference.x_offset- 0.01 * chart.preference.event_scale,0.005 * chart.preference.event_scale)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
-    x,w = fTrack:to_play_original_track(101,0.5)
+    x,w = fTrack:to_play_track(-chart.preference.x_offset + 1.01 * chart.preference.event_scale,0.005 * chart.preference.event_scale)
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
     local note_h = settings.note_height --25 * denom.scale
@@ -132,13 +132,13 @@ function demoPlay:draw()
         end
 
     --遮挡板
-    local start_x = fTrack:to_play_original_track(0,0)
-    local end_x = fTrack:to_play_original_track(100,0)
+    local start_x = fTrack:to_play_track(-chart.preference.x_offset,0)
+    local end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0)
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",start_x,settings.judge_line_y,end_x - start_x,WINDOW.h - settings.judge_line_y)
 
     --进度条
-    local progress_bar = fTrack:to_play_original_track(20,0)
+    local progress_bar = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale * 0.2,0)
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-(progress_bar*time.nowtime/time.alltime) / 2,settings.judge_line_y+30,time.nowtime/time.alltime * progress_bar,5)
 

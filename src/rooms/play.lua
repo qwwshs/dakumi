@@ -154,9 +154,9 @@ function play:draw()
             if not (y2 > WINDOW.h or y < 0) then
                 -- beizer曲线
                 for k = 1, 10 do
-                    local nowx = fTrack:to_play_track_original_x(chart.event[i].from) +
+                    local nowx = fTrack:to_play_track_x(chart.event[i].from) +
                     fEvent:getTrans(chart.event[i], k / 10) *
-                    fTrack:to_play_track_original_x(chart.event[i].to - chart.event[i].from)
+                    fTrack:to_play_track_x(chart.event[i].to - chart.event[i].from)
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)   --减去一个 (y2 - y)/10是为了与头对齐
                 end

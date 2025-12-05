@@ -91,8 +91,8 @@ function alt:keypressed(key)
     end
     if key == 'b' then --翻转
         if is_event and chart.event[note_or_event_index] then
-            chart.event[note_or_event_index].from = 100 - chart.event[note_or_event_index].from
-            chart.event[note_or_event_index].to = 100 - chart.event[note_or_event_index].to
+            chart.event[note_or_event_index].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].from
+            chart.event[note_or_event_index].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].to
             log('flip')
             sidebar:to('nil')
         end
