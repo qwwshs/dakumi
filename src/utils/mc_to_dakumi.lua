@@ -36,8 +36,8 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
                 track = i,
                 beat = {0,0,1},
                 beat2 = {0,1,4},
-                from = ((i / mc_tab.meta.mode_ext.column) - (1 / (mc_tab.meta.mode_ext.column *2))) * 100,
-                to = ((i / mc_tab.meta.mode_ext.column) - (1 / (mc_tab.meta.mode_ext.column *2))) * 100,
+                from = ((i / mc_tab.meta.mode_ext.column) - (1 / (mc_tab.meta.mode_ext.column *2))) * chart.preference.event_scale,
+                to = ((i / mc_tab.meta.mode_ext.column) - (1 / (mc_tab.meta.mode_ext.column *2))) * chart.preference.event_scale,
                 trans = {0,0,1,1}
             }
             chart_tab.event[#chart_tab.event + 1] = {
@@ -45,8 +45,8 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
                 track = i,
                 beat = {0,0,1},
                 beat2 = {0,1,4},
-                from = 1 / mc_tab.meta.mode_ext.column * 100,
-                to = 1 / mc_tab.meta.mode_ext.column * 100,
+                from = 1 / mc_tab.meta.mode_ext.column * chart.preference.event_scale,
+                to = 1 / mc_tab.meta.mode_ext.column * chart.preference.event_scale,
                 trans = {0,0,1,1}
             }
         end
@@ -144,8 +144,8 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
                 track = i,
                 beat = {0,0,1},
                 beat2 = {0,1,4},
-                from = track[track_index[i]][1]/255 * 100,
-                to = track[track_index[i]][1]/255 * 100,
+                from = track[track_index[i]][1]/255 * chart.preference.event_scale,
+                to = track[track_index[i]][1]/255 * chart.preference.event_scale,
                 trans = {0,0,1,1}
             }
             chart_tab.event[#chart_tab.event + 1] = {
@@ -153,8 +153,8 @@ function mc_to_takumi(mc) --malody的转换函数 silde模式mod是7 key是0
                 track = i,
                 beat = {0,0,1},
                 beat2 = {0,1,4},
-                from = track[track_index[i]][2]/255 * 100,
-                to = track[track_index[i]][2]/255 * 100,
+                from = track[track_index[i]][2]/255 * chart.preference.event_scale,
+                to = track[track_index[i]][2]/255 * chart.preference.event_scale,
                 trans = {0,0,1,1}
             }
             log(track[track_index[i]][2])

@@ -104,19 +104,13 @@ end
 
 function event:place(type,pos)
     --根据距离反推出beat
-    local event_beat = beat:yToBeat(pos)
-    local event_min_denom = 1 --假设1最近
-    for i = 1, denom.denom do --取分度 哪个近取哪个
-        if math.abs(event_beat - (math.floor(event_beat) + i / denom.denom)) < math.abs(event_beat - (math.floor(event_beat) + event_min_denom / denom.denom)) then
-            event_min_denom = i
-        end
-    end
-    
+    local event_beat = beat:toNearby(beat:yToBeat(pos))
+
     if event.hold_type == 0 then --放置头
             event.local_event = {
                 type = type,
                 track = track.track,
-                beat = {math.floor(event_beat),event_min_denom,denom.denom},
+                beat = {event_beat[1],event_beat[2],event_beat[3]},
                 from = 0,
                 to = 0,
                 trans = {type = 'easings',easings = easings_index}
@@ -129,7 +123,7 @@ function event:place(type,pos)
                 event.local_event.from,event.local_event.to = w,w
             end
     elseif event.hold_type == 1 then
-        event.local_event.beat2 = {math.floor(event_beat),event_min_denom,denom.denom} 
+        event.local_event.beat2 = {event_beat[1],event_beat[2],event_beat[3]} 
         if beat:get(event.local_event.beat2) <= beat:get(event.local_event.beat) then --尾巴比头早或重叠
             messageBox:add("illegal operation")
             event:cleanUp()

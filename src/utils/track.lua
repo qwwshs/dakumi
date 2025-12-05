@@ -4,27 +4,28 @@ function fTrack:get_track_offset()
 end
 function fTrack:to_play_track(x,w)
     x = x or 0
-    w = w or 0
-    
-    return (x + chart.preference.x_offset -w/2) *settings.track_w_scale + fTrack:get_track_offset(),w*settings.track_w_scale
+    w = w  or 0
+    return (x + chart.preference.x_offset -w /2) / chart.preference.event_scale * 100 *settings.track_w_scale + fTrack:get_track_offset(),
+    w*settings.track_w_scale / chart.preference.event_scale * 100
 end
-function fTrack:to_play_original_track(x,w)
+function fTrack:to_play_original_track(x,w) --废弃 不用
     x = x or 0
-    w = w or 0
+    w = w  or 0
     
-    return (x-w/2) *settings.track_w_scale + fTrack:get_track_offset(),w*settings.track_w_scale
+    return (x-w /2) / chart.preference.event_scale * 100 *settings.track_w_scale + fTrack:get_track_offset(),
+    w*settings.track_w_scale / chart.preference.event_scale * 100
 end
 
-function fTrack:to_play_track_original_x(x)
+function fTrack:to_play_track_x(x)
     x = x or 0
-    return (x+ chart.preference.x_offset)*settings.track_w_scale + fTrack:get_track_offset()
+    return (x+ chart.preference.x_offset)/ chart.preference.event_scale * 100 *settings.track_w_scale + fTrack:get_track_offset()
 end
-function fTrack:to_play_track_original_w(w)
+function fTrack:to_play_track_w(w)
     w = w or 0
-    return w*settings.track_w_scale
+    return w*settings.track_w_scale / chart.preference.event_scale * 100
 end
-function fTrack:to_chart_track(x)
-    return (x- chart.preference.x_offset * settings.track_w_scale - fTrack:get_track_offset()) / settings.track_w_scale
+function fTrack:to_chart_track(x) --play区域的x转谱面轨道x
+    return (chart.preference.event_scale / play.layout.demo.w * x) - chart.preference.x_offset
 end
 function fTrack:track_get_max_track() --得到最大的轨道
     local max_track = 0
@@ -47,9 +48,9 @@ end
 function fTrack:track_get_near_fence_x() --得到附近的栅栏所对应的play区域的x
     local pos = 0
     if track.fence == 0 then
-        pos = (mouse.x - fTrack:get_track_offset()) / settings.track_w_scale
+        pos = (mouse.x - fTrack:get_track_offset()) / settings.track_w_scale / 100 * chart.preference.event_scale
     else
-        pos = (100 / track.fence * fTrack:track_get_near_fence()) - chart.preference.x_offset
+        pos = (chart.preference.event_scale / track.fence * fTrack:track_get_near_fence()) - chart.preference.x_offset
     end
     return pos
 end

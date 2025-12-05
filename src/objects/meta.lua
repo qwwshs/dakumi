@@ -15,6 +15,7 @@ meta_chart = { --谱面基本格式 元表
         },
         preference = {
             x_offset = 0,
+            event_scale = 100,
         },
         track = {},
         version = 1

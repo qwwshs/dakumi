@@ -1,6 +1,6 @@
 
 local buttonSave = object:new('save')
-
+buttonSave.sound = love.audio.newSource('assets/sound/save.ogg', "stream")
 buttonSave.time = 0 --保存时间
 buttonSave.type = 'button'
 buttonSave.text = 'save'
@@ -9,6 +9,8 @@ buttonSave.img = isImage.save
 function buttonSave:click()
     save(chart,"chart.json")
     messageBox:add("save")
+    self.sound:seek(0)
+    self.sound:play()
 end
 
 function buttonSave:keypressed(key)

@@ -127,9 +127,9 @@ function demoInEdit:draw(pos, istrack)
                 love.graphics.printf(chart.event[i].to, x_pos, y2, one_track_w, 'center')
                 -- beizer曲线
                 for k = 1, 10 do
-                    local nowx = (chart.event[i].from - 50) / 100 * one_track_w + x_pos + one_track_w / 2 +
+                    local nowx = (chart.event[i].from - chart.preference.event_scale) / chart.preference.event_scale * one_track_w + x_pos + one_track_w / 2 +
                     fEvent:getTrans(chart.event[i], k / 10) *
-                    ((chart.event[i].to - 50) / 100 * one_track_w)                                         --减去50是为了使50居中
+                    ((chart.event[i].to - chart.event[i].from) / chart.preference.event_scale * one_track_w)                                         --减去50是为了使50居中
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)          --减去一个 (y2 - y)/10是为了与头对齐
                 end

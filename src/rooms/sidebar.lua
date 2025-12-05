@@ -38,11 +38,14 @@ function sidebar:update(dt)
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
         Nui:label(i18n:get(sidebar.displayed_content))
         Nui:label(i18n:get("version")..DAKUMI._VERSION)
-
-        if Nui:button(i18n:get("break")) then
-            messageBox:add("track")
-            sidebar:to("nil")
+        
+        if self.displayed_content ~= 'nil' then
+            if Nui:button(i18n:get("break")) then
+                messageBox:add("track")
+                sidebar:to("nil")
+            end
         end
+        
         if g and g.Nui then
             g:Nui()
         end
