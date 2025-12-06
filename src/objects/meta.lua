@@ -68,6 +68,13 @@ function meta_chart.__index:update()
         local trans = chart.event[i].trans
         trans.type = trans.type or 'bezier'
     end
+    --hold note head和wipe head填充
+    for i = 1, #chart.note do
+        if chart.note[i].type == 'hold' then
+            chart.note[i].note_head = chart.note[i].note_head or 0
+            chart.note[i].wipe_head = chart.note[i].wipe_head or 0
+        end
+    end
 end
 
 function meta_chart.__index:load()

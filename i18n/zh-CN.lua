@@ -90,4 +90,8 @@ return {
     ['x_offset'] = 'x偏移',
     ["Whether to offset the previously written event value"] = '是否将之前写的event数值进行偏移',
     ['event_scale'] = '事件缩放',
+    ['note head'] = 'note头',
+    ['wipe head'] = 'wipe头',
+    ['apply'] = '应用',
+    ['not apply'] = '不应用',
 }

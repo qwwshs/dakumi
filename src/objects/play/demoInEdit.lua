@@ -53,7 +53,7 @@ function demoInEdit:draw(pos, istrack)
             if chart.note[i].type == "hold" then
                 y2 = beat:toY(chart.note[i].beat2)
             end
-            if not (y2 > WINDOW.h + note_h or y < -note_h) then
+            if math.intersect(y,y2,WINDOW.h + note_h,-note_h) then
                 if chart.note[i].type == "note" then
                     love.graphics.draw(self.ui_note, pos, y - note_h, 0, self._scale_w, _scale_h)
                 elseif chart.note[i].type == "wipe" then
@@ -64,6 +64,12 @@ function demoInEdit:draw(pos, istrack)
                     local _scale_h2 = 1 / self._height * note_h2
                     love.graphics.draw(self.ui_hold_tail, pos, y2, 0, self._scale_w, _scale_h)           -- 尾
                     love.graphics.draw(self.ui_hold_body, pos, y2 + note_h, 0, self._scale_w, _scale_h2) --身
+                    if chart.note[i].note_head == 1 then
+                        love.graphics.draw(self.ui_note, pos, y - note_h, 0, self._scale_w/2, _scale_h)
+                    end 
+                    if chart.note[i].wipe_head == 1 then
+                        love.graphics.draw(self.ui_wipe, pos+self.note_w/2, y - note_h, 0, self._scale_w/2, _scale_h)
+                    end
                 end
                 if chart.note[i].fake and chart.note[i].fake == 1 then                                   --假note
                     love.graphics.setColor(1, 0, 0, 1)
@@ -84,7 +90,7 @@ function demoInEdit:draw(pos, istrack)
         local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
         local note_h2 = y - y2 - note_h * 2
         local _scale_h2 = 1 / self._height * note_h2
-        if not (y2 > track_y + track_h + note_h or y < -note_h) then
+        if math.intersect(y,y2,track_y + track_h + note_h,-note_h) then
             love.graphics.draw(self.ui_hold, pos, y - note_h, 0, self._scale_w, _scale_h)        --头
             love.graphics.draw(self.ui_hold_body, pos, y2 + note_h, 0, self._scale_w, _scale_h2) --身
             love.graphics.draw(self.ui_hold_tail, pos, y2, 0, self._scale_w, _scale_h)           --尾
