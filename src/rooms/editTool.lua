@@ -11,13 +11,40 @@ musicSpeed = require 'src.objects.editTool.musicSpeed'
 editTool:addObject(musicSpeed)
 noteFake = require 'src.objects.editTool.noteFake'
 editTool:addObject(noteFake)
-editTool:addObject(require 'src.objects.editTool.slider')
 holdNoteHead = require 'src.objects.editTool.holdNoteHead'
 editTool:addObject(holdNoteHead)
 holdWipeHead = require 'src.objects.editTool.holdWipeHead'
 editTool:addObject(holdWipeHead)
+editTool:addObject(require 'src.objects.editTool.slider')
+
 function editTool:load()
     self('load')
+    local editToolDataFile = io.open('editToolData.json')
+    if editToolDataFile then
+        local editToolData = dkjson.decode(editToolDataFile:read('*a')) or {}
+        editToolDataFile:close()
+        editToolData.denom = editToolData.denom or denom.denom
+        editToolData.scale = editToolData.scale or denom.scale
+        editToolData.track = editToolData.track or track.track
+        editToolData.musicSpeed = editToolData.musicSpeed or musicSpeed.speed
+        if editToolData.noteFake == nil then
+            editToolData.noteFake = noteFake.value
+        end
+        if editToolData.holdNoteHead == nil then
+            editToolData.holdNoteHead = holdNoteHead.value
+        end
+        if editToolData.holdWipeHead == nil then
+            editToolData.holdWipeHead = holdWipeHead.value
+        end
+
+        denom:to('denom',editToolData.denom)
+        denom:to('scale',editToolData.scale)
+        track:to(editToolData.track)
+        musicSpeed:to(editToolData.musicSpeed)
+        noteFake:to(editToolData.noteFake)
+        holdNoteHead:to(editToolData.holdNoteHead)
+        holdWipeHead:to(editToolData.holdWipeHead)
+    end
 end
 
 function editTool:update(dt)
@@ -109,6 +136,16 @@ function editTool:wheelmoved(x, y)
 end
 
 function editTool:quit()
+    local editToolData = {
+        denom = denom.denom,
+        scale = denom.scale,
+        track = track.track,
+        musicSpeed = musicSpeed.speed,
+        noteFake = noteFake.value,
+        holdNoteHead = holdNoteHead.value,
+        holdWipeHead = holdWipeHead.value,
+    }
+    save(dkjson.encode(editToolData),'editToolData.json')
     self('quit')
 end
 

@@ -13,4 +13,14 @@ function noteFake:update(dt)
     end
 end
 
+function noteFake:to(v)
+    self.value = v
+    if self.value then
+        self.v = 0
+    else 
+        self.v = 1
+    end
+end
+
+
 return noteFake
