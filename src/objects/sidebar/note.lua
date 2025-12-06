@@ -52,7 +52,6 @@ end
 
 function Gnote:NuiNext() --更新信息
     local v = chart.note[sidebar.incoming[1]]
-    log(v)
     if self.fakev.value then
         v.fake = 0
     else
