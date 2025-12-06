@@ -10,9 +10,9 @@ track.useToFence = {value = "10"}
 
 function track:keypressed(key)
     if key == "right" then
-        self:to(self.track + 1)
+        self:to('track',self.track + 1)
     elseif key == "left" then
-        self:to(math.max(self.track-1,1))
+        self:to('track',math.max(self.track-1,1))
     end
 end
 
@@ -60,9 +60,14 @@ function track:update(dt)
     end
 end
 
-function track:to(tk)
-    self.track = tk
-    self.useToTrack.value = tostring(tk)
+function track:to(ty,v)
+    if ty == 'track' then
+        self.track = v
+        self.useToTrack.value = tostring(v)
+    elseif ty == 'fence' then
+        self.track = v
+        self.useToFence.value = tostring(v)
+    end
 end
 
 return track

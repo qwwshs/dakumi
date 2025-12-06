@@ -26,6 +26,7 @@ function editTool:load()
         editToolData.denom = editToolData.denom or denom.denom
         editToolData.scale = editToolData.scale or denom.scale
         editToolData.track = editToolData.track or track.track
+        editToolData.fence = editToolData.fence or track.fence
         editToolData.musicSpeed = editToolData.musicSpeed or musicSpeed.speed
         if editToolData.noteFake == nil then
             editToolData.noteFake = noteFake.value
@@ -39,7 +40,8 @@ function editTool:load()
 
         denom:to('denom',editToolData.denom)
         denom:to('scale',editToolData.scale)
-        track:to(editToolData.track)
+        track:to('track',editToolData.track)
+        track:to('fence',editToolData.fence)
         musicSpeed:to(editToolData.musicSpeed)
         noteFake:to(editToolData.noteFake)
         holdNoteHead:to(editToolData.holdNoteHead)
@@ -140,6 +142,7 @@ function editTool:quit()
         denom = denom.denom,
         scale = denom.scale,
         track = track.track,
+        fence = track.fence,
         musicSpeed = musicSpeed.speed,
         noteFake = noteFake.value,
         holdNoteHead = holdNoteHead.value,
