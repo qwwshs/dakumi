@@ -43,9 +43,11 @@ function sidebar:update(dt)
             if Nui:button(i18n:get("break")) then
                 messageBox:add("track")
                 sidebar:to("nil")
+                g = self:getGroup(self.displayed_content)
             end
         end
-        
+
+
         if g and g.Nui then
             g:Nui()
         end

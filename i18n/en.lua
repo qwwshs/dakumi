@@ -90,4 +90,8 @@ return {
     ["Whether to offset the previously written event value"] = "Whether to offset the previously written event value",
     ['trans_type'] = 'trans type',
     ['event_scale'] = 'event scale',
+    ['note head'] = 'note head',
+    ['wipe head'] = 'wipe head',
+    ['apply'] = 'apply',
+    ['not apply'] = 'not apply',
 }

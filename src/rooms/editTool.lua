@@ -12,6 +12,10 @@ editTool:addObject(musicSpeed)
 noteFake = require 'src.objects.editTool.noteFake'
 editTool:addObject(noteFake)
 editTool:addObject(require 'src.objects.editTool.slider')
+holdNoteHead = require 'src.objects.editTool.holdNoteHead'
+editTool:addObject(holdNoteHead)
+holdWipeHead = require 'src.objects.editTool.holdWipeHead'
+editTool:addObject(holdWipeHead)
 function editTool:load()
     self('load')
 end

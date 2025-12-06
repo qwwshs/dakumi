@@ -126,6 +126,12 @@ function demoPlay:draw()
                     love.graphics.draw(demoPlay.ui.hold,x,y-note_h,0,_scale_w,_scale_h)
                     love.graphics.draw(demoPlay.ui.holdBody,x,y2+note_h,0,_scale_w,_scale_h2) --身
                     love.graphics.draw(demoPlay.ui.holdTail,x,y2,0,_scale_w,_scale_h)
+                    if chart.note[i].note_head == 1 then
+                        love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
+                    end
+                    if chart.note[i].wipe_head == 1 then
+                        love.graphics.draw(demoPlay.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
+                    end
                 end
             end
 

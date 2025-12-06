@@ -7,9 +7,9 @@ noteFake.text = 'note fake'
 
 function noteFake:update(dt)
     if self.value then
-        self.v = 1
-    else 
         self.v = 0
+    else 
+        self.v = 1
     end
 end
 

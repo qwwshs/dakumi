@@ -66,26 +66,28 @@ function note:place(note_type,pos)
             type = note_type,
             track = track.track,
             beat = {note_beat[1],note_beat[2],note_beat[3]},
-            fake = note_is_fake
+            fake = noteFake.v
         }
         note.local_tab = {type = note_type,
         track = track.track,
         beat = {note_beat[1],note_beat[2],note_beat[3]}
-        ,fake = note_is_fake}
+        ,fake = noteFake.v}
     else
         if note.hold_type == 0 then --放置头
             note.local_hold = {
                 type = note_type,
                 track = track.track,
                 beat = {note_beat[1],note_beat[2],note_beat[3]},
-                fake = note_is_fake
+                fake = noteFake.v,
+                note_head = holdNoteHead.v,
+                wipe_head = holdWipeHead.v,
             }
             note.hold_type = 1
             
             note.local_tab = {type = note_type,
                 track = track.track,
                 beat = {note_beat[1],note_beat[2],note_beat[3]},
-                fake = note_is_fake}
+                fake = noteFake.v}
 
         elseif note.hold_type == 1 then
             note.local_hold.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
