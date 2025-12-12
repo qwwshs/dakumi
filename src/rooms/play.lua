@@ -105,6 +105,9 @@ function play:update(dt)
 end
 
 function play:draw()
+    if demo.open then
+        return
+    end
     love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
@@ -120,7 +123,7 @@ function play:draw()
         local bg_width, bg_height = bg:getDimensions()  -- 得到宽高
         local bg_scale_h = 1 / bg_height * WINDOW.h
         local bg_scale_w = 1 / bg_height * WINDOW.h / (WINDOW.scale / WINDOW.scale)
-        if demo then
+        if demo.open then
             bg_scale_h = 1 / bg_height * WINDOW.h
             bg_scale_w = 1 / bg_height * WINDOW.h / (WINDOW.scale / WINDOW.scale) / (1 / (self.layout.demo.w / WINDOW.w))
         end
@@ -128,10 +131,6 @@ function play:draw()
         love.graphics.draw(bg, 450 - (bg_width * bg_scale_w) / 2, 0, 0, bg_scale_w, bg_scale_h) --居中显示
 
         love.graphics.setStencilTest()
-    end
-
-    if demo then
-        return
     end
 
     love.graphics.setColor(1, 1, 1, 1) --总note event 数

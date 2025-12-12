@@ -9,7 +9,7 @@ slider.h = layout.slider.h
 slider.down = false
 
 function slider:draw()
-    if demo then
+    if demo.open then
         return
     end
     love.graphics.setColor(0.15,0.15,0.15,0.7)

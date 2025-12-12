@@ -20,6 +20,7 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
         love.window.showMessageBox('Create a chart first',i18n:get('Create a chart first'))
         return
     end
+    setmetatable(chart,meta_chart)
     chart:load() --初始化
 
     room_pos = 'edit' --进入编辑
@@ -41,7 +42,9 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
 
     local file = nativefs.newFile(name..".json")
     file:open("w") --为了创建谱面
-    file:write(dkjson.encode(tableToString(meta_chart.__index), {indent = true})) --初始化
+    local isChart = {}
+    table.fill(isChart,meta_chart.__index)
+    file:write(dkjson.encode(isChart, {indent = true})) --初始化
     file:close()
 
     nativefs.unmount()
@@ -84,6 +87,7 @@ end
 menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'file select'}
 
 menuUI.fileTool[#menuUI.fileTool].func = function()
+    if true then return end --暂时禁用 有问题
     local fileselect = ffi.load("fileselect")
     -- 定义函数原型
     ffi.cdef[[

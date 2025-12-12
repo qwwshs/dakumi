@@ -14,7 +14,6 @@ FONT = {normal = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 13),plus
 isctrl  = false --ctrl按下状态
 isalt = false --alt按下状态
 iskeyboard = {} --key的按下状态
-demo = false --演示状态
 WINDOW = {w = 1600,h = 800,scale = 1,nowW = 1600,nowH = 800}
 PATH = {
     users = 'users/',

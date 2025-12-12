@@ -32,6 +32,7 @@ end
 
 function sidebar:update(dt)
     self('update',dt)
+    if demo.open then return end
     local layout = self.layout
     local g = self:getGroup(self.displayed_content)
     if Nui:windowBegin('sidebar', layout.x, layout.y, layout.w, layout.h,'border','scrollbar','background') then
@@ -63,6 +64,9 @@ function sidebar:update(dt)
 end
 
 function sidebar:draw()
+    if demo.open then
+        return
+    end
     self('draw')
 end
 

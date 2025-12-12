@@ -4,11 +4,12 @@ room:addRoom(edit)
 play = require 'src.rooms.play'
 sidebar = require 'src.rooms.sidebar'
 editTool = require 'src.rooms.editTool'
+demo = require 'src.rooms.demo'
 
 edit:addGroup(play)
 edit:addGroup(sidebar)
 edit:addGroup(editTool)
-
+edit:addGroup(demo)
 bezier_index = 1 --默认贝塞尔索引
 easings_index = 1 --默认缓动索引
 function edit:load()

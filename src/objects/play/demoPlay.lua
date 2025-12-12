@@ -1,5 +1,10 @@
 --轨道渲染
 local demoPlay = object:new("demoPlay")
+demoPlay.sw = 1
+demoPlay.sh = 1
+demoPlay.ex = 0
+demoPlay.ey = 0
+
 demoPlay.ui = {}
 demoPlay.ui.note = isImage.note2
 demoPlay.ui.wipe = isImage.wipe2
@@ -23,18 +28,25 @@ if ui_tab and #ui_tab > 0 then
         end
     end
 end
-
+function demoPlay:Setup(x,y,w,h)
+    local sw = w / play.layout.demo.w
+    local sh = h / play.layout.demo.h
+    self.ex = x
+    self.ey = y
+    self.sw = sw
+    self.sh = sh
+end
 function demoPlay:draw()
-    local sx = 1
-    local sy = 1
-    local effect = play:get_effect()
-    if not demo then effect = play:get_init_effect() end
-    
+    local sw = self.sw
+    local sh = self.sh
+    local ex = self.ex
+    local ey = self.ey
     love.graphics.push()
-    love.graphics.scale(sx,sy)
-
+    love.graphics.translate(ex,ey)
+    local judgePos = settings.judge_line_y *sh
+    local effect = play:get_init_effect()
     love.graphics.setColor(0,0, 0, 0.4) --游玩区域显示的背景板
-    love.graphics.rectangle("fill",0,0,900,WINDOW.h)
+    love.graphics.rectangle("fill",0,0,play.layout.demo.w*sw,WINDOW.h*sh)
 
     local all_track_pos = play:get_all_track_pos()
 
@@ -49,54 +61,68 @@ function demoPlay:draw()
     for i=1 ,#all_track do --轨道底板绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = fTrack:to_play_track(x,w) --为了居中
+            x = x * sw
+            w = w * sw
         if w ~= 0 then
-            love.graphics.rectangle("fill",x,0,w,settings.judge_line_y)
+            love.graphics.rectangle("fill",x,0,w,judgePos*sh)
         end
     end
 
     for i=1 ,#all_track do --轨道侧线绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = fTrack:to_play_track(x,w) --为了居中
+            x = x * sw
+            w = w * sw
             --倾斜计算
-            if track.track == all_track[i] and (not demo ) then --选择到的底板
+            if track.track == all_track[i] and (not demo.open ) then --选择到的底板
                 love.graphics.setColor(1,1,1,0.2) 
-                love.graphics.rectangle("fill",x,0,w,settings.judge_line_y)
+                love.graphics.rectangle("fill",x,0,w,judgePos)
             end
             if w ~= 0 then
                 love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
-                love.graphics.rectangle("line",x,0,w,settings.judge_line_y)
+                love.graphics.rectangle("line",x,0,w,judgePos)
             end
-            if not demo then
+            if not demo.open then
                 love.graphics.setColor(1,1,1,1) --轨道编号
                 if track.track == all_track[i] then
                     love.graphics.setColor(0,1,1,1) --轨道编号
                 end
-                love.graphics.printf(  all_track[i], x,settings.judge_line_y-20,w, "center")
+                love.graphics.printf(  all_track[i], x,judgePos-20,w, "center")
             end
     end
 
     --游玩区域侧线
     love.graphics.setColor(1,1,1,0.5)
     local x,w = fTrack:to_play_track(-chart.preference.x_offset,0.002*chart.preference.event_scale)
+    x = x*sw
+    w = w*sw
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     x,w = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0.002*chart.preference.event_scale)
+    x = x*sw
+    w = w*sw
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
     love.graphics.setColor(1,1,1,1)
     x,w = fTrack:to_play_track(-chart.preference.x_offset- 0.01 * chart.preference.event_scale,0.005 * chart.preference.event_scale)
+    x = x*sw
+    w = w*sw
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     x,w = fTrack:to_play_track(-chart.preference.x_offset + 1.01 * chart.preference.event_scale,0.005 * chart.preference.event_scale)
+    x = x*sw
+    w = w*sw
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
     
-    local note_h = settings.note_height --25 * denom.scale
-    local note_w = 75
+    local note_h = settings.note_height*sh --25 * denom.scale
     local _width, _height = demoPlay.ui.note:getDimensions() -- 得到宽高
     love.graphics.setColor(1,1,1,effect.note_alpha / 100)
 
     --展示侧note渲染
-    local spacing = 20 --note和track的间距
+    local spacing = 20*sw --note和track的间距
         for i = 1,#chart.note do
             local x,w = fTrack:to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
+            x = x * sw
+            w = w * sw
+
             x = x + w /2
             if w > spacing*2 then --增加间隙
                 w = w - spacing
@@ -109,13 +135,14 @@ function demoPlay:draw()
             if chart.note[i].type == "hold" then
                 y2 = beat:toY(chart.note[i].beat2)
             end
-
+            y = y * sh
+            y2 = y2 * sh
             local _scale_w = 1 / _width * w
 
             local _scale_h = 1 / _height * note_h
-            if y < play.layout.demo.y - note_h then break end --超出范围
-            if (not (y2 > settings.judge_line_y + note_h or y < play.layout.demo.y -  note_h)) and (not  (y > settings.judge_line_y and chart.note[i].fake == 1 ) )then
-                if y ~= y2 and y > settings.judge_line_y then y = settings.judge_line_y end --hold头保持在线上
+            if y < 0 then break end --超出范围
+            if (not (y2 > judgePos + note_h or y < 0)) and (not  (y > judgePos and chart.note[i].fake == 1 ) )then
+                if y ~= y2 and y > judgePos then y = judgePos end --hold头保持在线上
 
                 if chart.note[i].type == "note" then
                     love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
@@ -138,29 +165,28 @@ function demoPlay:draw()
         end
 
     --遮挡板
-    local start_x = fTrack:to_play_track(-chart.preference.x_offset,0)
-    local end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0)
+    local start_x = fTrack:to_play_track(-chart.preference.x_offset,0) *sw
+    local end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0) *sw
     love.graphics.setColor(0,0,0,1)
-    love.graphics.rectangle("fill",start_x,settings.judge_line_y,end_x - start_x,WINDOW.h - settings.judge_line_y)
+    love.graphics.rectangle("fill",start_x,judgePos,end_x - start_x,WINDOW.h - judgePos)
 
     --进度条
-    local progress_bar = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale * 0.2,0)
+    local progress_bar = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale * 0.2,0) *sw
     love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-(progress_bar*time.nowtime/time.alltime) / 2,settings.judge_line_y+30,time.nowtime/time.alltime * progress_bar,5)
+    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-(progress_bar*time.nowtime/time.alltime) / 2,judgePos+30,time.nowtime/time.alltime * progress_bar,5)
 
     love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-progress_bar/2,settings.judge_line_y+29,1,7)
-    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2+progress_bar/2,settings.judge_line_y+29,1,7)
+    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-progress_bar/2,judgePos+29,1,7)
+    love.graphics.rectangle("fill",start_x + (end_x - start_x)/2+progress_bar/2,judgePos+29,1,7)
 
     --判定线
     love.graphics.setColor(0,0.7,0.7,1) --判定线内部
-    love.graphics.rectangle("fill",start_x,settings.judge_line_y-5,end_x - start_x,10)
+    love.graphics.rectangle("fill",start_x,judgePos-5,end_x - start_x,10)
 
 
     love.graphics.setColor(1,1,1,1) --判定线 play
 
-    love.graphics.rectangle("line",start_x,settings.judge_line_y-8,end_x - start_x,16) --8是为了对其中心
-
+    love.graphics.rectangle("line",start_x,judgePos-8,end_x - start_x,16) --8是为了对其中心
     love.graphics.pop()
 end
 
