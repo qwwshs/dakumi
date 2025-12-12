@@ -20,7 +20,7 @@ function buttonSave:keypressed(key)
 end
 
 function buttonSave:update(dt)
-    if elapsed_time - self.time >= 114 and (not demo) and settings.auto_save == 1 then --保存
+    if elapsed_time - self.time >= 114 and (not demo.open) and settings.auto_save == 1 then --保存
         self.time = elapsed_time
         self:click()
         messageBox:add("auto_save")

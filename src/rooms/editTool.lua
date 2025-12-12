@@ -51,8 +51,8 @@ end
 
 function editTool:update(dt)
     self('update',dt)
-
-
+    
+    if demo.open then return end
     if Nui:windowBegin('editTool', self.layout.x, self.layout.y, self.layout.w, self.layout.h,'border') then
         Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
         local isbutton = editTool:getAllTypeObject('button')
@@ -88,7 +88,7 @@ function editTool:update(dt)
 end
 
 function editTool:draw()
-    if demo then
+    if demo.open then
         return
     end
 
@@ -98,7 +98,7 @@ function editTool:draw()
 end
 
 function editTool:keypressed(key)
-    if demo then
+    if demo.open then
         return
     end
     if mouse.x >= self.layout.x + self.layout.w then return end
@@ -108,21 +108,21 @@ function editTool:keypressed(key)
 end
 
 function editTool:mousepressed( x, y, button, istouch, presses )
-    if demo then
+    if demo.open then
         return
     end
     self('mousepressed', x, y, button, istouch, presses )
 end
 
 function editTool:textinput(input)
-    if demo then
+    if demo.open then
         return
     end
     self('textinput',input)
 end
 
 function editTool:mousereleased( x, y, button, istouch, presses )
-    if demo then
+    if demo.open then
         return
     end
     
@@ -130,7 +130,7 @@ function editTool:mousereleased( x, y, button, istouch, presses )
 end
 
 function editTool:wheelmoved(x, y)
-    if demo then
+    if demo.open then
         return
     end
     if mouse.x >= self.layout.x + self.layout.w then return end
