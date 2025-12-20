@@ -56,7 +56,7 @@ function hit:update(dt)
                 self.sound:seek(0)
                 self.sound:play()
             end
-            if settings.hit == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) then
+            if settings.hit == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) and time.nowtime - beat:toTime(chart.bpm_list,noteBeat) < 0.5 then
                 self.tab[#self.tab + 1] = { x = fTrack:to_play_track_x(x), time = time.nowtime, track = noteTrack }
             end
         end
@@ -96,12 +96,12 @@ function hit:draw()
         hit_light_alpha = hit_light_alpha * 0.5
 
         if time.nowtime - self.tab[i].time > hit_time or time.nowtime - self.tab[i].time < 0  then
-            hit_alpha = 0
+            hit_alpha = 1
         else
             local_hit_tab[#local_hit_tab + 1] = self.tab[i]
         end
         if time.nowtime - self.tab[i].time > hit_light_time or time.nowtime - self.tab[i].time < 0 then
-            hit_light_alpha = 0
+            hit_light_alpha = 1
         end
 
 

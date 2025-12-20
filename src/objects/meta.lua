@@ -30,10 +30,7 @@ meta_event = { --谱面事件格式 元表
         from = 1,
         to = 1,
         trans = {
-            1,
-            1,
-            1,
-            1,
+            trans = {0,0,1,1},
             type = 'bezier',
             easings = 1
         },
@@ -56,17 +53,28 @@ function meta_chart.__index:update()
             find_form = true
         end
     end
-    if find_form then
-        save(chart, 'chart.json')
-    end
+
     --note fake填充
     for i = 1, #chart.note do
         chart.note[i].fake = chart.note[i].fake or 0
     end
-    --event trans类型填充
+    --event trans类型填充 并转移event的trans数字部分
     for i = 1, #chart.event do
         local trans = chart.event[i].trans
+        if #trans > 0 then
+            --记录数字索引
+            local trans_tab = {}
+            for j = 1, #trans do
+                trans_tab[j] = trans[j]
+            end
+            --删除数字索引
+            for j = 1, #trans do
+                chart.event[i].trans[j] = nil
+            end
+            chart.event[i].trans.trans = trans_tab
+        end
         trans.type = trans.type or 'bezier'
+        trans.easings = trans.easings or 1
     end
     --hold note head和wipe head填充
     for i = 1, #chart.note do
@@ -79,53 +87,8 @@ end
 
 function meta_chart.__index:load()
     self:update()
-    --解决谱面trans索引混乱的问题
-    local function sortNumericKeys(tbl)
-        -- 收集数字键值对
-        local numericEntries = {}
-        local otherEntries = {}
+    save(chart, 'chart.json')
 
-        -- 分离数字索引和其他类型的键
-        for k, v in pairs(tbl) do
-            if type(k) == "number" then
-                table.insert(numericEntries, { key = k, value = v })
-            else
-                otherEntries[k] = v
-            end
-        end
-
-        -- 按数字键排序
-        table.sort(numericEntries, function(a, b)
-            return a.key < b.key
-        end)
-
-        -- 创建新表，重新设置连续的数字索引
-        local newTable = {}
-
-        -- 添加其他类型的键
-        for k, v in pairs(otherEntries) do
-            newTable[k] = v
-        end
-
-        -- 重新设置数字索引（从1开始连续）
-        for i, entry in ipairs(numericEntries) do
-            newTable[i] = entry.value
-        end
-
-        return newTable
-    end
-
-    for i = 1, #chart.event do
-        local v = chart.event[i]
-        --先化索引为数字
-        for k, val in pairs(v.trans) do
-            if type(k) ~= "number" and tonumber(k) then
-                v.trans[tonumber(k)] = val
-                v.trans[k] = nil
-            end
-        end
-        v.trans = sortNumericKeys(v.trans)
-    end
 end
 
 meta_settings = { --设置基本格式 元表

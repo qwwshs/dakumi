@@ -73,14 +73,13 @@ function demoPlay:draw()
             x,w = fTrack:to_play_track(x,w) --为了居中
             x = x * sw
             w = w * sw
-            --倾斜计算
             if track.track == all_track[i] and (not demo.open ) then --选择到的底板
                 love.graphics.setColor(1,1,1,0.2) 
-                love.graphics.rectangle("fill",x,0,w,judgePos)
+                love.graphics.rectangle("fill",x,0,w,WINDOW.h)
             end
             if w ~= 0 then
                 love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
-                love.graphics.rectangle("line",x,0,w,judgePos)
+                love.graphics.rectangle("line",x,0,w,WINDOW.h)
             end
             if not demo.open then
                 love.graphics.setColor(1,1,1,1) --轨道编号
