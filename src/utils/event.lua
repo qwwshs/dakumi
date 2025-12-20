@@ -11,15 +11,7 @@ end
 
 event.local_event = {} -- 局部event表
 event.hold_type = 0 --长条状态 0没放 1头 2尾
-event.__index = {
-    type = 'x',
-    track = 0,
-    beat = {0,0,1},
-    beat2 = {0,0,2},
-    from = 0,
-    to = 0,
-    trans = {1,1,1,1,type='bezier'}
-}
+event.__index = meta_event.__index
 function event:cleanUp() --长条清除
     event.local_event = {}
     event.hold_type = 0
@@ -27,7 +19,7 @@ end
 
 function event:getTrans(isevent,t)
     if isevent.trans.type == 'bezier' then
-        return bezier(0,1,0,1,isevent.trans,t)
+        return bezier(0,1,0,1,isevent.trans.trans,t)
     elseif isevent.trans.type == 'easings' then
         return easings[isevent.trans.easings](t)
     else return 1
@@ -107,14 +99,13 @@ function event:place(type,pos)
     local event_beat = beat:toNearby(beat:yToBeat(pos))
 
     if event.hold_type == 0 then --放置头
-            event.local_event = {
-                type = type,
-                track = track.track,
-                beat = {event_beat[1],event_beat[2],event_beat[3]},
-                from = 0,
-                to = 0,
-                trans = {type = 'easings',easings = easings_index}
-            }
+            event.local_event = table.copy(meta_event.__index)
+            event.local_event.type = type
+            event.local_event.track = track.track
+            event.local_event.beat = {event_beat[1],event_beat[2],event_beat[3]}
+            event.local_event.trans.type = 'easings'
+            event.local_event.trans.easings = easings_index
+
             event.hold_type = 1
             local x,w = event:get(event.local_event.track,beat:get(event.local_event.beat)) --把数值设定为上次event结尾的数值
             if type == "x" then

@@ -3,9 +3,14 @@ demo.layout = require 'config.layouts.demo'
 demo.open = false              --演示界面开关
 demo:addObject(require 'src.objects.demo.demoPlay')
 demo:addObject(require 'src.objects.demo.hit')
+demo:addObject(require 'src.objects.demo.comboAndScore')
 function demo:keypressed(key)
     if key == 'tab' then
         demo.open = not demo.open
+    end
+    --特别的
+    if key == 'space' and demo.open then
+        musicPlay:click()
     end
     self('keypressed', key)
 end

@@ -1,11 +1,5 @@
 local note = object:new('note')
-note.__index = {
-    type = 'note',
-    track = 1,
-    beat = {0,0,1},
-    beat2 = {0,0,2},
-    fake = 0
-}
+note.__index = meta_note.__index
 
 note.local_hold = {} -- 局部hold表
 note.hold_type = 0 --长条状态 0没放 1头 2尾
@@ -62,12 +56,12 @@ function note:place(note_type,pos)
                 return false
             end
         end
-        chart.note[#chart.note + 1] = {
-            type = note_type,
-            track = track.track,
-            beat = {note_beat[1],note_beat[2],note_beat[3]},
-            fake = noteFake.v
-        }
+        chart.note[#chart.note + 1] = table.copy(note.__index)
+        chart.note[#chart.note].type = note_type
+        chart.note[#chart.note].track = track.track
+        chart.note[#chart.note].beat = {note_beat[1],note_beat[2],note_beat[3]}
+        chart.note[#chart.note].fake = noteFake.v
+
         note.local_tab = {type = note_type,
         track = track.track,
         beat = {note_beat[1],note_beat[2],note_beat[3]}
@@ -84,11 +78,12 @@ function note:place(note_type,pos)
             }
             note.hold_type = 1
             
-            note.local_tab = {type = note_type,
-                track = track.track,
-                beat = {note_beat[1],note_beat[2],note_beat[3]},
-                fake = noteFake.v}
-
+            note.local_tab = table.copy(note.local_tab)
+            note.local_tab.type = note_type
+            note.local_tab.beat = {note_beat[1],note_beat[2],note_beat[3]}
+            note.local_tab.track = track.track
+            note.local_tab.fake = noteFake.v
+            
         elseif note.hold_type == 1 then
             note.local_hold.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 
             note.local_tab.beat2 = {note_beat[1],note_beat[2],note_beat[3]} 

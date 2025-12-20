@@ -73,23 +73,23 @@ function play:update(dt)
         if v then
             if (beat:get(v.beat) <= beat.nowbeat and beat:get(v.beat2) > beat.nowbeat) or (beat:get(v.beat2) <= beat.nowbeat) then
                 if v.type == "note_alpha" and (not now_note_alpha_ed) then
-                    play.effect.note_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans,
+                    play.effect.note_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans.trans,
                         beat.nowbeat)
                     now_note_alpha_ed = true
                 elseif v.type == "track_alpha" and (not now_track_alpha_ed) then
-                    play.effect.track_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans,
+                    play.effect.track_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans.trans,
                         beat.nowbeat)
                     now_track_alpha_ed = true
                 elseif v.type == "track_line_alpha" and (not now_track_alpha_ed) then
-                    play.effect.track_line_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans,
+                    play.effect.track_line_alpha = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans.trans,
                         beat.nowbeat)
                     now_track_line_alpha_ed = true
                 elseif v.type == "note_rotate" and (not now_track_alpha_ed) then
-                    play.effect.note_rotate = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans,
+                    play.effect.note_rotate = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans.trans,
                         beat.nowbeat)
                     now_note_rotate_ed = true
                 elseif v.type == "scroll" and (not now_track_alpha_ed) then
-                    play.effect.scroll = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans, beat.nowbeat)
+                    play.effect.scroll = bezier(beat:get(v.beat), beat:get(v.beat2), v.from, v.to, v.trans.trans, beat.nowbeat)
                     now_scroll_ed = true
                 end
             end

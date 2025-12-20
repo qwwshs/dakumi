@@ -67,15 +67,14 @@ function alt:keypressed(key)
                         event_min_denom = k
                     end
                 end
-                local local_event = {
-                    type = temp_event.type,
-                    track = temp_event.track,
-                    beat = {math.floor(isnow_beat),event_min_denom ,denom.denom*2},
-                    beat2 = {math.floor(isnow_beat),event_min_denom + 1 ,denom.denom*2},
-                    from = temp_event_int[i],
-                    to = temp_event_int[i + 1],
-                    trans = {[1] = 0,[2] = 0,[3] = 1,[4] = 1}
-                }
+                local local_event = table.copy(meta_event.__index)
+                local_event.type = temp_event.type
+                local_event.track = temp_event.track
+                local_event.beat = {math.floor(isnow_beat),event_min_denom ,denom.denom*2}
+                local_event.beat2 = {math.floor(isnow_beat),event_min_denom + 1 ,denom.denom*2}
+                local_event.from = temp_event_int[i]
+                local_event.to = temp_event_int[i + 1]
+
                 if isnow_beat > beat:get(chart.event[note_or_event_index].beat2) then
                     local_event.beat2 = temp_event.beat2
                 end

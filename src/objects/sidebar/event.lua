@@ -35,7 +35,7 @@ function Gevent:to(event_index)
     self.transv.value = ''
     if v.trans.type == 'bezier' then
         self.transType.value = 1
-        self.transv.value = table.concat(v.trans, ",")
+        self.transv.value = table.concat(v.trans.trans, ",")
     elseif v.trans.type == 'easings' then
         self.transType.value = 2
         self.transv.value = tostring(v.trans.easings)
@@ -169,12 +169,12 @@ function Gevent:NuiNext() --更新信息
     end
 
     if v.trans.type == 'bezier' then
-        for i = 1,#v.trans do
-            v.trans[i] = nil
+        for i = 1,#v.trans.trans do
+            v.trans.trans[i] = nil
         end
         for i in string.gmatch(self.transv.value, "[^,]+") do
             local value = tonumber(i) or 0
-            table.insert(v.trans,value)
+            table.insert(v.trans.trans,value)
         end
     elseif v.trans.type == 'easings' then
         value = tonumber(self.transv.value) or 1

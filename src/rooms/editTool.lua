@@ -2,7 +2,8 @@ local editTool =  group:new('editTool')
 editTool.layout = require 'config.layouts.editTool'
 
 editTool:addObject(require 'src.objects.editTool.save')
-editTool:addObject(require 'src.objects.editTool.musicPlay')
+musicPlay = require 'src.objects.editTool.musicPlay'
+editTool:addObject(musicPlay)
 denom = require 'src.objects.editTool.denom'
 editTool:addObject(denom)
 track = require 'src.objects.editTool.Track'
