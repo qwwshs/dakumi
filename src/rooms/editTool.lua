@@ -6,7 +6,7 @@ musicPlay = require 'src.objects.editTool.musicPlay'
 editTool:addObject(musicPlay)
 denom = require 'src.objects.editTool.denom'
 editTool:addObject(denom)
-track = require 'src.objects.editTool.Track'
+track = require 'src.objects.editTool.track'
 editTool:addObject(track) 
 musicSpeed = require 'src.objects.editTool.musicSpeed'
 editTool:addObject(musicSpeed)
