@@ -74,65 +74,65 @@ menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = '',img = isImage
 
 menuUI.fileTool[#menuUI.fileTool].func = function()
     messageBox:add("dakumi")
-    love.system.openURL("https://dakumi.com")
+    love.system.openURL(PATH.web.dakumi)
 end
 
 menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = '',img = isImage.github}
 
 menuUI.fileTool[#menuUI.fileTool].func = function()
     messageBox:add("github")
-    love.system.openURL("https://github.com/qwwshs/daikumi_editor/")
+    love.system.openURL(PATH.web.github)
 end
 
-menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'file select'}
+--menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'file select'}
 
-menuUI.fileTool[#menuUI.fileTool].func = function()
-    if true then return end --暂时禁用 有问题
-    local fileselect = ffi.load("fileselect")
-    -- 定义函数原型
-    ffi.cdef[[
-        const char* OpenFileDialog(const char* filter);
-        const char* SaveFileDialog(const char* filter);
-    ]]
-    -- ANSI 到 UTF-8 的转换函数
-    local function ansi_to_utf8(ansi_str)
-        -- 常量定义
-        local CP_ACP = 0        -- ANSI代码页
-        local CP_UTF8 = 65001   -- UTF-8代码页
+--menuUI.fileTool[#menuUI.fileTool].func = function()
+--    if true then return end --暂时禁用 有问题
+--    local fileselect = ffi.load("fileselect")
+--    -- 定义函数原型
+--    ffi.cdef[[
+--        const char* OpenFileDialog(const char* filter);
+--        const char* SaveFileDialog(const char* filter);
+--    ]]
+--    -- ANSI 到 UTF-8 的转换函数
+--    local function ansi_to_utf8(ansi_str)
+--        -- 常量定义
+--        local CP_ACP = 0        -- ANSI代码页
+--        local CP_UTF8 = 65001   -- UTF-8代码页
     
-        -- 首先将 ANSI 转换为 UTF-16
-        local wlen = ffi.C.MultiByteToWideChar(CP_ACP, 0, ansi_str, -1, nil, 0)
-        if wlen <= 0 then return ansi_str end
-    
-        local wstr = ffi.new("wchar_t[?]", wlen)
-        ffi.C.MultiByteToWideChar(CP_ACP, 0, ansi_str, -1, wstr, wlen)
-    
-        -- 然后将 UTF-16 转换为 UTF-8
-        local utf8len = ffi.C.WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nil, 0, nil, nil)
-        if utf8len <= 0 then return ansi_str end
-    
-        local utf8str = ffi.new("char[?]", utf8len)
-        ffi.C.WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf8str, utf8len, nil, nil)
-    
-        return ffi.string(utf8str)
-    end
-
-    -- 定义文件过滤器
-    local filter = 
-    "Audio Files (*.ogg;*.mp3;*.wav)\0*.ogg;*.mp3;*.wav\0Chart Files (*.json;*.mc)\0*.json;*.mc\0Image Files (*.jpg;*.png)\0*.jpg;*.png\0Package Files (*.dkz)\0*.dkz\0All Files (*.*)\0*.*\0";
-    local selectedFile = fileselect.OpenFileDialog(filter)
-    if selectedFile ~= nil then
-        local filepath = ffi.string(selectedFile)
-        local lastSlashIndex = string.find(filepath, "\\[^\\]*$") --找到最后一个斜杠的位置
-        local file_name = string.sub(filepath, lastSlashIndex + 1) --从最后一个斜杠之后开始截取字符串
-        local file = love.filesystem.newFile("temporary/"..file_name)
-        file:open("w")
-        local data = nativefs.read(filepath)
-        file:write(data)
-        file:close()
-        menu:filedropped(file) --导入文件
-    end
-end
+--        -- 首先将 ANSI 转换为 UTF-16
+--        local wlen = ffi.C.MultiByteToWideChar(CP_ACP, 0, ansi_str, -1, nil, 0)
+--        if wlen <= 0 then return ansi_str end
+--    
+--        local wstr = ffi.new("wchar_t[?]", wlen)
+--        ffi.C.MultiByteToWideChar(CP_ACP, 0, ansi_str, -1, wstr, wlen)
+--    
+--        -- 然后将 UTF-16 转换为 UTF-8
+--        local utf8len = ffi.C.WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nil, 0, nil, nil)
+--        if utf8len <= 0 then return ansi_str end
+--    
+--        local utf8str = ffi.new("char[?]", utf8len)
+--        ffi.C.WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf8str, utf8len, nil, nil)
+--    
+--        return ffi.string(utf8str)
+--    end
+--
+--    -- 定义文件过滤器
+--    local filter = 
+--    "Audio Files (*.ogg;*.mp3;*.wav)\0*.ogg;*.mp3;*.wav\0Chart Files (*.json;*.mc)\0*.json;*.mc\0Image Files (*.jpg;*.png)\0*.jpg;*.png\0Package Files (*.dkz)\0*.dkz\0All Files (*.*)\0*.*\0";
+--    local selectedFile = fileselect.OpenFileDialog(filter)
+--    if selectedFile ~= nil then
+--        local filepath = ffi.string(selectedFile)
+--        local lastSlashIndex = string.find(filepath, "\\[^\\]*$") --找到最后一个斜杠的位置
+--        local file_name = string.sub(filepath, lastSlashIndex + 1) --从最后一个斜杠之后开始截取字符串
+--        local file = love.filesystem.newFile("temporary/"..file_name)
+--        file:open("w")
+--        local data = nativefs.read(filepath)
+--        file:write(data)
+--        file:close()
+--        menu:filedropped(file) --导入文件
+--    end
+--end
 
 menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'export'}
 

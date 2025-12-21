@@ -53,6 +53,7 @@ function demoPlay:draw()
     local all_track = fTrack:track_get_all_track()
     
     if next(all_track_pos) == nil then --没有轨道
+        love.graphics.pop()
         return
     end
 
