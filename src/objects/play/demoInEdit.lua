@@ -180,14 +180,14 @@ function demoInEdit:draw(pos, istrack)
     love.graphics.setColor(0, 0, 0, 0.5)
     love.graphics.rectangle("fill", pos, settings.judge_line_y + 10, track_w, WINDOW.h - settings.judge_line_y) --遮罩
     love.graphics.setColor(1, 1, 1, 1)                                                                          --现在节拍
-    love.graphics.print(i18n:get('beat') .. ":" .. math.floor(beat.nowbeat * 100) / 100, pos, settings.judge_line_y + 20)
-    love.graphics.print(i18n:get('time') .. ":" .. math.floor(time.nowtime * 100) / 100, pos, settings.judge_line_y + 40)
+    love.graphics.print(i18n:get('beat') .. ":" .. math.roundToPrecision(beat.nowbeat, 100), pos, settings.judge_line_y + 20)
+    love.graphics.print(i18n:get('time') .. ":" .. math.roundToPrecision(time.nowtime, 100), pos, settings.judge_line_y + 40)
     local now_x, now_w = 0, 0
     if all_track_pos[istrack] then
         now_x, now_w = all_track_pos[istrack].x, all_track_pos[istrack].w
     end
-    love.graphics.print(i18n:get('x') .. ":" .. math.floor(now_x * 100) / 100, pos + 100, settings.judge_line_y + 20)
-    love.graphics.print(i18n:get('w') .. ":" .. math.floor(now_w * 100) / 100, pos + 200, settings.judge_line_y + 20)
+    love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100, settings.judge_line_y + 20)
+    love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200, settings.judge_line_y + 20)
     love.graphics.print(i18n:get('track') .. ":" .. istrack, pos, settings.judge_line_y + 60)
 end
 

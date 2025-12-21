@@ -11,20 +11,20 @@ demoPlay.ui.wipe = isImage.wipe2
 demoPlay.ui.hold = isImage.hold_head2
 demoPlay.ui.holdBody = isImage.hold_body2
 demoPlay.ui.holdTail = isImage.hold_tail2
-local ui_tab = love.filesystem.getDirectoryItems("ui") --得到文件夹下的所有文件
+local ui_tab = nativefs.getDirectoryItems(PATH.usersPath.ui) --得到文件夹下的所有文件
 if ui_tab and #ui_tab > 0 then
     for i=1,#ui_tab do
         local v = ui_tab[i]
-        if string.find(v,"ui_note") then
-            demoPlay.ui.note = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_wipe") then
-            demoPlay.ui.wipe = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_head") then
-            demoPlay.ui.hold = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_body") then
-            demoPlay.ui.holdBody = love.graphics.newImage("ui/"..v)
-        elseif string.find(v,"ui_hold_tail") then
-            demoPlay.ui.holdTail = love.graphics.newImage("ui/"..v)
+        if string.find(v,"note") then
+            demoPlay.ui.note = love.graphics.newImage(PATH.usersPath.ui..v)
+        elseif string.find(v,"wipe") then
+            demoPlay.ui.wipe = love.graphics.newImage(PATH.usersPath.ui..v)
+        elseif string.find(v,"holdHead") then
+            demoPlay.ui.hold = love.graphics.newImage(PATH.usersPath.ui..v)
+        elseif string.find(v,"holdBody") then
+            demoPlay.ui.holdBody = love.graphics.newImage(PATH.usersPath.ui..v)
+        elseif string.find(v,"holdTail") then
+            demoPlay.ui.holdTail = love.graphics.newImage(PATH.usersPath.ui..v)
         end
     end
 end

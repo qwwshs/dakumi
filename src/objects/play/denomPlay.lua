@@ -26,7 +26,7 @@ local beat_y = 0
         goto next
 
         ::denom::
-           local isdenom =i - math.floor(i / denom.denom) * denom.denom
+           local isdenom =i - math.roundToPrecision(i,denom.denom)
             local r,g,b = 0, 0.4, 0.4
             if denom.denom % 3 == 0 and denom.denom % 4 ~= 0 then
                   r,g,b = 0, 1, 0.2

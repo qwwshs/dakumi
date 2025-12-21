@@ -20,11 +20,11 @@ function Gnil:Nui()
     end
     if Nui:button(i18n:get("dakumi")) then
         messageBox:add("dakumi")
-        love.system.openURL("https://dakumi.qwwshs.top")
+        love.system.openURL(PATH.web.dakumi)
     end
     if Nui:button(i18n:get("github")) then
         messageBox:add("github")
-        love.system.openURL("https://github.com/qwwshs/daikumi/")
+        love.system.openURL(PATH.web.github)
     end
 end
 
