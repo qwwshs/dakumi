@@ -6,7 +6,6 @@ serpent = require("src.utils.serpent") --lua序列化
 require("src.utils.room")
 require('src/objects/meta')
 
-require("src.utils.music")
 beat = require("src.utils.beat")
 fEvent = require("src.utils.event")
 fNote = require("src.utils.note")

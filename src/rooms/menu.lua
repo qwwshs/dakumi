@@ -287,24 +287,20 @@ function menu:filedropped(file) -- 文件拖入
     elseif string.find(flie_name, ".ogg") or string.find(flie_name, ".mp3") or string.find(flie_name, ".wav") then --音频文件
         --创建新文件夹
         local path_name = flie_name                                                                             --文件夹名
-        local music_type = get_music_type(file)
-
-        if music_type == "unknown" then --后缀错误
-            love.window.showMessageBox('Unknown audio format', i18n:get('Unknown audio format'))
-            return
-        end
 
         path_name = string.sub(path_name, 1, string.find(path_name, ".[^.]*$")) --删除后缀
 
         while love.filesystem.getInfo(PATH.usersPath.chart .. path_name) do   --防止撞名
             path_name = path_name .. "_"
         end
-        local new_file_name = path_name .. "." .. music_type                                                        --防止后缀错误
-        love.filesystem.createDirectory(PATH.usersPath.chart .. path_name)                                          --创建新的文件夹
-        love.filesystem.newFile(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, "w")
-        love.filesystem.write(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, content)                   --复制到新的文件夹
-        love.filesystem.newFile(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', "w")
-        love.filesystem.write(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', dkjson.encode(meta_chart.__index)) --复制到新的文件夹
+        local new_file_name = flie_name
+        nativefs.createDirectory(PATH.usersPath.chart .. path_name)                                          --创建新的文件夹
+        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, "w")
+        nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, content)                   --复制到新的文件夹
+        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', "w")
+        local tab = {}
+        table.fill(tab,meta_chart.__index)
+        nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', dkjson.encode(tab)) --复制到新的文件夹
     end
     nativefs.unmount()
     menu:flushed() --重新加载
