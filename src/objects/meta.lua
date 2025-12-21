@@ -83,6 +83,8 @@ function meta_chart.__index:update()
             chart.note[i].wipe_head = chart.note[i].wipe_head or 0
         end
     end
+    --track填充
+
 end
 
 function meta_chart.__index:load()

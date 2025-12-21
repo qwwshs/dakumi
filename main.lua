@@ -26,7 +26,11 @@ PATH = {
         auto_save = 'users/auto_save/',
         ui = 'users/ui/',
     },
-    base = love.filesystem.getSourceBaseDirectory( ) --保存路径
+    base = love.filesystem.getSourceBaseDirectory( ), --保存路径
+    web = {
+        github = "https://github.com/qwwshs/daikumi/",
+        dakumi = "https://dakumi.qwwshs.top"
+    }
 }
 
 

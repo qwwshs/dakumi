@@ -54,8 +54,8 @@ function slider:draw()
     love.graphics.rectangle('fill',self.x,self.now_y,self.w,4) --现在所在位置点 
     if slider.down then
         love.graphics.setColor(1,1,1,1) 
-        love.graphics.print(i18n:get("nowtime")..":"..(math.floor(time.nowtime*100)/100).."\n"..
-        i18n:get("beat")..":"..math.floor(beat.nowbeat*100)/100,self.x+self.w,self.now_y)
+        love.graphics.print(i18n:get("nowtime")..":"..math.roundToPrecision(time.nowtime,100).."\n"..
+        i18n:get("beat")..":"..math.roundToPrecision(beat.nowbeat,100),self.x+self.w,self.now_y)
     end
 
 end
