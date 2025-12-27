@@ -12,9 +12,8 @@ function slider:draw()
     if demo.open then
         return
     end
-    love.graphics.setColor(0.15,0.15,0.15,0.7)
-    love.graphics.rectangle('fill',self.x,self.y,self.w,self.h) -- 框
-    love.graphics.setColor(1,1,1,1)
+    setColor(editTool.colors.slider)
+    love.graphics.rectangle('fill',self.x,self.y,self.w,self.h)
 
     local local_tab = {1} --用来计算密度的
     for i = 1 ,100 do
@@ -44,16 +43,16 @@ function slider:draw()
     for i = 1, 100, 1 do
         local max_h = self.w
         local density_ratio = (local_tab[i]-min) / (max - min) --密度比例
-        love.graphics.setColor(density_ratio * 1,1 - density_ratio * 1,1 - density_ratio * 1,1)
+        setColor(density_ratio * 1,1 - density_ratio * 1,1 - density_ratio * 1,1)
         love.graphics.rectangle("fill",self.x,self.y+ self.h - self.h / 100 * i,density_ratio * max_h,self.h / 100)
     end
 
-    love.graphics.setColor(1,1,1,0.5)
+    setColor(editTool.colors.sliderLine)
     love.graphics.rectangle('line',self.x,self.y,self.w,self.h) -- 框
-    love.graphics.setColor(1,1,1,1)
+    setColor(editTool.colors.progress)
     love.graphics.rectangle('fill',self.x,self.now_y,self.w,4) --现在所在位置点 
     if slider.down then
-        love.graphics.setColor(1,1,1,1) 
+        setColor("white") 
         love.graphics.print(i18n:get("nowtime")..":"..math.roundToPrecision(time.nowtime,100).."\n"..
         i18n:get("beat")..":"..math.roundToPrecision(beat.nowbeat,100),self.x+self.w,self.now_y)
     end

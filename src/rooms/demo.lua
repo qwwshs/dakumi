@@ -1,5 +1,6 @@
 local demo = group:new('demo') --演示界面
 demo.layout = require 'config.layouts.demo'
+demo.colors = require 'config.colors.demo'
 demo.open = false              --演示界面开关
 demo:addObject(require 'src.objects.demo.demoPlay')
 demo:addObject(require 'src.objects.demo.hit')
@@ -19,7 +20,7 @@ function demo:draw()
     if not self.open then
         return
     end
-    love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
+    setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
         --图像范围限制函数

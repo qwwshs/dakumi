@@ -7,7 +7,7 @@ play.effect = {
     note_rotate = 0,
 }     --影响效果
 play.layout = require 'config.layouts.play'
-
+play.colors = require 'config.colors.play'
 function play:get_all_track_pos()
     return play.now_all_track_pos
 end
@@ -108,7 +108,7 @@ function play:draw()
     if demo.open then
         return
     end
-    love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
+    setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
         --图像范围限制函数
@@ -133,7 +133,10 @@ function play:draw()
         love.graphics.setStencilTest()
     end
 
-    love.graphics.setColor(1, 1, 1, 1) --总note event 数
+    
+    self('draw')
+
+    setColor('white') --总note event 数
     local str = 'note: ' .. #chart.note .. '  event: ' .. #chart.event
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
@@ -141,21 +144,22 @@ function play:draw()
     local event_h = settings.note_height
     local event_w = 75
     for i = #chart.event, 1, -1 do
-        if chart.event[i].track == track.track then
-            if chart.event[i].type == "w" then
-                love.graphics.setColor(1, 1, 1, 1)
-            elseif chart.event[i].type == "x" then
-                love.graphics.setColor(0, 1, 1, 1)
+        local isevent = chart.event[i]
+        if isevent.track == track.track then
+            if isevent.type == "w" then
+                setColor(self.colors.wEventInDemo)
+            elseif isevent.type == "x" then
+                setColor(self.colors.xEventInDemo)
             end
-            local y = beat:toY(chart.event[i].beat)
-            local y2 = beat:toY(chart.event[i].beat2)
+            local y = beat:toY(isevent.beat)
+            local y2 = beat:toY(isevent.beat2)
             local event_h2 = y - y2 - event_h * 2
             if not (y2 > WINDOW.h or y < 0) then
                 -- beizer曲线
                 for k = 1, 10 do
-                    local nowx = fTrack:to_play_track_x(chart.event[i].from) +
-                    fEvent:getTrans(chart.event[i], k / 10) *
-                    fTrack:to_play_track_x(chart.event[i].to - chart.event[i].from)
+                    local nowx = fTrack:to_play_track_x(isevent.from) +
+                    fEvent:getTrans(isevent, k / 10) *
+                    fTrack:to_play_track_x(isevent.to - isevent.from)
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)   --减去一个 (y2 - y)/10是为了与头对齐
                 end
@@ -166,18 +170,17 @@ function play:draw()
     end
 
     --栅栏绘制
-    love.graphics.setColor(1, 1, 1, 0.5)
+    setColor(self.colors.fence)
     for i = 1, track.fence do
         love.graphics.rectangle("fill", (self.layout.demo.w + self.layout.demo.x) / track.fence * i, self.layout.demo.y,
             2, self.layout.demo.h)
     end
     if self.layout.demo.w / track.fence * fTrack:track_get_near_fence() < self.layout.demo.w then
-        love.graphics.setColor(0, 1, 1, 0.7)
+        setColor(self.colors.nearFence)
         love.graphics.rectangle("fill", self.layout.demo.w / track.fence * fTrack:track_get_near_fence(),
             self.layout.demo.y, 2, self.layout.demo.h)
     end
 
-    self('draw')
 end
 
 function play:keypressed(key)

@@ -1,5 +1,4 @@
 local alt = object:new('alt')
-
 function alt:keypressed(key)
     if not isalt then
         return

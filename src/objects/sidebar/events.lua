@@ -199,7 +199,7 @@ function Gevents:Nui()
         self:transDo()
     end
 
-    love.graphics.setColor(1,1,1)
+    setColor("white")
     local x = self.layout.bezier.x
     local y = self.layout.bezier.y
     local w = self.layout.bezier.w

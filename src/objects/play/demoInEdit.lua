@@ -25,26 +25,26 @@ function demoInEdit:draw(pos, istrack)
     local _scale_h = 1 / self._height * note_h
     pos = pos or track_x
     istrack = istrack or track.track
-    love.graphics.setColor(1, 1, 1, 1) --轨道
+    setColor("white") --轨道
     love.graphics.rectangle("line", pos, 0, one_track_w, track_h)
 
-    love.graphics.setColor(1, 1, 1, 1) -- 侧线左
+    -- 侧线左
     love.graphics.rectangle("fill", pos, 0, 3, track_h)
 
-    love.graphics.setColor(1, 1, 1, 1) -- x轨道
+    -- x轨道
     love.graphics.rectangle("line", pos + interval, track_y, one_track_w, track_h)
 
-    love.graphics.setColor(1, 1, 1, 1) -- w轨道
+     -- w轨道
     love.graphics.rectangle("line", pos + interval * 2, track_y, one_track_w, track_h)
 
-    love.graphics.setColor(1, 1, 1, 1) -- 侧线右
+    -- 侧线右
     love.graphics.rectangle("fill", pos + one_track_w + interval * 2, track_y, 3, track_h)
 
-    love.graphics.setColor(1, 1, 1, 1) --判定线
+    --判定线
     love.graphics.rectangle("fill", pos, settings.judge_line_y, one_track_w + interval * 2, 10)
 
 
-    love.graphics.setColor(1, 1, 1, 1)
+    setColor('white')
     --note(edit区域渲染)
     for i = 1, #chart.note do
         if chart.note[i].track == istrack then
@@ -72,10 +72,10 @@ function demoInEdit:draw(pos, istrack)
                     end
                 end
                 if chart.note[i].fake and chart.note[i].fake == 1 then                                   --假note
-                    love.graphics.setColor(1, 0, 0, 1)
+                    setColor(play.colors.isFakeNote)
                     love.graphics.rectangle('line', pos, y - note_h, self.note_w, note_h)
                     love.graphics.printf('false', pos, y - note_h, one_track_w, 'center')
-                    love.graphics.setColor(1, 1, 1, 1)
+                    setColor('white')
                 end
             elseif y < -note_h then
                 break
@@ -85,7 +85,7 @@ function demoInEdit:draw(pos, istrack)
     --放置一半的长条渲染
     local thelocal_hold = fNote:getHoldTable()
     if thelocal_hold.beat and thelocal_hold.track == istrack then -- 存在
-        love.graphics.setColor(1, 1, 1, 1)
+        setColor('white')
         local y = beat:toY(thelocal_hold.beat)
         local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
         local note_h2 = y - y2 - note_h * 2
@@ -106,7 +106,7 @@ function demoInEdit:draw(pos, istrack)
         if chart.note[note_index].type == 'hold' then
             y2 = beat:toY(chart.note[note_index].beat2)
         end
-        love.graphics.setColor(1, 1, 1, 0.5)
+        setColor(play.colors.selectNote)
         love.graphics.rectangle("fill", pos, y2, one_track_w, y - y2)
     end
 
@@ -115,7 +115,7 @@ function demoInEdit:draw(pos, istrack)
     local event_w = 75
     for i = 1, #chart.event do
         if chart.event[i].track == istrack then
-            love.graphics.setColor(1, 1, 1, 1)
+            setColor('white')
             local y = beat:toY(chart.event[i].beat)
             local y2 = beat:toY(chart.event[i].beat2)
             local event_h2 = y - y2 - event_h * 2
@@ -147,7 +147,7 @@ function demoInEdit:draw(pos, istrack)
     --放置一半的event渲染
     local thelocal_event = fEvent:getHoldTable()
     if thelocal_event.beat and thelocal_event.track == istrack then -- 存在
-        love.graphics.setColor(1, 1, 1, 1)
+        setColor('white')
         local y = beat:toY(thelocal_event.beat)
         local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
         local event_h2 = y - y2 - event_h * 2
@@ -169,7 +169,7 @@ function demoInEdit:draw(pos, istrack)
         chart.event[event_index].track == track.track then                   --框出现在编辑的event
         local y = beat:toY(chart.event[event_index].beat)
         local y2 = beat:toY(chart.event[event_index].beat2)
-        love.graphics.setColor(1, 1, 1, 0.5)
+        setColor(play.colors.selectingEvent)
         if chart.event[event_index].type == "x" then
             love.graphics.rectangle("fill", pos + interval, y2, one_track_w, y - y2)
         else
@@ -177,9 +177,9 @@ function demoInEdit:draw(pos, istrack)
         end
     end
 
-    love.graphics.setColor(0, 0, 0, 0.5)
+    setColor(play.colors.editInJudgheLineDownBg)
     love.graphics.rectangle("fill", pos, settings.judge_line_y + 10, track_w, WINDOW.h - settings.judge_line_y) --遮罩
-    love.graphics.setColor(1, 1, 1, 1)                                                                          --现在节拍
+    setColor('white')                                                                          --现在节拍
     love.graphics.print(i18n:get('beat') .. ":" .. math.roundToPrecision(beat.nowbeat, 100), pos, settings.judge_line_y + 20)
     love.graphics.print(i18n:get('time') .. ":" .. math.roundToPrecision(time.nowtime, 100), pos, settings.judge_line_y + 40)
     local now_x, now_w = 0, 0
