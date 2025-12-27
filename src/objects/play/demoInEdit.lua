@@ -106,7 +106,7 @@ function demoInEdit:draw(pos, istrack)
         if chart.note[note_index].type == 'hold' then
             y2 = beat:toY(chart.note[note_index].beat2)
         end
-        setColor(play.colors.selectNote)
+        setColor(play.colors.selectingNote)
         love.graphics.rectangle("fill", pos, y2, one_track_w, y - y2)
     end
 
