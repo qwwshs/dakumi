@@ -43,17 +43,17 @@ function ctrl:draw()
     local note_h = settings.note_height --25 * denom.scale
     local note_w = play.layout.edit.noteW
     if love.mouse.isDown(1) then        --复制框
-        love.graphics.setColor(0, 1, 1, 0.4)
+        setColor(play.colors.copySelectFill)
         love.graphics.rectangle("fill", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
-        love.graphics.setColor(0, 1, 1, 1)
+        setColor(play.colors.copySelectLine)
         love.graphics.rectangle("line", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
     end
     if self.copy_tab.type ~= "x" then
-        love.graphics.setColor(0, 1, 1, 0.5)
+        setColor(play.colors.copyAndPaste)
     else
-        love.graphics.setColor(1, 1, 1, 0.5)
+        setColor(play.colors.cutAndPaste)
     end
     --对所选标记
     for i = 1, #self.copy_tab.note do

@@ -86,7 +86,7 @@ function hit:draw()
 
         local hit_light_scale_w = 1 / self.lightW
         local hit_light_scale_h = 1 / self.lightH
-        love.graphics.setColor(1, 1, 1, 1)
+        setColor('white')
         local hit_time = 0.5
         local hit_alpha = (time.nowtime - self.tab[i].time) / hit_time
         hit_alpha = easings.out_quart(hit_alpha)
@@ -111,7 +111,7 @@ function hit:draw()
             local w = hit_scale_w * hit_alpha
             local h = hit_scale_h * hit_alpha
 
-            love.graphics.setColor(1, 1, 1, 1 - hit_alpha)
+            setColor(1, 1, 1, 1 - hit_alpha)
 
             love.graphics.draw(self.hit, x, y, 0, w, h)
 
@@ -119,7 +119,7 @@ function hit:draw()
             x = x * sw
             w = w * sw
 
-            love.graphics.setColor(1, 1, 1,0.5 - hit_light_alpha)
+            setColor(1, 1, 1,0.5 - hit_light_alpha)
 
             love.graphics.draw(self.light, x, judgePos - size, 0, hit_light_scale_w * w, hit_light_scale_h * size)
         end

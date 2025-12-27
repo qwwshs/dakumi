@@ -1,5 +1,5 @@
 local layout    = require 'config.layouts.menu' --菜单布局
-
+local colors    = require 'config.colors.menu' --菜单颜色
 menu            = room:new('menu')
 room:addRoom(menu)
 
@@ -101,7 +101,7 @@ function menu:load()
 end
 
 function menu:draw()
-    love.graphics.setColor(1, 1, 1, 0.2)
+    setColor(colors.line1)
 
     --装饰网格
     for i = 0, 74 do
@@ -111,7 +111,7 @@ function menu:draw()
         love.graphics.rectangle('fill', 0, i * 25, WINDOW.w, 1)
     end
 
-    love.graphics.setColor(1, 1, 1, 1)
+    setColor('white')
 
     if menu.chartInfo.bg then
         local bg_width, bg_height = menu.chartInfo.bg:getDimensions()  -- 得到宽高
@@ -132,30 +132,30 @@ function menu:draw()
     --歌曲信息
 
     --背景板
-    love.graphics.setColor(0.2, 0.2, 0.2, 0.7)
+    setColor(colors.bg)
     love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, layout.musicSelect.w,
         layout.musicSelect.h)
 
     --装饰线
-    love.graphics.setColor(1, 1, 1, 0.5)
+    setColor(colors.line2)
     love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, 1, layout.musicSelect.h)
-    love.graphics.setColor(1, 1, 1, 1)
+    setColor(colors.line3)
     love.graphics.rectangle("fill", layout.musicSelect.x - 5, layout.musicSelect.y, 3, layout.musicSelect.h)
 
 
     local middle = 400
     local fontHeight = love.graphics.getFont():getHeight()
 
-    love.graphics.setColor(1, 1, 1, 0.2)
+    setColor(colors.selectThisMusicTextBg)
     love.graphics.rectangle("fill", layout.musicSelect.x, middle - layout.musicSelect.musicH / 2, layout.musicSelect.w,
         layout.musicSelect.musicH)
 
 
     for i, v in ipairs(menu.chartTab) do
         if i == menu.selectMusicPos then
-            love.graphics.setColor(1, 1, 1, 1)
+            setColor(colors.selectThisMusicText)
         else
-            love.graphics.setColor(1, 1, 1, 0.5)
+            setColor(colors.unSelectThisMusicText)
         end
         love.graphics.printf(v, layout.musicSelect.x,
             (i - menu.selectMusicPos) * layout.musicSelect.musicH + middle - fontHeight / 2, layout.musicSelect.w,
@@ -165,20 +165,19 @@ function menu:draw()
 
     love.graphics.setFont(FONT.normal)
     local fontHeight = love.graphics.getFont():getHeight()
-    love.graphics.setColor(1, 1, 1, 1)
 
     --谱面信息
-    love.graphics.setColor(1, 1, 1, 0.2)
+    setColor(colors.chartInofoBg)
     love.graphics.rectangle("fill", layout.chartSelect.x, layout.chartSelect.y - layout.chartSelect.chartH / 2,
         layout.chartSelect.w, layout.chartSelect.h)
 
     for i = 1, #menu.chartInfo.chart_name do
         if i == menu.selectChartPos then
-            love.graphics.setColor(1, 1, 1, 1)
+            setColor(colors.selectThischartText)
         else
-            love.graphics.setColor(1, 1, 1, 0.5)
+            setColor(colors.unSelectThischartText)
         end
-        if not menu.chartInfo.chart_name[i].is_true_chart then love.graphics.setColor(1, 0.5, 0.5, 1) end
+        if not menu.chartInfo.chart_name[i].is_true_chart then setColor(colors.errorChart) end
         love.graphics.printf('chart:' .. menu.chartInfo.chart_name[i].name, layout.chartSelect.x,
             (menu.selectChartPos - i) * layout.chartSelect.chartH + layout.chartSelect.y - fontHeight / 2,
             layout.chartSelect.w, "center")
@@ -295,9 +294,9 @@ function menu:filedropped(file) -- 文件拖入
         end
         local new_file_name = flie_name
         nativefs.createDirectory(PATH.usersPath.chart .. path_name)                                          --创建新的文件夹
-        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, "w")
+        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. new_file_name)
         nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, content)                   --复制到新的文件夹
-        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', "w")
+        nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json')
         local tab = {}
         table.fill(tab,meta_chart.__index)
         nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', dkjson.encode(tab)) --复制到新的文件夹

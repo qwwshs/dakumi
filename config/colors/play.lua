@@ -1,0 +1,30 @@
+return {
+    fence = {1, 1, 1, 0.5},
+    nearFence = {0, 1, 1, 0.7},
+    xEventInDemo = {0, 1, 1, 1},
+    wEventInDemo = {1, 1, 1, 1},
+    copySelectFill = {0, 1, 1, 0.4},
+    copySelectLine = {0, 1, 1, 1},
+    copyAndPaste = {0, 1, 1, 0.5},
+    cutAndPaste = {1, 1, 1, 0.5},
+    isFakeNote = {1, 0, 0, 1},
+    selectingNote = {1, 1, 1, 0.5},
+    selectingEvent = {1, 1, 1, 0.5},
+    editInJudgheLineDownBg = {0, 0, 0, 0.5},
+    demoInJudgheLineDownBg = {0, 0, 0, 0.4},
+    selectingTrack = {1,1,1,0.2},
+    trackNum = {1,1,1,1},
+    selectingTrackNum = {0,1,1,1},
+    demoTrackline = {1,1,1,0.5}, --游玩区域侧线(内侧)
+    demoTrackline2 = {1,1,1,1}, --游玩区域侧线(外侧)
+    ProgressBar = {1,1,1,1},
+    Shield = {0,0,0,1}, --遮挡板judge line以下的
+    judgeLine = {0,0.7,0.7,1}, --判定线内部
+    judge = {1,1,1,1}, --判定线外部
+    beat = {1,1,1,1},
+    mouseBeat = {1,1,1,0.5},
+    denom = {0,0.4,0.4},
+    denom3and4 = {0, 1, 0.2},
+    denom2 = {0.8, 0.2, 1},
+    denomMid = {0.5, 1, 0.95},
+}

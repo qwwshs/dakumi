@@ -1,6 +1,6 @@
 local editTool =  group:new('editTool')
 editTool.layout = require 'config.layouts.editTool'
-
+editTool.colors = require 'config.colors.editTool'
 editTool:addObject(require 'src.objects.editTool.save')
 musicPlay = require 'src.objects.editTool.musicPlay'
 editTool:addObject(musicPlay)

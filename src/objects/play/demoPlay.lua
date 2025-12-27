@@ -45,7 +45,7 @@ function demoPlay:draw()
     love.graphics.translate(ex,ey)
     local judgePos = settings.judge_line_y *sh
     local effect = play:get_init_effect()
-    love.graphics.setColor(0,0, 0, 0.4) --游玩区域显示的背景板
+    setColor(play.colors.demoInJudgheLineDownBg) --游玩区域显示的背景板
     love.graphics.rectangle("fill",0,0,play.layout.demo.w*sw,WINDOW.h*sh)
 
     local all_track_pos = play:get_all_track_pos()
@@ -57,7 +57,7 @@ function demoPlay:draw()
         return
     end
 
-    love.graphics.setColor(0,0,0,0.5 * effect.track_alpha / 100 )  --底板
+    setColor(0,0,0,0.5 * effect.track_alpha / 100 )  --底板
 
     for i=1 ,#all_track do --轨道底板绘制
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
@@ -75,24 +75,24 @@ function demoPlay:draw()
             x = x * sw
             w = w * sw
             if track.track == all_track[i] and (not demo.open ) then --选择到的底板
-                love.graphics.setColor(1,1,1,0.2) 
+                setColor(play.colors.selectingTrack) 
                 love.graphics.rectangle("fill",x,0,w,WINDOW.h)
             end
             if w ~= 0 then
-                love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
+                setColor(1,1,1,effect.track_line_alpha / 100) --侧线
                 love.graphics.rectangle("line",x,0,w,WINDOW.h)
             end
             if not demo.open then
-                love.graphics.setColor(1,1,1,1) --轨道编号
+                setColor(play.colors.trackNum) --轨道编号
                 if track.track == all_track[i] then
-                    love.graphics.setColor(0,1,1,1) --轨道编号
+                    setColor(play.colors.selectingTrackNum) --轨道编号
                 end
                 love.graphics.printf(  all_track[i], x,judgePos-20,w, "center")
             end
     end
 
     --游玩区域侧线
-    love.graphics.setColor(1,1,1,0.5)
+    setColor(play.colors.demoTrackline)
     local x,w = fTrack:to_play_track(-chart.preference.x_offset,0.002*chart.preference.event_scale)
     x = x*sw
     w = w*sw
@@ -101,8 +101,8 @@ function demoPlay:draw()
     x = x*sw
     w = w*sw
     love.graphics.rectangle("fill",x,0,w,WINDOW.h)
-    
-    love.graphics.setColor(1,1,1,1)
+
+    setColor(play.colors.demoTrackline2) --游玩区域侧线(外侧)
     x,w = fTrack:to_play_track(-chart.preference.x_offset- 0.01 * chart.preference.event_scale,0.005 * chart.preference.event_scale)
     x = x*sw
     w = w*sw
@@ -114,7 +114,7 @@ function demoPlay:draw()
     
     local note_h = settings.note_height*sh --25 * denom.scale
     local _width, _height = demoPlay.ui.note:getDimensions() -- 得到宽高
-    love.graphics.setColor(1,1,1,effect.note_alpha / 100)
+    setColor(1,1,1,effect.note_alpha / 100)
 
     --展示侧note渲染
     local spacing = 20*sw --note和track的间距
@@ -167,24 +167,23 @@ function demoPlay:draw()
     --遮挡板
     local start_x = fTrack:to_play_track(-chart.preference.x_offset,0) *sw
     local end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale,0) *sw
-    love.graphics.setColor(0,0,0,1)
+    setColor(play.colors.Shield)
     love.graphics.rectangle("fill",start_x,judgePos,end_x - start_x,WINDOW.h - judgePos)
 
     --进度条
     local progress_bar = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale * 0.2,0) *sw
-    love.graphics.setColor(1,1,1,1)
+    setColor(play.colors.ProgressBar)
     love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-(progress_bar*time.nowtime/time.alltime) / 2,judgePos+30,time.nowtime/time.alltime * progress_bar,5)
 
-    love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("fill",start_x + (end_x - start_x)/2-progress_bar/2,judgePos+29,1,7)
     love.graphics.rectangle("fill",start_x + (end_x - start_x)/2+progress_bar/2,judgePos+29,1,7)
 
     --判定线
-    love.graphics.setColor(0,0.7,0.7,1) --判定线内部
+    setColor(play.colors.judgeLine) --判定线内部
     love.graphics.rectangle("fill",start_x,judgePos-5,end_x - start_x,10)
 
 
-    love.graphics.setColor(1,1,1,1) --判定线 play
+    setColor(play.colors.judge) --判定线 play
 
     love.graphics.rectangle("line",start_x,judgePos-8,end_x - start_x,16) --8是为了对其中心
     love.graphics.pop()

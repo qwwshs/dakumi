@@ -15,7 +15,7 @@ function start:load()
 end
 
 function start:draw()
-    love.graphics.setColor(1, 1, 1, 1)
+    setColor(1, 1, 1, 1)
     love.graphics.draw(ui_dakumi, 0, 0, 0, _scale, _scale)
 end
 
