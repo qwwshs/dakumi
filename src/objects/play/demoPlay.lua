@@ -119,7 +119,8 @@ function demoPlay:draw()
     --展示侧note渲染
     local spacing = 20*sw --note和track的间距
         for i = 1,#chart.note do
-            local x,w = fTrack:to_play_track(all_track_pos[chart.note[i].track].x,all_track_pos[chart.note[i].track].w)
+            local isnote = chart.note[i]
+            local x,w = fTrack:to_play_track(all_track_pos[isnote.track].x,all_track_pos[isnote.track].w)
             x = x * sw
             w = w * sw
 
@@ -130,10 +131,10 @@ function demoPlay:draw()
                 w = spacing
             end
             x = x - w /2
-            local y = beat:toY(chart.note[i].beat)
+            local y = beat:toY(isnote.beat)
             local y2 = y
-            if chart.note[i].type == "hold" then
-                y2 = beat:toY(chart.note[i].beat2)
+            if isnote.type == "hold" then
+                y2 = beat:toY(isnote.beat2)
             end
             y = y * sh
             y2 = y2 * sh
@@ -141,22 +142,22 @@ function demoPlay:draw()
 
             local _scale_h = 1 / _height * note_h
             if y < 0 then break end --超出范围
-            if (not (y2 > judgePos + note_h or y < 0)) and (not  (y > judgePos and chart.note[i].fake == 1 ) )then
+            if (not (y2 > judgePos + note_h or y < 0)) and (not  (y > judgePos and isnote.fake == 1 ) )then
                 if y ~= y2 and y > judgePos then y = judgePos end --hold头保持在线上
 
-                if chart.note[i].type == "note" then
+                if isnote.type == "note" then
                     love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
-                elseif chart.note[i].type == "wipe" then
+                elseif isnote.type == "wipe" then
                     love.graphics.draw(demoPlay.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                 else --hold
                     local _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
                     love.graphics.draw(demoPlay.ui.hold,x,y-note_h,0,_scale_w,_scale_h)
                     love.graphics.draw(demoPlay.ui.holdBody,x,y2+note_h,0,_scale_w,_scale_h2) --身
                     love.graphics.draw(demoPlay.ui.holdTail,x,y2,0,_scale_w,_scale_h)
-                    if chart.note[i].note_head == 1 then
+                    if isnote.note_head == 1 then
                         love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     end
-                    if chart.note[i].wipe_head == 1 then
+                    if isnote.wipe_head == 1 then
                         love.graphics.draw(demoPlay.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     end
                 end
