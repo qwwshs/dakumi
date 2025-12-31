@@ -6,7 +6,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
 ## 概述
 
-dakumi是由qwwshs用`love2d`所制造的Takumi3谱面饭制器
+dakumi是由qwwshs用`love2d`所制造的TAKUMI³谱面饭制器
 
 dakumi文档请于[dakumi](http://dakumi.qwwshs.top)中访问
 
@@ -46,6 +46,22 @@ copy /b love.exe+dakumi.love dakumi.exe
 ```
 
 构建完毕
+
+## 依赖
+
+- [LxgwNeoXiHei](https://github.com/lxgw/LxgwNeoXiHei)
+
+- [love2d](https://github.com/love2d/love)
+
+- [dkjson](https://github.com/LuaDist/dkjson)
+
+- [fileselect](https://github.com/bili-fule/fileselect)
+
+- [serpent](https://github.com/pkulchenko/serpent)
+
+- [LÖVE-Nuklear](https://github.com/keharriso/love-nuklear)
+
+- [7zip](https://github.com/ip7z/7zip)
 
 ## 开源许可
 
