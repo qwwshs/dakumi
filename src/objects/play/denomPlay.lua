@@ -20,7 +20,7 @@ local beat_y = 0
             goto denom
         end
         ::beat::
-            setColor(play.colors.beat) -- 节拍线颜色
+            love.graphics.setColor(play.colors.beat) -- 节拍线颜色
             love.graphics.rectangle("fill",play.layout.left_boundary,beat_y,play.layout.right_boundary,1) -- 节拍线
             love.graphics.printf(math.floor(isbeat),play.layout.right_boundary  + 5,beat_y-fontHeight/2, print_w, "left")
         goto next
@@ -37,7 +37,7 @@ local beat_y = 0
             if isdenom  == denom.denom / 2 then --中线
                 r,g,b = play.colors.denomMid[1],play.colors.denomMid[2],play.colors.denomMid[3]
             end
-            setColor(r,g,b,settings.denom_alpha/100)
+            love.graphics.setColor(r,g,b,settings.denom_alpha/100)
             love.graphics.rectangle("fill",play.layout.left_boundary,beat_y,play.layout.right_boundary,1)
         goto next
 
@@ -47,7 +47,7 @@ local beat_y = 0
         if play:mouseInPlay() then--在play里面
             --根据距离反推出beat
             local mouse_nearby_y = beat:toY(beat:get(beat:toNearby(beat:yToBeat(mouse.y))))
-            setColor(play.colors.mouseBeat)
+            love.graphics.setColor(play.colors.mouseBeat)
             love.graphics.rectangle("fill",play.layout.right_boundary,mouse_nearby_y,play.layout.left_boundary-play.layout.right_boundary,2)
         end 
 end

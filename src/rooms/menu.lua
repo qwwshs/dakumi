@@ -101,7 +101,7 @@ function menu:load()
 end
 
 function menu:draw()
-    setColor(colors.line1)
+    love.graphics.setColor(colors.line1)
 
     --装饰网格
     for i = 0, 74 do
@@ -111,7 +111,7 @@ function menu:draw()
         love.graphics.rectangle('fill', 0, i * 25, WINDOW.w, 1)
     end
 
-    setColor('white')
+    love.graphics.setColor(1,1,1)
 
     if menu.chartInfo.bg then
         local bg_width, bg_height = menu.chartInfo.bg:getDimensions()  -- 得到宽高
@@ -132,30 +132,30 @@ function menu:draw()
     --歌曲信息
 
     --背景板
-    setColor(colors.bg)
+    love.graphics.setColor(colors.bg)
     love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, layout.musicSelect.w,
         layout.musicSelect.h)
 
     --装饰线
-    setColor(colors.line2)
+    love.graphics.setColor(colors.line2)
     love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, 1, layout.musicSelect.h)
-    setColor(colors.line3)
+    love.graphics.setColor(colors.line3)
     love.graphics.rectangle("fill", layout.musicSelect.x - 5, layout.musicSelect.y, 3, layout.musicSelect.h)
 
 
     local middle = 400
     local fontHeight = love.graphics.getFont():getHeight()
 
-    setColor(colors.selectThisMusicTextBg)
+    love.graphics.setColor(colors.selectThisMusicTextBg)
     love.graphics.rectangle("fill", layout.musicSelect.x, middle - layout.musicSelect.musicH / 2, layout.musicSelect.w,
         layout.musicSelect.musicH)
 
 
     for i, v in ipairs(menu.chartTab) do
         if i == menu.selectMusicPos then
-            setColor(colors.selectThisMusicText)
+            love.graphics.setColor(colors.selectThisMusicText)
         else
-            setColor(colors.unSelectThisMusicText)
+            love.graphics.setColor(colors.unSelectThisMusicText)
         end
         love.graphics.printf(v, layout.musicSelect.x,
             (i - menu.selectMusicPos) * layout.musicSelect.musicH + middle - fontHeight / 2, layout.musicSelect.w,
@@ -167,17 +167,17 @@ function menu:draw()
     local fontHeight = love.graphics.getFont():getHeight()
 
     --谱面信息
-    setColor(colors.chartInofoBg)
+    love.graphics.setColor(colors.chartInofoBg)
     love.graphics.rectangle("fill", layout.chartSelect.x, layout.chartSelect.y - layout.chartSelect.chartH / 2,
         layout.chartSelect.w, layout.chartSelect.h)
 
     for i = 1, #menu.chartInfo.chart_name do
         if i == menu.selectChartPos then
-            setColor(colors.selectThischartText)
+            love.graphics.setColor(colors.selectThischartText)
         else
-            setColor(colors.unSelectThischartText)
+            love.graphics.setColor(colors.unSelectThischartText)
         end
-        if not menu.chartInfo.chart_name[i].is_true_chart then setColor(colors.errorChart) end
+        if not menu.chartInfo.chart_name[i].is_true_chart then love.graphics.setColor(colors.errorChart) end
         love.graphics.printf('chart:' .. menu.chartInfo.chart_name[i].name, layout.chartSelect.x,
             (menu.selectChartPos - i) * layout.chartSelect.chartH + layout.chartSelect.y - fontHeight / 2,
             layout.chartSelect.w, "center")
