@@ -20,7 +20,6 @@ easings = require('src.utils.easings')
 require("src.utils.bezier")
 require("src.utils.math")
 fTrack = require("src.utils.track")
-require("src.utils.color")
 
 --属于main
 require('src.objects.messageBox')

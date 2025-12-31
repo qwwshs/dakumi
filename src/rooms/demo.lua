@@ -20,7 +20,7 @@ function demo:draw()
     if not self.open then
         return
     end
-    setColor(1, 1, 1, settings.bg_alpha / 100)
+    love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
         --图像范围限制函数

@@ -32,7 +32,7 @@ end
 function comboAndScore:draw()
     local scale = comboAndScore.scoreLayout.size* 1 / self.numtab.w
     local interval = comboAndScore.scoreLayout.size
-    setColor(demo.colors.combo)
+    love.graphics.setColor(demo.colors.combo)
     for i = 1,#self.combo do
         local v = string.sub(self.combo,i,i)
         if #v < 1 then break end
@@ -40,7 +40,7 @@ function comboAndScore:draw()
         local x = self.comboLayout.x + (i - #self.combo / 2) * interval - comboAndScore.scoreLayout.size --love2d图片位置不是以中点算的
         love.graphics.draw(img,x,settings.judge_line_y + self.comboLayout.y,0,scale,scale)
     end
-    setColor(demo.colors.score)
+    love.graphics.setColor(demo.colors.score)
     for i = 1,#self.score do
         local v = string.sub(self.score,i,i)
         if #v < 1 then break end

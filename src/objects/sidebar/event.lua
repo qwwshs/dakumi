@@ -80,7 +80,7 @@ function Gevent:transTypeIsBezier()
         local value = tonumber(i) or 0
         table.insert(istrans,value)
     end
-    setColor("white")
+    love.graphics.setColor("white")
     for i = 1,100 do --曲线绘制
         bezier_y = bezier(1,100,y + h,y,istrans,i) or 0
         bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1) or 0
@@ -117,7 +117,7 @@ function Gevent:transTypeIsEasings()
     local istrans = self.easings_index
     local easings_y
     local easings_y_end
-    setColor("white")
+    love.graphics.setColor("white")
     for i = 1,100 do --曲线绘制
         easings_y = (y+h - h*easings[self.easings_index.value](i/100)) or 0
         easings_y_end = (y+h - h*easings[self.easings_index.value]((i + 1)/100)) or 0

@@ -22,8 +22,6 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
     end
     setmetatable(chart,meta_chart)
     chart:load() --初始化
-
-    room_pos = 'edit' --进入编辑
     room:to('edit')
     love.window.setTitle(chart.info.song_name.."-"..chart.info.chart_name)
 end

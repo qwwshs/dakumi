@@ -6,7 +6,6 @@ time = {nowtime = 0 ,alltime = 1}
 chart = {}
 bg = nil
 music = nil
-room_pos = "start" --所属房间
 music_play = false
 mouse  = {x = 0,y = 0,down = false}--鼠标按下状态
 elapsed_time = 0 -- 已运行时间
@@ -72,21 +71,6 @@ Nui:styleLoadColors({
     })
 room:load("start")
 
-function the_room_pos(pos) -- 房间状态判定
-    local isroom = false
-    if type(pos) == 'table' then
-        for i, v in ipairs(pos) do
-            if the_room_pos(v) then
-                isroom = true
-            end
-        end
-
-        return isroom
-    else
-        return pos == room_pos
-    end
-end
-
 function love.load()
     --文件夹创建与检查
     nativefs.mount(PATH.base)
@@ -115,8 +99,8 @@ function love.update(dt)
     end
 
     local original_x, original_y = love.mouse.getPosition( ) --对缩放进行处理
-    mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale)
-    mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale)
+    mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale)/2  
+    mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale)/2
 
     room("update",dt)
 
@@ -289,7 +273,7 @@ function love.errorhandler(msg)
 	love.graphics.reset()
 	local font = love.graphics.setNewFont(14)
 
-	love.graphics.setColor(1, 1, 1)
+	love.graphics.love.graphics.setColor(1, 1, 1)
 
 	local trace = debug.traceback()
 

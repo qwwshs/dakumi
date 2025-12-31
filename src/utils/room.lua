@@ -155,9 +155,7 @@ function room:__call(methodName,...)
     self:callAllObject(methodName,...)
     self:callAllGroup(methodName,...)
 
-    if not self.rooms then return end
-    if not self.rooms[self.type] then return end
-    if type(self.rooms[self.type][methodName]) ~= 'function' then return end
+    if not self.rooms or not self.rooms[self.type] or not self.rooms[self.type][methodName] then return end
     self.rooms[self.type][methodName](self.rooms[self.type],...)
 end
 

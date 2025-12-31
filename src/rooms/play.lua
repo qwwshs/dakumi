@@ -108,7 +108,7 @@ function play:draw()
     if demo.open then
         return
     end
-    setColor(1, 1, 1, settings.bg_alpha / 100)
+    love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示
         --图像范围限制函数
@@ -136,7 +136,7 @@ function play:draw()
     
     self('draw')
 
-    setColor('white') --总note event 数
+    love.graphics.setColor(1,1,1) --总note event 数
     local str = 'note: ' .. #chart.note .. '  event: ' .. #chart.event
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
@@ -147,9 +147,9 @@ function play:draw()
         local isevent = chart.event[i]
         if isevent.track == track.track then
             if isevent.type == "w" then
-                setColor(self.colors.wEventInDemo)
+                love.graphics.setColor(self.colors.wEventInDemo)
             elseif isevent.type == "x" then
-                setColor(self.colors.xEventInDemo)
+                love.graphics.setColor(self.colors.xEventInDemo)
             end
             local y = beat:toY(isevent.beat)
             local y2 = beat:toY(isevent.beat2)
@@ -170,13 +170,13 @@ function play:draw()
     end
 
     --栅栏绘制
-    setColor(self.colors.fence)
+    love.graphics.setColor(self.colors.fence)
     for i = 1, track.fence do
         love.graphics.rectangle("fill", (self.layout.demo.w + self.layout.demo.x) / track.fence * i, self.layout.demo.y,
             2, self.layout.demo.h)
     end
     if self.layout.demo.w / track.fence * fTrack:track_get_near_fence() < self.layout.demo.w then
-        setColor(self.colors.nearFence)
+        love.graphics.setColor(self.colors.nearFence)
         love.graphics.rectangle("fill", self.layout.demo.w / track.fence * fTrack:track_get_near_fence(),
             self.layout.demo.y, 2, self.layout.demo.h)
     end
