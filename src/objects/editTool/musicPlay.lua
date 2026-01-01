@@ -15,7 +15,7 @@ function buttonMusicPlay:click()
 end
 
 function buttonMusicPlay:keypressed(key)
-    if key == "space" then
+    if input('play') then
         self:click()
     end
 end

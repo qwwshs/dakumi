@@ -6,10 +6,10 @@ function redo:writeRevoke(type,tab)
     self.revoke[#self.revoke + 1] = {type=type,tab = tab}
 end
 function redo:keypressed(key)
-    if not isctrl then
+    if not iskeyboard.ctrl then
         return
     end
-    if key == "z" and self.revoke[#self.revoke] ~= nil then --撤销上一步操作
+    if input('undo') and self.revoke[#self.revoke] ~= nil then --撤销上一步操作
         self.redo[#redo + 1] = self.revoke[#self.revoke]
         --type分类
             
@@ -124,7 +124,7 @@ function redo:keypressed(key)
         self.revoke[#self.revoke] = nil
 
 
-    elseif key == "y" and self.redo[#self.redo] ~= nil then
+    elseif input('redoing') and self.redo[#self.redo] ~= nil then
         self.revoke[#self.revoke] = self.redo[#self.redo]
         if  self.redo[#self.redo].type == "note delete" then --重做 所以全部反过来的
             for i = 1, #chart.note do

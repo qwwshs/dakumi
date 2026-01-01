@@ -143,9 +143,10 @@ end
 
 function ctrl:mousereleased(x, y)
     --松手＋shift确认选中
-    if not ((iskeyboard.lshift or iskeyboard.rshift) and love.mouse.isDown(1)) then
+    if not (input('select') and love.mouse.isDown(1)) then
         return
     end
+    messageBox:add('select')
     self.copy_tab = { note = {}, event = {} }
     local min_x = fTrack:to_play_track(fTrack:to_chart_track(math.min(x, self.mouse_start_pos.x)), 1)
     local max_x = fTrack:to_play_track(fTrack:to_chart_track(math.max(x, self.mouse_start_pos.x)), 1)
@@ -257,17 +258,20 @@ function ctrl:keypressed(key)
         self:mousereleased(mouse.x, mouse.y)
     end
 
-    if not isctrl then
+    if not iskeyboard.ctrl then
         return
     end
-    if key == "c" then
-        self.copy_tab.type = "c"
-    elseif key == "x" then
-        self.copy_tab.type = "x"
-    elseif key == "d" then
+    if input('copy') then
+        self.copy_tab.type = "copy"
+        messageBox:add("copy")
+    elseif input('cut') then
+        self.copy_tab.type = "cut"
+        messageBox:add("cut")
+    elseif input('deleteSelect') or input('deleteAllSelect') then
         sidebar:to("nil")
+        local all = input('deleteAllSelect')
         local local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then
             redo:writeRevoke("copy delete", table.copy(self.copy_tab))
         else
             redo:writeRevoke("copy delete", { note = table.copy(self.copy_tab.note), event = {} })
@@ -283,7 +287,7 @@ function ctrl:keypressed(key)
         chart.note = table.copy(local_tab)
 
         local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     -- a完全复制
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a全部删除
             for i = 1, #chart.event do
                 if not table.eq(self.copy_tab.event[1], chart.event[i]) then
                     local_tab[#local_tab + 1] = chart.event[i]
@@ -301,7 +305,8 @@ function ctrl:keypressed(key)
             type = "",     --类型是复制 还是裁剪
             pos = "",      --位置是游玩区域还是编辑区域
         }
-    elseif key == "v" or key == "b" or key == "n" or key == "m" then
+    elseif input('paste') or input('flipPaste') or input('pasteAll') or input('flipPasteAll') then
+        local all = input('pasteAll') or input('flipPasteAll')
         local copy_tab2 = table.copy(self.copy_tab)
         --先对表进行处理
         local min_track
@@ -336,7 +341,7 @@ function ctrl:keypressed(key)
             frist_beat = self.copy_tab.note[1].beat
         end
 
-        if self.copy_tab.note[1] and self.copy_tab.pos == 'play' and not iskeyboard.a then     --不完全复制
+        if self.copy_tab.note[1] and self.copy_tab.pos == 'play' and not all then     --不完全复制
             frist_beat = self.copy_tab.note[1].beat
         end
         for i = 1, #copy_tab2.note do     --轨道修改
@@ -347,10 +352,6 @@ function ctrl:keypressed(key)
             if copy_tab2.note[i].type == "hold" then
                 copy_tab2.note[i].beat2 = beat:add(beat:sub(copy_tab2.note[i].beat2, frist_beat), to_beat)
             end
-            if key == "n" then     --对所有轨道增加
-                local max_track = fTrack:track_get_max_track() + 1
-                copy_tab2.note[i].track = max_track + copy_tab2.note[i].track - min_track
-            end
         end
         for i = 1, #copy_tab2.event do
             if self.copy_tab.pos ~= 'play' then
@@ -358,32 +359,16 @@ function ctrl:keypressed(key)
             end
             copy_tab2.event[i].beat = beat:add(beat:sub(copy_tab2.event[i].beat, frist_beat), to_beat)
             copy_tab2.event[i].beat2 = beat:add(beat:sub(copy_tab2.event[i].beat2, frist_beat), to_beat)
-            if key == "b" and copy_tab2.event[i].type == "x" then     --取反
+            if (input('flipPaste') or input('flipPasteAll')) and copy_tab2.event[i].type == "cut" then     --取反
                 copy_tab2.event[i].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].from
                 copy_tab2.event[i].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].to
-            end
-            if key == "n" then     --对所有轨道增加
-                local max_track = fTrack:track_get_max_track() + 1
-                copy_tab2.event[i].track = max_track + copy_tab2.event[i].track - min_track
-            end
-        end
-        if key == "n" or key == "m" then
-            local pos = 0     --鼠标所在位置
-            pos = fTrack:track_get_near_fence_x()
-
-            for i = 1, #copy_tab2.event do
-                --处理一下位置
-                if copy_tab2.event[i].type == "x" then
-                    copy_tab2.event[i].to = copy_tab2.event[i].to - copy_tab2.event[i].from + pos
-                    copy_tab2.event[i].from = pos
-                end
             end
         end
         --写入谱面内
         for i = 1, #copy_tab2.note do
             chart.note[#chart.note + 1] = table.copy(copy_tab2.note[i])
         end
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     -- a完全复制
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a完全复制
             for i = 1, #copy_tab2.event do
                 chart.event[#chart.event + 1] = table.copy(copy_tab2.event[i])
             end
@@ -391,8 +376,8 @@ function ctrl:keypressed(key)
         fEvent:sort()
         fNote:sort()
 
-        if self.copy_tab.type == "c" then
-            if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     -- a完全复制
+        if self.copy_tab.type == "copy" then
+            if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a完全复制
                 redo:writeRevoke("copy", table.copy(copy_tab2))
             else
                 redo:writeRevoke("copy", { note = table.copy(copy_tab2.note), event = {} })
@@ -401,7 +386,7 @@ function ctrl:keypressed(key)
         end
 
         --x
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     --x
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     --x
             redo:writeRevoke("cropping", { table.copy(self.copy_tab), table.copy(copy_tab2) })
         else
             redo:writeRevoke("cropping",
@@ -418,7 +403,7 @@ function ctrl:keypressed(key)
         end
         chart.note = table.copy(local_tab)
         local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and iskeyboard.a) then     -- a完全复制
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a对event操作
             for i = 1, #chart.event do
                 if not table.eq(self.copy_tab.event[1], chart.event[i]) then
                     local_tab[#local_tab + 1] = chart.event[i]

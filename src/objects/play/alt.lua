@@ -1,12 +1,13 @@
 local alt = object:new('alt')
+
 function alt:keypressed(key)
-    if not isalt then
+    if not iskeyboard.alt then
         return
     end
     local is_note = sidebar.displayed_content == "note"
     local is_event = sidebar.displayed_content == "event"
     local note_or_event_index = sidebar.incoming[1]
-    if key == 'z' then --拖头
+    if input('dragHead') then --拖头
         if is_note then
             chart.note[note_or_event_index].beat = beat:toNearby(beat:yToBeat(mouse.y))
             fNote:sort()
@@ -18,7 +19,7 @@ function alt:keypressed(key)
             sidebar:to("nil")
         end
     end
-    if key == 'x' then --拖尾
+    if input('dragTail') then --拖尾
         if is_note and chart.note[note_or_event_index].beat2 then
             if beat:get(beat:toNearby(beat:yToBeat(mouse.y))) <= beat:get(chart.note[note_or_event_index].beat) then
                 return
@@ -36,7 +37,7 @@ function alt:keypressed(key)
             sidebar:to("nil")
         end
     end
-    if key == "c" then --裁切
+    if input('cutEventOrHold') then --裁切
         log('cut')
         if is_event and chart.event[note_or_event_index] then
             local temp_event = {} -- 临时event表
@@ -87,7 +88,7 @@ function alt:keypressed(key)
             sidebar:to('events')
         end
     end
-    if key == 'b' then --翻转
+    if input('flipEvent') then --翻转
         if is_event and chart.event[note_or_event_index] then
             chart.event[note_or_event_index].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].from
             chart.event[note_or_event_index].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].to
@@ -95,7 +96,7 @@ function alt:keypressed(key)
             sidebar:to('nil')
         end
     end
-    if key == "t" then --快速调整
+    if input('adjustEventValue') then --快速调整
         if is_event and chart.event[note_or_event_index] then
             local fence_x = fTrack:track_get_near_fence_x()
             if beat:yToBeat(mouse.y) < beat:get(chart.event[note_or_event_index].beat) then --在event之前

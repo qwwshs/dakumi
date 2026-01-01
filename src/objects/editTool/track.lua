@@ -9,9 +9,9 @@ track.useToTrack = {value = "4"}
 track.useToFence = {value = "10"}
 
 function track:keypressed(key)
-    if key == "right" then
+    if input('trackUp') then
         self:to('track',self.track + 1)
-    elseif key == "left" then
+    elseif input('trackDown') then
         self:to('track',math.max(self.track-1,1))
     end
 end
