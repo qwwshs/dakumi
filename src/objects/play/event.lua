@@ -4,8 +4,8 @@ function eventEdit:keypressed(key)
     if not(mouse.y >= self.layout.y) then
         return
     end
-    local isEdit = key == "e"
-    local isDelete = key == "d"
+    local isEdit = input('placeEvent')
+    local isDelete = input('delete')
     local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
     local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
     if isEdit and isXEvent then

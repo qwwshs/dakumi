@@ -97,7 +97,7 @@ function GchartInfo:Nui()
             end
         end
 
-        bpmListSort()
+        beat:bpmListSort()
     end
 end
 

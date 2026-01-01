@@ -20,7 +20,7 @@ function buttonSave:click(isAutoSave)
 end
 
 function buttonSave:keypressed(key)
-    if key == "s" and isctrl then
+    if input('save') then
         self:click()
     end
 end

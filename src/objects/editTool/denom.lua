@@ -8,9 +8,9 @@ denom.layout = require 'config.layouts.editTool'
 denom.useToDenom = {value = "4"}
 denom.useToScale = {value = "1"}
 function denom:keypressed(key)
-    if key == "up" then
+    if input('denomUp') then
         self:to('denom',denom.denom + 1)
-    elseif key == "down" then
+    elseif input('denomDown') then
         self:to('denom',math.max(denom.denom-1,1))
     end
 end

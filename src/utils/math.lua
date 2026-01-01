@@ -7,7 +7,7 @@
 -- @treturn number 相加后结果的分子
 -- @treturn number 相加后结果的分母
 -- @usage local num, denom = addFractions(1, 2, 1, 3) -- 返回 5, 6
-function addFractions(num1, denom1, num2, denom2)
+function math.addFractions(num1, denom1, num2, denom2)
     -- 计算新分子和新分母
     local newNumerator = num1 * denom2 + num2 * denom1
     local newDenominator = denom1 * denom2
@@ -57,4 +57,14 @@ function math.roundToPrecision(x, a)
     a = a or 1
 
     return math.floor(x * a) / a
+end
+
+function math.getNearNumerator(num,denom)
+    local numerator = 1 --假设1最近
+    for i = 1, denom do --取分度 哪个近取哪个
+        if math.abs(num - (math.floor(num) + i / denom)) < math.abs(num - (math.floor(num) + numerator / denom)) then
+            numerator = i
+        end
+    end
+    return numerator
 end

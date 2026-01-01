@@ -10,11 +10,15 @@ music_play = false
 mouse  = {x = 0,y = 0,down = false}--鼠标按下状态
 elapsed_time = 0 -- 已运行时间
 FONT = {normal = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 13),plus = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 26)}
-isctrl  = false --ctrl按下状态
-isalt = false --alt按下状态
+
 iskeyboard = {} --key的按下状态
+iskeyboard.alt = false --alt按下状态
+iskeyboard.ctrl  = false --ctrl按下状态
+iskeyboard.shift = false --shift按下状态
+
 WINDOW = {w = 1600,h = 800,scale = 1,nowW = 1600,nowH = 800}
 PATH = {
+    i18n = 'i18n/',
     users = 'users/',
     usersPath = {
         settings = 'users/',
@@ -25,6 +29,9 @@ PATH = {
         auto_save = 'users/auto_save/',
         ui = 'users/ui/',
     },
+    key = '',
+    editToolData = '',
+    defaultBezier = '',
     base = love.filesystem.getSourceBaseDirectory( ), --保存路径
     web = {
         github = "https://github.com/qwwshs/daikumi/",
@@ -69,9 +76,17 @@ Nui:styleLoadColors({
     ['scrollbar cursor active'] = '#969696',
     ['tab header'] = '#282828'
     })
+
+--快捷键相关
+key = loadstring(nativefs.read(PATH.key..'key.lua'))() or {}
+for i,v in pairs(key) do
+    input:new(i,v)
+end
+
 room:load("start")
 
 function love.load()
+
     --文件夹创建与检查
     nativefs.mount(PATH.base)
     nativefs.createDirectory(PATH.users)
@@ -125,10 +140,13 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
     if key == "lctrl" or key == "rctrl" then
-        isctrl = true
+        iskeyboard.ctrl = true
     end
     if key == "lalt" or key == "ralt" then
-        isalt = true
+        iskeyboard.alt = true
+    end
+    if key == "lshift" or key == "rshift" then
+        iskeyboard.shift = true
     end
     iskeyboard[key] = true
     if string.sub(key,1,2) == "kp" then
@@ -145,10 +163,13 @@ function love.keyreleased(key,scancode)
     end
 
     if key == "lctrl" or key == "rctrl" then
-        isctrl = false
+        iskeyboard.ctrl = false
     end 
     if key == "lalt" or key == "ralt" then
-        isalt = false
+        iskeyboard.alt = false
+    end
+    if key == "lshift" or key == "rshift" then
+        iskeyboard.shift = false
     end
     iskeyboard[key] = false
 
@@ -273,7 +294,7 @@ function love.errorhandler(msg)
 	love.graphics.reset()
 	local font = love.graphics.setNewFont(14)
 
-	love.graphics.love.graphics.setColor(1, 1, 1)
+	love.graphics.setColor(1, 1, 1)
 
 	local trace = debug.traceback()
 

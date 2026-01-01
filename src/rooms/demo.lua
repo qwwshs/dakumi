@@ -6,7 +6,7 @@ demo:addObject(require 'src.objects.demo.demoPlay')
 demo:addObject(require 'src.objects.demo.hit')
 demo:addObject(require 'src.objects.demo.comboAndScore')
 function demo:keypressed(key)
-    if key == 'tab' then
+    if input('demo') then
         demo.open = not demo.open
     end
     --特别的
