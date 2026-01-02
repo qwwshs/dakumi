@@ -94,4 +94,8 @@ return {
     ['wipe head'] = 'wipe head',
     ['apply'] = 'apply',
     ['not apply'] = 'not apply',
+    ['Filter'] = 'filter',
+    ['do_not_hide'] = 'do not hide',
+    ['track_name'] = 'track name',
+    ['hide'] = 'hide',
 }

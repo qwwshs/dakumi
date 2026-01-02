@@ -186,9 +186,21 @@ function demoInEdit:draw(pos, istrack)
     if all_track_pos[istrack] then
         now_x, now_w = all_track_pos[istrack].x, all_track_pos[istrack].w
     end
-    love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100, settings.judge_line_y + 20)
-    love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200, settings.judge_line_y + 20)
+    local track_info = fTrack:get_track_info(istrack)
+    if track_info.type == 'xw' then
+        love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100, settings.judge_line_y + 20)
+        love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200, settings.judge_line_y + 20)
+    elseif track_info.type == 'lposrpos' then
+        love.graphics.print(i18n:get('lpos') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100, settings.judge_line_y + 20)
+        love.graphics.print(i18n:get('rpos') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200, settings.judge_line_y + 20)
+    end
+    if track_info.w0thenShow == 0 then
+        love.graphics.print(i18n:get('hide'), pos + 200, settings.judge_line_y + 40)
+    else
+        love.graphics.print(i18n:get('do_not_hide'), pos + 200, settings.judge_line_y + 40)
+    end
     love.graphics.print(i18n:get('track') .. ":" .. istrack, pos, settings.judge_line_y + 60)
+    love.graphics.print(i18n:get('track_name') .. ":" .. track_info.name, pos, settings.judge_line_y + 80)
 end
 
 return demoInEdit

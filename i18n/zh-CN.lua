@@ -94,4 +94,8 @@ return {
     ['wipe head'] = 'wipe头',
     ['apply'] = '应用',
     ['not apply'] = '不应用',
+    ['Filter'] = '筛选',
+    ['do_not_hide'] = '不隐藏',
+    ['hide'] = '隐藏',
+    ['track_name'] = '轨道名称',
 }
