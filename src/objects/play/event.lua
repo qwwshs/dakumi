@@ -17,7 +17,7 @@ function eventEdit:keypressed(key)
     elseif isDelete and isXEvent then -- x delete
             fEvent:delete("x",mouse.y)
             messageBox:add("event x place")
-    elseif isDelete and misWEvent then -- w delete
+    elseif isDelete and isWEvent then -- w delete
             fEvent:delete("w",mouse.y)
             messageBox:add("event w place")
     end

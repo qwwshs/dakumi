@@ -1,6 +1,6 @@
 -- Copyright (C) 2010-2024 qwwshs
 
-DAKUMI = {_VERSION = "0.5.0"}
+DAKUMI = {_VERSION = "0.5.0a"}
 beat = beat
 time = {nowtime = 0 ,alltime = 1}
 chart = {}

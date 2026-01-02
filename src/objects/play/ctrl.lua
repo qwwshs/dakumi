@@ -216,10 +216,10 @@ function ctrl:mousereleased(x, y)
     if math.intersect(min_x,max_x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval * 3) then --在event轨道
         for i = 1, #chart.event do
             local event_x_min = play.layout.edit.x + play.layout.edit.interval
-            local event_x_max = play.layout.edit.x + play.layout.edit.interval * 2
+            local event_x_max = play.layout.edit.x + play.layout.edit.interval + play.layout.edit.oneTrackW
             if chart.event[i].type == "w" then
                 event_x_min = play.layout.edit.x + play.layout.edit.interval * 2
-                event_x_max = play.layout.edit.x + play.layout.edit.interval * 3
+                event_x_max = play.layout.edit.x + play.layout.edit.interval * 2 + play.layout.edit.oneTrackW
             end
             if math.intersect(min_x,max_x,event_x_min,event_x_max) then
                 local isbeat = beat:get(chart.event[i].beat)
@@ -254,7 +254,7 @@ function ctrl:wheelmoved(x, y)
 end
 
 function ctrl:keypressed(key)
-    if (iskeyboard.lshift or iskeyboard.rshift) and mouse.down then
+    if input('select') and mouse.down then
         self:mousereleased(mouse.x, mouse.y)
     end
 
@@ -354,12 +354,13 @@ function ctrl:keypressed(key)
             end
         end
         for i = 1, #copy_tab2.event do
+            local track_info = fTrack:get_track_info(copy_tab2.event[i].track)
             if self.copy_tab.pos ~= 'play' then
                 copy_tab2.event[i].track = track.track
             end
             copy_tab2.event[i].beat = beat:add(beat:sub(copy_tab2.event[i].beat, frist_beat), to_beat)
             copy_tab2.event[i].beat2 = beat:add(beat:sub(copy_tab2.event[i].beat2, frist_beat), to_beat)
-            if (input('flipPaste') or input('flipPasteAll')) and copy_tab2.event[i].type == "cut" then     --取反
+            if (input('flipPaste') or input('flipPasteAll')) and (copy_tab2.event[i].type == "x" or track_info.type == "lposrpos") then     --取反
                 copy_tab2.event[i].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].from
                 copy_tab2.event[i].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].to
             end
