@@ -100,12 +100,12 @@ function Gevent:transTypeIsEasings()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)
 
     if Nui:button("",isImage.add) then
-        self.easings_index.value = math.min(self.bezier_index.value + 1,#easings)
+        self.easings_index.value = math.min(self.easings_index.value + 1,#easings)
         self.transv.value = tostring(self.easings_index.value)
         easings_index = self.easings_index.value
     end
     if Nui:button("",isImage.sub) then
-        self.bezier_index.value = math.max(self.bezier_index.value - 1,1)
+        self.easings_index.value = math.max(self.easings_index.value - 1,1)
         self.transv.value = tostring(self.easings_index.value)
         easings_index = self.easings_index.value
     end

@@ -18,6 +18,7 @@ function event:cleanUp() --长条清除
 end
 
 function event:getTrans(isevent,t)
+    t = math.min(math.max(t,0),1)
     if isevent.trans.type == 'bezier' then
         return bezier(0,1,0,1,isevent.trans.trans,t)
     elseif isevent.trans.type == 'easings' then
