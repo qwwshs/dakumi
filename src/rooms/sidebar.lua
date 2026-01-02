@@ -3,6 +3,7 @@ sidebar.layout = require 'config.layouts.sidebar'
 
 sidebar:addGroup(require 'src.objects.sidebar.nil')
 sidebar:addGroup(require 'src.objects.sidebar.track')
+sidebar:addGroup(require 'src.objects.sidebar.track_edit')
 sidebar:addGroup(require 'src.objects.sidebar.settings')
 sidebar:addGroup(require 'src.objects.sidebar.preference')
 sidebar:addGroup(require 'src.objects.sidebar.chart_info')
@@ -13,10 +14,17 @@ sidebar:addGroup(require 'src.objects.sidebar.events')
 sidebar.displayed_content = "nil" --现在所在的界面
 sidebar.incoming = {}             --传入的参数
 
+
 function sidebar:to(ty, ...)      -- 更变房间
     self.incoming = { ... }
     self.displayed_content = ty
+    log("Sidebar to " .. ty)
     local g = self:getGroup(self.displayed_content)
+    if not g then
+        log("Sidebar group " .. ty .. " not found!")
+        self.displayed_content = "nil"
+        return
+    end
     if type(g.to) == 'function' then
         g:to(...)
     end

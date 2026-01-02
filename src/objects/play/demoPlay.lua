@@ -70,6 +70,7 @@ function demoPlay:draw()
     end
 
     for i=1 ,#all_track do --轨道侧线绘制
+            local track_info = fTrack:get_track_info(all_track[i])
             local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
             x,w = fTrack:to_play_track(x,w) --为了居中
             x = x * sw
@@ -81,13 +82,20 @@ function demoPlay:draw()
             if w ~= 0 then
                 love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
                 love.graphics.rectangle("line",x,0,w,WINDOW.h)
+            elseif w == 0 and track_info.w0thenShow == 1 then
+                love.graphics.setColor(1,1,1,effect.track_line_alpha / 100) --侧线
+                love.graphics.rectangle("line",x,0,0.01,WINDOW.h)
             end
             if not demo.open then
-                love.graphics.setColor(play.colors.trackNum) --轨道编号
+                love.graphics.setColor(play.colors.trackNum) --轨道编号 与名称
                 if track.track == all_track[i] then
                     love.graphics.setColor(play.colors.selectingTrackNum) --轨道编号
                 end
-                love.graphics.printf(  all_track[i], x,judgePos-20,w, "center")
+                local str = ""
+                if track_info.name ~= '' then
+                    str = "("..track_info.name..")"
+                end
+                love.graphics.printf(  all_track[i]..str, x,judgePos-20,100, "center")
             end
     end
 

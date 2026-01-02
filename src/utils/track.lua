@@ -70,4 +70,14 @@ function fTrack:track_get_all_track() --得到所有的轨道
     return temp2_track
 end
 
+function fTrack:get_track_info(track)
+    if not chart.track[tostring(track)] then
+        chart.track[tostring(track)] = {
+                name = '',
+                w0thenShow = 0,
+                type = 'xw'
+            }
+    end
+    return chart.track[tostring(track)]
+end
 return fTrack

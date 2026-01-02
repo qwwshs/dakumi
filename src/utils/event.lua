@@ -50,6 +50,13 @@ function event:get(track,isbeat) --得到event此时的宽和高
             end
         end
     end
+    local track_info = fTrack:get_track_info(track)
+    if track_info.type == 'lposrpos' then --将x w 转换为 lpos rpos
+        local lpos = now_x
+        local rpos = now_w
+        now_x = (lpos + rpos) /2
+        now_w = rpos - lpos
+    end
     return now_x,now_w
 end
 
