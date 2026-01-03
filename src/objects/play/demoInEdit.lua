@@ -182,10 +182,7 @@ function demoInEdit:draw(pos, istrack)
     love.graphics.setColor(1,1,1)                                                                          --现在节拍
     love.graphics.print(i18n:get('beat') .. ":" .. math.roundToPrecision(beat.nowbeat, 100), pos, settings.judge_line_y + 20)
     love.graphics.print(i18n:get('time') .. ":" .. math.roundToPrecision(time.nowtime, 100), pos, settings.judge_line_y + 40)
-    local now_x, now_w = 0, 0
-    if all_track_pos[istrack] then
-        now_x, now_w = all_track_pos[istrack].x, all_track_pos[istrack].w
-    end
+    local now_x, now_w = fEvent:get(istrack, beat.nowbeat, true)
     local track_info = fTrack:get_track_info(istrack)
     if track_info.type == 'xw' then
         love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100, settings.judge_line_y + 20)
