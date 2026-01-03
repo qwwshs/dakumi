@@ -50,7 +50,7 @@ function ctrl:draw()
         love.graphics.rectangle("line", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
     end
-    if self.copy_tab.type ~= "x" then
+    if self.copy_tab.type ~= "cut" then
         love.graphics.setColor(play.colors.copyAndPaste)
     else
         love.graphics.setColor(play.colors.cutAndPaste)
@@ -196,7 +196,7 @@ function ctrl:mousereleased(x, y)
         return
     end
     
-    if math.intersect(min_x,max_x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --在note轨道
+    if math.intersect(x,self.mouse_start_pos.x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --在note轨道
         for i = 1, #chart.note do
             local isbeat = beat:get(chart.note[i].beat)
             local isbeat2 = isbeat
@@ -204,7 +204,7 @@ function ctrl:mousereleased(x, y)
                 isbeat2 = beat:get(chart.note[i].beat2)
             end
 
-            if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and track.track == chart.note[i].track then --这引擎y是向下增长的 服了
+            if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and track.track == chart.note[i].track then
                 self.copy_tab.note[#self.copy_tab.note + 1] = table.copy(chart.note[i])
             end
             if isbeat > max_y_beat then
@@ -213,7 +213,7 @@ function ctrl:mousereleased(x, y)
         end
     end
 
-    if math.intersect(min_x,max_x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval * 3) then --在event轨道
+    if math.intersect(x,self.mouse_start_pos.x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval * 3) then --在event轨道
         for i = 1, #chart.event do
             local event_x_min = play.layout.edit.x + play.layout.edit.interval
             local event_x_max = play.layout.edit.x + play.layout.edit.interval + play.layout.edit.oneTrackW
@@ -221,7 +221,7 @@ function ctrl:mousereleased(x, y)
                 event_x_min = play.layout.edit.x + play.layout.edit.interval * 2
                 event_x_max = play.layout.edit.x + play.layout.edit.interval * 2 + play.layout.edit.oneTrackW
             end
-            if math.intersect(min_x,max_x,event_x_min,event_x_max) then
+            if math.intersect(x,self.mouse_start_pos.x,event_x_min,event_x_max) then
                 local isbeat = beat:get(chart.event[i].beat)
                 local isbeat2 = beat:get(chart.event[i].beat2)
                 if math.intersect(min_y_beat,max_y_beat,isbeat,isbeat2) and track.track == chart.event[i].track then

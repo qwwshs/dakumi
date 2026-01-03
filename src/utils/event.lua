@@ -27,7 +27,8 @@ function event:getTrans(isevent,t)
     end
 end
 
-function event:get(track,isbeat) --得到event此时的宽和高
+function event:get(track,isbeat,original) --得到event此时的宽和高
+    local original = original or false --是否获得原值（不进行lrpos转换）
     local now_w = 0
     local now_x = 0
     local now_x_ed = false --已经计算
@@ -52,7 +53,7 @@ function event:get(track,isbeat) --得到event此时的宽和高
         end
     end
     local track_info = fTrack:get_track_info(track)
-    if track_info.type == 'lposrpos' then --将x w 转换为 lpos rpos
+    if track_info.type == 'lposrpos' and not original then --将x w 转换为 lpos rpos
         local lpos = now_x
         local rpos = now_w
         now_x = (lpos + rpos) /2
@@ -115,7 +116,7 @@ function event:place(type,pos)
             event.local_event.trans.easings = easings_index
 
             event.hold_type = 1
-            local x,w = event:get(event.local_event.track,beat:get(event.local_event.beat)) --把数值设定为上次event结尾的数值
+            local x,w = event:get(event.local_event.track,beat:get(event.local_event.beat),true) --把数值设定为上次event结尾的数值
             if type == "x" then
                 event.local_event.from,event.local_event.to = x,x
             else

@@ -140,7 +140,7 @@ function play:draw()
     local str = 'note: ' .. #chart.note .. '  event: ' .. #chart.event
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
-    --event渲染
+    --event渲染 于demo侧
     local event_h = settings.note_height
     local event_w = 75
     for i = #chart.event, 1, -1 do
