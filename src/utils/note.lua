@@ -32,12 +32,12 @@ function note:delete(pos)
     local note_beat_up = beat:yToBeat(pos - pos_interval)
     local note_beat_down = beat:yToBeat(pos + pos_interval)
     for i = 1,#chart.note do
-        if chart.note[i].track == track.track and 
-        ((beat:get(chart.note[i].beat) >= note_beat_down and beat:get(chart.note[i].beat) <= note_beat_up)
-        or (chart.note[i].beat2 and -- 长条
-        math.intersect(beat:get(chart.note[i].beat), beat:get(chart.note[i].beat2), note_beat_up, note_beat_down))) then
-            redo:writeRevoke("note delete",chart.note[i])
-            table.remove(chart.note, i)
+        local isnote = chart.note[i]
+        if isnote.track == track.track and 
+        ((beat:get(isnote.beat) >= note_beat_down and beat:get(isnote.beat) <= note_beat_up)
+        or (isnote.beat2 and -- 长条
+        math.intersect(beat:get(isnote.beat), beat:get(isnote.beat2), note_beat_up, note_beat_down))) then
+            chart:delete(isnote)
             sidebar.displayed_content = 'nil'
             return
         end
@@ -56,11 +56,13 @@ function note:place(note_type,pos)
                 return false
             end
         end
-        chart.note[#chart.note + 1] = table.copy(note.__index)
-        chart.note[#chart.note].type = note_type
-        chart.note[#chart.note].track = track.track
-        chart.note[#chart.note].beat = {note_beat[1],note_beat[2],note_beat[3]}
-        chart.note[#chart.note].fake = noteFake.v
+        local isnote
+        isnote = table.copy(note.__index)
+        isnote.type = note_type
+        isnote.track = track.track
+        isnote.beat = {note_beat[1],note_beat[2],note_beat[3]}
+        isnote.fake = noteFake.v
+        chart:add(isnote)
 
         note.local_tab = {type = note_type,
         track = track.track,
@@ -92,7 +94,7 @@ function note:place(note_type,pos)
                 note:holdCleanUp()
                 return false
             else -- 合法操作
-                chart.note[#chart.note + 1] = note.local_hold
+                chart:add(note.local_hold)
                 note.hold_type = 2
 
             end

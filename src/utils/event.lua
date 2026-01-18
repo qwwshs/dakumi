@@ -96,8 +96,7 @@ function event:delete(type,pos)
         local beat2 = beat:get(isevent.beat2) or beat1
         if isevent.track == track.track and isevent.type == type and
         (math.intersect(beat1,beat2, event_beat_down, event_beat_up)) then
-            redo:writeRevoke("event delete",isevent)
-            table.remove(chart.event, i)
+            chart:delete(isevent)
             return
         end
     end
@@ -129,7 +128,7 @@ function event:place(type,pos)
             event:cleanUp()
             return false
         else -- 合法操作
-            chart.event[#chart.event + 1] = event.local_event
+            chart:add(event.local_event)
             event.hold_type = 2
         end
     end

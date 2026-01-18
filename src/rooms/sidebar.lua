@@ -10,6 +10,7 @@ sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar:addGroup(require 'src.objects.sidebar.event')
 sidebar:addGroup(require 'src.objects.sidebar.note')
 sidebar:addGroup(require 'src.objects.sidebar.events')
+sidebar:addGroup(require 'src.objects.sidebar.to_takana')
 
 sidebar.displayed_content = "nil" --现在所在的界面
 sidebar.incoming = {}             --传入的参数

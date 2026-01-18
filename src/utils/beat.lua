@@ -1,4 +1,4 @@
-local beat = object:new('beat')
+beat = object:new('beat')
 beat.nowbeat = 0
 beat.allbeat = 1
 function beat:toBeat(bpm, time) --时间转换为beat
@@ -21,18 +21,18 @@ function beat:toBeat(bpm, time) --时间转换为beat
     return beat:get(bpm[#bpm].beat) + (bpm[#bpm].bpm / 60 * (time - usetime))
 end
 
-function beat:toTime(bpm, beat)                              -- 根据bpm和beat计算时间
-    if type(beat) == "table" then beat = beat:get(beat) end  -- 转数值
-    local function thetime(isbeat, bpm)                      -- 转时间的函数
-        return isbeat / bpm * 60
+function beat:toTime(bpm, isbeat)                              -- 根据bpm和beat计算时间
+    if type(isbeat) == "table" then isbeat = beat:get(isbeat) end  -- 转数值
+    local function thetime(thebeat, bpm)                      -- 转时间的函数
+        return thebeat / bpm * 60
     end
 
-    if #bpm == 1 or beat <= beat:get(bpm[2].beat) then -- 只有一个或者beat小于第一个bpm的beat时刻
-        return thetime(beat, bpm[1].bpm)
+    if #bpm == 1 or isbeat <= beat:get(bpm[2].beat) then -- 只有一个或者beat小于第一个bpm的beat时刻
+        return thetime(isbeat, bpm[1].bpm)
     end
 
 
-    local usebeat = beat:get(bpm[2].beat)        --累加beat 直到当前beat
+    local usebeat = beat:get(bpm[2].isbeat)        --累加beat 直到当前beat
     local bpm_time = thetime(usebeat, bpm[1].bpm) -- 转换为数值
     local all_bpm_time = bpm_time
     for i = 2, #bpm - 1 do
@@ -42,12 +42,12 @@ function beat:toTime(bpm, beat)                              -- 根据bpm和beat
         if temp_beat < beat then
             usebeat = temp_beat
         else
-            return all_bpm_time + thetime((beat - usebeat), bpm[i].bpm)
+            return all_bpm_time + thetime((isbeat - usebeat), bpm[i].bpm)
         end
         all_bpm_time = all_bpm_time + bpm_time
     end
     --大于最后一个
-    return all_bpm_time + thetime((beat - beat:get(bpm[#bpm].beat)), bpm[#bpm].bpm)
+    return all_bpm_time + thetime((isbeat - beat:get(bpm[#bpm].beat)), bpm[#bpm].bpm)
 end
 
 function beat:get(table) --beat转成数值
@@ -128,5 +128,3 @@ end
 function beat:toNearby(isbeat) --取最近的beat
     return { math.floor(isbeat), math.getNearNumerator(isbeat, denom.denom), denom.denom }
 end
-
-return beat

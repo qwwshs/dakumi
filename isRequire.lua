@@ -9,7 +9,7 @@ require('src.utils.pass')
 require("src.utils.room")
 require('src/objects/meta')
 
-beat = require("src.utils.beat")
+require("src.utils.beat")
 fEvent = require("src.utils.event")
 fNote = require("src.utils.note")
 
