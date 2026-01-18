@@ -98,4 +98,5 @@ return {
     ['do_not_hide'] = '不隐藏',
     ['hide'] = '隐藏',
     ['track_name'] = '轨道名称',
+    ['frame_rate'] = '帧率',
 }

@@ -93,6 +93,60 @@ function meta_chart.__index:load()
 
 end
 
+function meta_chart.__index:push()
+
+end
+
+function meta_chart.__index:pop()
+    
+end
+
+
+function meta_chart.__index:add(noteorevent)
+    --判断类型
+    local iseventtype = noteorevent.type == 'x' or noteorevent.type == 'w'
+    local isnotetype = noteorevent.type == 'note' or noteorevent.type == 'hold' or noteorevent.type == 'wipe'
+    if not iseventtype and not isnotetype then
+        return
+    end
+    if iseventtype then
+        table.insert(self.event,noteorevent)
+        redo:writeRevoke("event place",noteorevent)
+        fEvent:sort()
+    elseif isnotetype then
+        table.insert(self.note,noteorevent)
+        redo:writeRevoke("note place",noteorevent)
+        fNote:sort()
+    end
+    
+end
+
+function meta_chart.__index:delete(noteorevent)
+    local iseventtype = noteorevent.type == 'x' or noteorevent.type == 'w'
+    local isnotetype = noteorevent.type == 'note' or noteorevent.type == 'hold' or noteorevent.type == 'wipe'
+    if not iseventtype and not isnotetype then
+        return
+    end
+    if iseventtype then
+        for i = 1, #self.event do
+            if table.eq(self.event[i], noteorevent) then
+                table.remove(self.event, i)
+                redo:writeRevoke("event delete", noteorevent)
+                break
+            end
+        end
+    elseif isnotetype then
+        for i = 1, #self.note do
+            if table.eq(self.note[i], noteorevent) then
+                table.remove(self.note, i)
+                redo:writeRevoke("note delete", noteorevent)
+                break
+            end
+        end
+    end
+
+end
+
 meta_settings = { --设置基本格式 元表
     __index = {
 
