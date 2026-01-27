@@ -3,8 +3,8 @@ local Gtakana = group:new('takana')
 Gtakana.type = "settings"
 Gtakana.frames = 30
 function Gtakana:Nui()
-    Nui:label(i18n:get('frame_rate')..':'..self.frames)
-    self.frames = Nui:slider(1,self.frames,120,1)
+    Nui:label(i18n:get('frame_rate') .. ':' .. self.frames)
+    self.frames = Nui:slider(1, self.frames, 120, 1)
     local frames = self.frames
     if Nui:button(i18n:get('do')) then
         local to_ms = 1000
@@ -13,22 +13,23 @@ function Gtakana:Nui()
         local all_track = fTrack:track_get_all_track()
         local id = 0
         local takana = {
+            version = 2,
             properties = {
-                offset = "0",
-                mode = 'takana',
+                offset = { value = -chart.offset, type = "offset" },
+
             },
             components = {}
         }
-        takana.properties.offset = tostring(math.max(chart.offset,0))
 
-        takana.components[1] = 
+        takana.components[1] =
         {
             id = id,
-            type = 'judgeLine'
+            model = { type = 'line' },
+            children = {}
         }
         id = id + 1
         --先创建轨道
-        for i,v in ipairs(all_track) do
+        for i, v in ipairs(all_track) do
             extra_chart[v] = {
                 note = {},
                 lpos = {},
@@ -36,69 +37,126 @@ function Gtakana:Nui()
             }
         end
         local track_id = 0
-        for istrack,v in pairs(extra_chart) do
+        for istrack, v in pairs(extra_chart) do
             local track_component = {
                 id = id,
-                timeStart = 0,
-                timeEnd = math.floor(time.alltime*to_ms),
-                line = 0,
-                movement = {
-                    left = {
-                        list = {},
-                        type = "v1e"
+                children = {},
+                model = {
+                    timeStart = 0,
+                    timeEnd = math.floor(time.alltime * to_ms),
+                    movement = {
+                        left = {
+                            list = {},
+                            type = "position"
+                        },
+                        right = {
+                            list = {},
+                            type = "position"
+                        },
+                        type = "trackEdgeMovement",
+
                     },
-                    right = {
-                        list = {},
-                        type = "v1e"
-                    },
-                    type = "trackEdgeMoveList"
-                },
-                type = 'e_track'
+                    type = 'track'
+                }
+
             }
-            track_id = id    
+            track_id = id
             id = id + 1
-            local x,w
-            local lpos,rpos
+            local x, w
+            local lpos, rpos
             local nowbeat
-            for istime=0,time.alltime,1/frames do
-                istime = math.roundToPrecision(istime,to_ms)
-                
-                nowbeat = beat:toBeat(chart.bpm_list,istime)
-                x,w = fEvent:get(istrack,nowbeat)
-                lpos = x - w/2
-                rpos = x + w/2
+            for istime = 0, time.alltime, 1 / frames do
+                istime = math.roundToPrecision(istime, to_ms)
+
+                nowbeat = beat:toBeat(chart.bpm_list, istime)
+                x, w = fEvent:get(istrack, nowbeat)
+                lpos = x - w / 2
+                rpos = x + w / 2
                 --进行坐标系变换
                 lpos = (lpos + chart.preference.x_offset) / chart.preference.event_scale * 9 - 4.5
                 rpos = (rpos + chart.preference.x_offset) / chart.preference.event_scale * 9 - 4.5
-                table.insert(track_component.movement.left.list,"("..math.floor(istime*to_ms)..","..lpos..", u)")
-                table.insert(track_component.movement.right.list,"("..math.floor(istime*to_ms)..","..rpos..", u)")
+                table.insert(v.lpos, lpos)
+                table.insert(v.rpos, rpos)
+                if not v.lpos[#v.lpos - 1] or v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] then
+                    track_component.model.movement.left.list[tostring(istime * to_ms)] = "v1e_(" .. lpos .. ", u)"
+                end
+                if not v.rpos[#v.rpos - 1] or v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] then
+                    track_component.model.movement.right.list[tostring(istime * to_ms)] = "v1e_(" .. rpos .. ", u)"
+                end
             end
 
-            table.insert(takana.components,track_component) 
+            table.insert(takana.components[1].children, track_component)
             local takana_note
-            for i,isnote in ipairs(chart.note) do
+            for i, isnote in ipairs(chart.note) do
                 if isnote.track == istrack then
-
                     takana_note = {
                         id = id,
-                        track = track_id,
-                        timeJudge = math.floor(beat:toTime(chart.bpm_list,isnote.beat)*to_ms),
-                        properties = {
-                            isDummy = isnote.fake == 1
+                        model = {
+                            timeJudge = math.floor(beat:toTime(chart.bpm_list, isnote.beat) * to_ms),
+                            type = 'hit'
                         },
                     }
-                    id = id + 1
+                    local x, w = fEvent:get(isnote.track, beat:get(isnote.beat))
+
+                    if w == 0 or isnote.fake == 1 then
+                        takana_note.model.properties = {}
+                        takana_note.model.properties.isDummy = {
+                            value = true,
+                            type = 'dummyFlag'
+                        }
+                    end
                     if isnote.type == 'hold' then
-                        takana_note.timeEnd = math.floor(beat:toTime(chart.bpm_list,isnote.beat2)*to_ms)
+                        takana_note.model.timeEnd = math.floor(beat:toTime(chart.bpm_list, isnote.beat2) * to_ms)
                     end
-                    if isnote.type == 'note' then 
-                        takana_note.type = 'e_tap'
-                    elseif isnote.type == 'wipe' then 
-                        takana_note.type = 'e_slide'
-                    elseif isnote.type == 'hold' then 
-                        takana_note.type = 'e_hold'
+                    if isnote.type == 'note' then
+                        takana_note.model.hitType = 'Tap'
+                    elseif isnote.type == 'wipe' then
+                        takana_note.model.hitType = 'Slide'
+                    elseif isnote.type == 'hold' then
+                        takana_note.model.type = 'hold'
+                        if isnote.note_head == 1 then
+                            local hold_note = {
+                                id = id,
+                                model = {
+                                    timeJudge = math.floor(beat:toTime(chart.bpm_list, isnote.beat) * to_ms),
+                                    type = 'hit',
+                                    hitType = 'Tap'
+                                },
+                            }
+                            if w == 0 or isnote.fake == 1 then
+                                hold_note.model.properties = {}
+                                hold_note.model.properties.isDummy = {
+                                    value = true,
+                                    type = 'dummyFlag'
+                                }
+                            end
+                            table.insert(takana.components[1].children[#takana.components[1].children].children,
+                                hold_note)
+                            id = id + 1
+                        end
+                        if isnote.wipe_head == 1 then
+                            local hold_note = {
+                                id = id,
+                                model = {
+                                    timeJudge = math.floor(beat:toTime(chart.bpm_list, isnote.beat) * to_ms),
+                                    type = 'hit',
+                                    hitType = 'Slide'
+                                },
+                            }
+                            if w == 0 or isnote.fake == 1 then
+                                hold_note.model.properties = {}
+                                hold_note.model.properties.isDummy = {
+                                    value = true,
+                                    type = 'dummyFlag'
+                                }
+                            end
+                            table.insert(takana.components[1].children[#takana.components[1].children].children,
+                                hold_note)
+                            id = id + 1
+                        end
                     end
-                    table.insert(takana.components,takana_note) 
+                    table.insert(takana.components[1].children[#takana.components[1].children].children, takana_note)
+                    id = id + 1
                 end
             end
         end
@@ -107,7 +165,8 @@ function Gtakana:Nui()
         if dakumi_name == 'normal' or dakumi_name == 'hard' or dakumi_name == 'master' or dakumi_name == 'insanity' or dakumi_name == 'ravage' then
             name = dakumi_name
         end
-        save(dkjson.encode(takana,{indent = true,invalidnumbers = true}),PATH.usersPath.export..name..'.json')
+        save(dkjson.encode(takana, { indent = true }), PATH.usersPath.export .. name .. '.json')
     end
 end
+
 return Gtakana
