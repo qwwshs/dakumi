@@ -126,7 +126,7 @@ function menu:draw()
     for i = 0, 74 do
         love.graphics.rectangle('fill', i * 25, 0, 1, WINDOW.h)
     end
-    for i = 0, 32 do
+    for i = 0, 36 do
         love.graphics.rectangle('fill', 0, i * 25, WINDOW.w, 1)
     end
 
@@ -202,6 +202,7 @@ function menu:filedropped(file) -- 文件拖入
     local content = file:read()
     local flie_name = string.sub(flie_name, lastSlashIndex + 1)
     local isfile_extension = getFileExtension(flie_name)
+    
     nativefs.mount(PATH.base)
 
     if table.find(file_extension.bg, isfile_extension) then                         --bg

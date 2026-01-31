@@ -16,7 +16,7 @@ iskeyboard.alt = false --alt按下状态
 iskeyboard.ctrl  = false --ctrl按下状态
 iskeyboard.shift = false --shift按下状态
 
-WINDOW = {w = 1600,h = 800,scale = 1,nowW = 1600,nowH = 800}
+WINDOW = {w = 1600,h = 900,scale = 1,nowW = 1600,nowH = 900}
 PATH = {
     i18n = 'i18n/',
     users = 'users/',

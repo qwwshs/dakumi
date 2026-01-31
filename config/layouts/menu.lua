@@ -2,7 +2,7 @@
 return {
     chartTool = {
         x = 0,
-        y = 750,
+        y = 850,
         w = 750,
         h = 50,
         cols = 7
@@ -18,7 +18,7 @@ return {
         x = 1150,
         y = 0,
         w = 450,
-        h = 800,
+        h = 900,
         musicH = 100,
     },
     chartSelect = {
@@ -30,7 +30,7 @@ return {
     },
     bg = {
         x = 400,
-        y = 400,
+        y = 450,
         size = 300,
         pointSize = 5
     }

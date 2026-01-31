@@ -16,7 +16,7 @@ holdNoteHead = require 'src.objects.editTool.holdNoteHead'
 editTool:addObject(holdNoteHead)
 holdWipeHead = require 'src.objects.editTool.holdWipeHead'
 editTool:addObject(holdWipeHead)
-editTool:addObject(require 'src.objects.editTool.slider')
+
 
 function editTool:load()
     self('load')
