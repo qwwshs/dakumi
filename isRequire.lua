@@ -4,6 +4,9 @@ ffi = require("ffi")                   --调用C语言库
 nuklear = require 'nuklear'            --图形界面
 serpent = require("src.utils.serpent") --lua序列化
 input = require("src.utils.input")   --输入处理
+yaml = require("src.utils.yaml")     --YAML解析
+
+require('src.utils.file')
 require('src.utils.pass')
 
 require("src.utils.room")
@@ -35,3 +38,4 @@ require("src.rooms.edit")
 require("src.rooms.menu")
 
 require("src.rooms.start")
+

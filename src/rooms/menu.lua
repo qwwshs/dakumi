@@ -1,7 +1,15 @@
 local layout    = require 'config.layouts.menu' --菜单布局
 local colors    = require 'config.colors.menu' --菜单颜色
+local file_extension = {
+    music = {'mp3', 'ogg', 'wav'},
+    chart = {'json'},
+    old_chart = {'d3'},
+    bg = {'jpg', 'jpeg', 'png'}
+}
 menu            = room:new('menu')
 room:addRoom(menu)
+menu:addObject(require 'src.objects.menu.select_music')
+menu:addObject(require 'src.objects.menu.select_chart')
 
 --选择的歌曲的房间
 menu.chartTab = {}                                                     --所有谱面的文件夹
@@ -9,6 +17,9 @@ menu.selectMusicPos = 1                                                --选择�
 menu.selectChartPos = 1                                                --选择到的歌曲
 menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
 menu.path = ''
+menu.bgPath = ''
+menu.musicPath = ''
+
 
 local menuUI = require 'src.objects.menu.ui'
 
@@ -20,12 +31,15 @@ function menu:select_music()
 
         local file_tab = love.filesystem.getDirectoryItems(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos]) --得到谱面文件夹下的谱面
         for i, v in ipairs(file_tab) do
-            if string.find(v, ".json") then                                                                          --谱面文件
+            local v_extemsion = getFileExtension(v)
+            log("found file:",v_extemsion)
+            if table.find(file_extension.chart, v_extemsion) then                                                                          --谱面文件
                 local info = love.filesystem.read(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v)
-                local t = pcall(function() info = dkjson.decode(info) end)
+                local s = pcall(function() info = dkjson.decode(info) end)
                 local is_true_chart = true
-                if not t then
+                if not s then
                     log("It is " .. type(info))
+                    log(info)
                     is_true_chart = false
                     info = {}
                 end
@@ -42,16 +56,18 @@ function menu:select_music()
                     setmetatable(chart, meta_chart) --防谱报废
                 end
             end
-            if string.find(v, ".jpg") or string.find(v, ".png") or string.find(v, ".jpeg") then --bg
+            if table.find(file_extension.bg, getFileExtension(v)) then --bg
                 menu.chartInfo.bg = love.graphics.newImage(PATH.usersPath.chart ..
                 menu.chartTab[menu.selectMusicPos] .. "/" .. v)
 
                 bg = menu.chartInfo.bg
+                menu.bgPath = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v
             end
         end
         table.fill(chart, meta_chart.__index)
         for i, v in ipairs(file_tab) do                                                     --因为一些数据在chart里面 所以分开读
-            if string.find(v, ".mp3") or string.find(v, ".ogg") or string.find(v, ".wav") then --歌曲
+            local v_extemsion = getFileExtension(v)
+            if table.find(file_extension.music, getFileExtension(v)) then --歌曲
                 love.audio.stop()                                                           --停止上一个歌曲
                 menu.chartInfo.song = love.audio.newSource(
                 PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v, "stream")
@@ -60,7 +76,8 @@ function menu:select_music()
 
                 --读取音频信息
                 music = menu.chartInfo.song
-                time.alltime = music:getDuration() + chart.offset / 1000 -- 得到音频总时长
+                menu.musicPath = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v
+                time.alltime = music:getDuration() + chart.offset / 1000
                 beat.allbeat = beat:toBeat(chart.bpm_list, time.alltime)
             end
         end
@@ -97,10 +114,12 @@ function menu:flushed()                                                    --刷
 end
 
 function menu:load()
+    menu('load')
     menu:flushed()
 end
 
 function menu:draw()
+
     love.graphics.setColor(colors.line1)
 
     --装饰网格
@@ -127,108 +146,22 @@ function menu:draw()
         love.graphics.rectangle('fill', layout.bg.x + layout.bg.size / 2 / bg_height * bg_width + layout.bg.pointSize,
             layout.bg.y + layout.bg.size / 2 + layout.bg.pointSize, -layout.bg.pointSize, -layout.bg.pointSize)
     end
-    love.graphics.setFont(FONT.plus)
 
-    --歌曲信息
+    menu('draw')
 
-    --背景板
-    love.graphics.setColor(colors.bg)
-    love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, layout.musicSelect.w,
-        layout.musicSelect.h)
-
-    --装饰线
-    love.graphics.setColor(colors.line2)
-    love.graphics.rectangle("fill", layout.musicSelect.x, layout.musicSelect.y, 1, layout.musicSelect.h)
-    love.graphics.setColor(colors.line3)
-    love.graphics.rectangle("fill", layout.musicSelect.x - 5, layout.musicSelect.y, 3, layout.musicSelect.h)
-
-
-    local middle = 400
-    local fontHeight = love.graphics.getFont():getHeight()
-
-    love.graphics.setColor(colors.selectThisMusicTextBg)
-    love.graphics.rectangle("fill", layout.musicSelect.x, middle - layout.musicSelect.musicH / 2, layout.musicSelect.w,
-        layout.musicSelect.musicH)
-
-
-    for i, v in ipairs(menu.chartTab) do
-        if i == menu.selectMusicPos then
-            love.graphics.setColor(colors.selectThisMusicText)
-        else
-            love.graphics.setColor(colors.unSelectThisMusicText)
-        end
-        love.graphics.printf(v, layout.musicSelect.x,
-            (i - menu.selectMusicPos) * layout.musicSelect.musicH + middle - fontHeight / 2, layout.musicSelect.w,
-            "center")
-    end
-
-
-    love.graphics.setFont(FONT.normal)
-    local fontHeight = love.graphics.getFont():getHeight()
-
-    --谱面信息
-    love.graphics.setColor(colors.chartInofoBg)
-    love.graphics.rectangle("fill", layout.chartSelect.x, layout.chartSelect.y - layout.chartSelect.chartH / 2,
-        layout.chartSelect.w, layout.chartSelect.h)
-
-    for i = 1, #menu.chartInfo.chart_name do
-        if i == menu.selectChartPos then
-            love.graphics.setColor(colors.selectThischartText)
-        else
-            love.graphics.setColor(colors.unSelectThischartText)
-        end
-        if not menu.chartInfo.chart_name[i].is_true_chart then love.graphics.setColor(colors.errorChart) end
-        love.graphics.printf('chart:' .. menu.chartInfo.chart_name[i].name, layout.chartSelect.x,
-            (menu.selectChartPos - i) * layout.chartSelect.chartH + layout.chartSelect.y - fontHeight / 2,
-            layout.chartSelect.w, "center")
-    end
-
-
-    love.graphics.setFont(FONT.normal)
 end
 
 function menu:wheelmoved(x, y)
-    if mouse.x > layout.musicSelect.x and mouse.x < layout.musicSelect.x + layout.musicSelect.w then
-        if y < 0 then
-            menu.selectMusicPos = menu.selectMusicPos + 1
-        else
-            menu.selectMusicPos = menu.selectMusicPos - 1
-        end
+    menu('wheelmoved', x, y)
 
-        menu.selectMusicPos = math.max(1, math.min(#menu.chartTab, menu.selectMusicPos))
-
-        menu.selectChartPos = 1 --归位
-        menu:select_music()
-    elseif mouse.x > layout.chartSelect.x and mouse.x < layout.chartSelect.x + layout.chartSelect.w then
-        if y < 0 then
-            menu.selectChartPos = menu.selectChartPos + 1
-        else
-            menu.selectChartPos = menu.selectChartPos - 1
-        end
-
-        menu.selectChartPos = math.max(1, math.min(#menu.chartInfo.chart_name, menu.selectChartPos))
-
-        if menu.chartInfo.chart_name[menu.selectChartPos] then
-            menu.path = menu.chartInfo.chart_name[menu.selectChartPos].path
-            local info = love.filesystem.read(menu.path)
-
-            pcall(function() info = loadstring("return " .. info)() end)
-            if type(info) ~= "table" then
-                log("It is " .. type(info))
-                info = {}
-            end
-            setmetatable(info, meta_chart) --防谱报废
-            table.fill(info, meta_chart.__index)
-            chart = table.copy(info)      --读取谱面
-        end
-    end
 end
 
 function menu:mousereleased(x, y, button, istouch, presses)
-
+    menu('mousereleased', x, y, button, istouch, presses)
 end
 
 function menu:update(dt)
+    menu('update', dt)
     if Nui:windowBegin('chartTool', layout.chartTool.x, layout.chartTool.y, layout.chartTool.w, layout.chartTool.h, 'border') then
         Nui:layoutRow('dynamic', layout.chartTool.h, layout.chartTool.cols)
         for i, obj in ipairs(menuUI.chartTool) do
@@ -256,6 +189,7 @@ function menu:update(dt)
 end
 
 function menu:filedropped(file) -- 文件拖入
+    menu('filedropped', file)
     file:open("r")
     local flie_name = file:getFilename()
     local lastSlashIndex = string.find(flie_name, "/[^/]*$") --找到最后一个斜杠的位置
@@ -263,27 +197,35 @@ function menu:filedropped(file) -- 文件拖入
         lastSlashIndex = string.find(flie_name, "\\[^\\]*$") --找到最后一个斜杠的位置
     end
     if not lastSlashIndex then
-        lastSlashIndex = 0 --找到最后一个斜杠的位置
+        lastSlashIndex = 0
     end
     local content = file:read()
     local flie_name = string.sub(flie_name, lastSlashIndex + 1)
+    local isfile_extension = getFileExtension(flie_name)
     nativefs.mount(PATH.base)
 
-    if string.find(flie_name, ".jpg") or string.find(flie_name, ".jpeg") or
-        string.find(flie_name, ".png") or string.find(flie_name, ".json") then                         --bg/谱面文件
+    if table.find(file_extension.bg, isfile_extension) then                         --bg
         nativefs.newFile(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. flie_name) --复制到当前文件夹下
         nativefs.write(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. flie_name,
-            content)                                                                                   --复制到新的文件夹
-    elseif string.find(flie_name, ".d3") then --旧谱面格式
+            content)      
+            --复制到新的文件夹
+    elseif table.find(file_extension.chart, isfile_extension) then --谱面格式
+        nativefs.newFile(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. flie_name) --复制到当前文件夹下
+        nativefs.write(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. flie_name,
+            content)    
+            
+    elseif table.find(file_extension.old_chart, isfile_extension) then --旧谱面格式
         local json_name = string.sub(flie_name, 1, string.find(flie_name, ".[^.]*$")) .. "json"                 --更改后缀
         nativefs.newFile(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. json_name)   --复制到当前文件夹下
+
         --更新谱面格式
         chart = loadstring('return ' .. content)()
         setmetatable(chart, meta_chart)
         chart:update()
         log(nativefs.write(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. json_name,
             dkjson.encode(chart)))                                                 --复制到新的文件夹
-    elseif string.find(flie_name, ".ogg") or string.find(flie_name, ".mp3") or string.find(flie_name, ".wav") then --音频文件
+
+    elseif table.find(file_extension.music, isfile_extension) then --音频文件
         --创建新文件夹
         local path_name = flie_name                                                                             --文件夹名
 
@@ -296,6 +238,8 @@ function menu:filedropped(file) -- 文件拖入
         nativefs.createDirectory(PATH.usersPath.chart .. path_name)                                          --创建新的文件夹
         nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. new_file_name)
         nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. new_file_name, content)                   --复制到新的文件夹
+
+        --创建默认谱面
         nativefs.newFile(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json')
         local tab = {}
         table.fill(tab,meta_chart.__index)
