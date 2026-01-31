@@ -1,5 +1,5 @@
 local slider = object:new('slider')
-local layout = require 'config.layouts.editTool'
+local layout = require 'config.layouts.play'
 slider.now_y = layout.slider.y + layout.slider.h --现在所在y位置
 slider.x = layout.slider.x
 slider.y = layout.slider.y

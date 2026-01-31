@@ -38,6 +38,8 @@ function Gtakana:Nui()
         end
         local track_id = 0
         for istrack, v in pairs(extra_chart) do
+            v.lpos = {-10}
+            v.rpos = {-10}
             local track_component = {
                 id = id,
                 children = {},
@@ -65,6 +67,7 @@ function Gtakana:Nui()
             local x, w
             local lpos, rpos
             local nowbeat
+            local nowisfade = false
             for istime = 0, time.alltime, 1 / frames do
                 istime = math.roundToPrecision(istime, to_ms)
 
@@ -78,17 +81,21 @@ function Gtakana:Nui()
                 table.insert(v.lpos, lpos)
                 table.insert(v.rpos, rpos)
                 if lpos ~= rpos or fTrack:get_track_info(istrack).w0thenShow == 1 then
-                    if not v.lpos[#v.lpos - 1] or v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] then
+                    if v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] then
                         track_component.model.movement.left.list[tostring(istime * to_ms)] = "v1e_(" .. lpos .. ", u)"
                     end
-                    if not v.rpos[#v.rpos - 1] or v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] then
+                    if v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] then
                         track_component.model.movement.right.list[tostring(istime * to_ms)] = "v1e_(" .. rpos .. ", u)"
                     end
-                elseif lpos == rpos and fTrack:get_track_info(istrack).w0thenShow == 0 then
-                    track_component.model.movement.left.list[tostring(istime * to_ms)] = "v1e_(" .. 11.45 .. ", u)"
-                    track_component.model.movement.right.list[tostring(istime * to_ms)] = "v1e_(" .. 11.45 .. ", u)"
-                    table.insert(v.lpos, 11.45)
-                    table.insert(v.rpos, 11.45)
+                    nowisfade = false
+                elseif lpos == rpos and fTrack:get_track_info(istrack).w0thenShow == 0 and not nowisfade then
+                    if v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] and v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] then
+                        nowisfade = true
+                        track_component.model.movement.left.list[tostring(istime * to_ms)] = "v1e_(" .. -4.5 .. ", u)"
+                        track_component.model.movement.right.list[tostring(istime * to_ms)] = "v1e_(" .. -4.5 .. ", u)"
+                        table.insert(v.lpos, -4.5)
+                        table.insert(v.rpos, -4.5)
+                    end
                 end
             end
 
