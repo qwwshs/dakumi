@@ -81,10 +81,10 @@ function Gtakana:Nui()
                 table.insert(v.lpos, lpos)
                 table.insert(v.rpos, rpos)
                 if lpos ~= rpos or fTrack:get_track_info(istrack).w0thenShow == 1 then
-                    if v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] then
+                    if v.lpos[#v.lpos] ~= v.lpos[#v.lpos - 1] or nowisfade then
                         track_component.model.movement.left.list[tostring(istime * to_ms)] = "v1e_(" .. lpos .. ", u)"
                     end
-                    if v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] then
+                    if v.rpos[#v.rpos] ~= v.rpos[#v.rpos - 1] or nowisfade then
                         track_component.model.movement.right.list[tostring(istime * to_ms)] = "v1e_(" .. rpos .. ", u)"
                     end
                     nowisfade = false

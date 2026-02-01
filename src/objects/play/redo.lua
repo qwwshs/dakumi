@@ -5,6 +5,9 @@ function redo:writeRevoke(type,tab)
     self.redo = {}
     self.revoke[#self.revoke + 1] = {type=type,tab = tab}
 end
+--所有写入的tab类型有
+--note place  note delete event place event delete copy copy delete cropping
+--copy与 copydelete写法为 {note={...},event={...}}
 function redo:keypressed(key)
     if not iskeyboard.ctrl then
         return
