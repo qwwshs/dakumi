@@ -26,16 +26,18 @@ local beat_y = 0
         goto next
 
         ::denom::
-           local isdenom =i - math.roundToPrecision(i,denom.denom)
-            local r,g,b = play.colors.denom[1],play.colors.denom[2],play.colors.denom[3]
+            local isdenom =math.floor(isbeat * denom.denom) - math.floor(isbeat) * denom.denom
+            local r,g,b = unpack(play.colors.denom)
             if denom.denom % 3 == 0 and denom.denom % 4 ~= 0 then
-                  r,g,b = play.colors.denom3and4[1],play.colors.denom3and4[2],play.colors.denom3and4[3]
+                r,g,b = unpack(play.colors.denom3and4)
             end
-            if  isdenom % 2 == 0 and denom.denom % 2 == 0 then
-                r,g,b = play.colors.denom2[1],play.colors.denom2[2],play.colors.denom2[3]
-            end
-            if isdenom  == denom.denom / 2 then --中线
-                r,g,b = play.colors.denomMid[1],play.colors.denomMid[2],play.colors.denomMid[3]
+
+            if isdenom % 2 == 0 and denom.denom % 2 == 0 then
+                if isdenom  == denom.denom / 2 then --中线
+                r,g,b = unpack(play.colors.denomMid)
+                else
+                    r,g,b = unpack(play.colors.denom2)
+                end
             end
             love.graphics.setColor(r,g,b,settings.denom_alpha/100)
             love.graphics.rectangle("fill",play.layout.left_boundary,beat_y,play.layout.right_boundary,1)

@@ -84,7 +84,7 @@ function alt:keypressed(key)
             end
             chart:delete(chart.event[note_or_event_index])
             chart:pop() --结束记录
-            
+
             fEvent:sort()
             sidebar:to('events')
         end
@@ -94,7 +94,7 @@ function alt:keypressed(key)
             chart.event[note_or_event_index].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].from
             chart.event[note_or_event_index].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].to
             log('flip')
-            sidebar:to('event edit',note_or_event_index)
+            sidebar:to('event',note_or_event_index)
         end
     end
     if input('adjustEventValue') then --快速调整
@@ -105,7 +105,7 @@ function alt:keypressed(key)
             else
                 chart.event[note_or_event_index].to = fence_x
             end
-            sidebar:to('event edit',note_or_event_index)
+            sidebar:to('event',note_or_event_index)
         end
      end
 end

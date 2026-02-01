@@ -199,10 +199,16 @@ function play:wheelmoved(x, y)
 end
 
 function play:mousepressed(x, y, button, istouch, presses)
+    if not self:mouseInPlay() then --限制范围
+        return
+    end
     self('mousepressed', x, y, button, istouch, presses)
 end
 
 function play:mousereleased(x, y, button, istouch, presses)
+    if not self:mouseInPlay() then --限制范围
+        return
+    end
     self('mousereleased', x, y, button, istouch, presses)
 end
 
