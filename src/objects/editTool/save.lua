@@ -3,7 +3,7 @@ local buttonSave = object:new('save')
 buttonSave.sound = love.audio.newSource('assets/sound/save.ogg', "stream")
 buttonSave.time = 0 --保存时间
 buttonSave.type = 'button'
-buttonSave.text = 'save'
+buttonSave.text = ''
 buttonSave.img = isImage.save
 
 function buttonSave:click(isAutoSave)

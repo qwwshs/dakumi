@@ -1,8 +1,8 @@
 
 local buttonMusicPlay = object:new('music_play')
 buttonMusicPlay.type = 'button'
-buttonMusicPlay.text = 'play'
-buttonMusicPlay.text2 = 'pause'
+buttonMusicPlay.text = ''
+buttonMusicPlay.text2 = ''
 buttonMusicPlay.img = isImage.play
 buttonMusicPlay.img2 = isImage.pause
 
