@@ -57,6 +57,7 @@ function alt:keypressed(key)
                 end
             end
 
+            chart:push() --开始记录
             for i = 0, math.floor((beat:get(chart.event[note_or_event_index].beat2) -  beat:get(chart.event[note_or_event_index].beat)) * (denom.denom * 2)) do
                 local isnow_beat =  (i /(denom.denom * 2)) +
                 beat:get(chart.event[note_or_event_index].beat)
@@ -78,12 +79,12 @@ function alt:keypressed(key)
                 if isnow_beat > beat:get(chart.event[note_or_event_index].beat2) then
                     local_event.beat2 = temp_event.beat2
                 end
-                chart.event[#chart.event + 1] = local_event --添加
-                redo:writeRevoke("event place",local_event)
+                chart:add(local_event)
                 ctrl:copy_add(local_event,'event')
             end
-            redo:writeRevoke("event delete",chart.event[note_or_event_index])
-                table.remove(chart.event,note_or_event_index) --删除    
+            chart:delete(chart.event[note_or_event_index])
+            chart:pop() --结束记录
+            
             fEvent:sort()
             sidebar:to('events')
         end
@@ -93,7 +94,7 @@ function alt:keypressed(key)
             chart.event[note_or_event_index].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].from
             chart.event[note_or_event_index].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - chart.event[note_or_event_index].to
             log('flip')
-            sidebar:to('nil')
+            sidebar:to('event edit',note_or_event_index)
         end
     end
     if input('adjustEventValue') then --快速调整
@@ -104,7 +105,7 @@ function alt:keypressed(key)
             else
                 chart.event[note_or_event_index].to = fence_x
             end
-            sidebar:to('nil')
+            sidebar:to('event edit',note_or_event_index)
         end
      end
 end
