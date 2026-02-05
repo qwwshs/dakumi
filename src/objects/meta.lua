@@ -104,9 +104,38 @@ end
 
 function meta_chart.__index:pop()
     meta_chart_push.now = false
+
+    --对chart进行增删改查
+    --填入event
+    for _,v in ipairs(meta_chart_push.add.event) do
+        table.insert(chart.event, v)
+    end
+    --填入note
+    for _,v in ipairs(meta_chart_push.add.note) do
+        table.insert(chart.note, v)
+    end
+    fNote:sort()
+    fEvent:sort()
+    --删去event
+    for _,v in ipairs(meta_chart_push.del.event) do
+        for i = 1, #chart.event do
+            if table.eq(chart.event[i], v) then
+                table.remove(chart.event, i)
+                break
+            end
+        end
+    end
+    --删去note
+    for _,v in ipairs(meta_chart_push.del.note) do
+        for i = 1, #chart.note do
+            if table.eq(chart.note[i], v) then
+                table.remove(chart.note, i)
+                break
+            end
+        end
+    end
     --填入redo
-    redo:writeRevoke("copy", meta_chart_push.add)
-    redo:writeRevoke("copy delete", meta_chart_push.del)
+    redo:writeRevoke(meta_chart_push)
 
     meta_chart_push.add = {event = {}, note = {}}
     meta_chart_push.del = {event = {}, note = {}}
@@ -121,20 +150,20 @@ function meta_chart.__index:add(noteorevent)
         return
     end
     if iseventtype then
-        table.insert(self.event,noteorevent)
         if meta_chart_push.now then
             table.insert(meta_chart_push.add.event, noteorevent)
             return
         end
-        redo:writeRevoke("event place",noteorevent)
+        table.insert(self.event,noteorevent)
+        redo:writeRevoke(noteorevent,'add')
         fEvent:sort()
     elseif isnotetype then
-        table.insert(self.note,noteorevent)
         if meta_chart_push.now then
             table.insert(meta_chart_push.add.note, noteorevent)
             return
         end
-        redo:writeRevoke("note place",noteorevent)
+        table.insert(self.note,noteorevent)
+        redo:writeRevoke(noteorevent,'add')
         fNote:sort()
     end
     
@@ -149,24 +178,24 @@ function meta_chart.__index:delete(noteorevent)
     if iseventtype then
         for i = 1, #self.event do
             if table.eq(self.event[i], noteorevent) then
-                table.remove(self.event, i)
                 if meta_chart_push.now then
                     table.insert(meta_chart_push.del.event, noteorevent)
                     return
                 end
-                redo:writeRevoke("event delete", noteorevent)
+                table.remove(self.event, i)
+                redo:writeRevoke(noteorevent,'del')
                 return
             end
         end
     elseif isnotetype then
         for i = 1, #self.note do
             if table.eq(self.note[i], noteorevent) then
-                table.remove(self.note, i)
                 if meta_chart_push.now then
                     table.insert(meta_chart_push.del.note, noteorevent)
                     return
                 end
-                redo:writeRevoke("note delete", noteorevent)
+                table.remove(self.note, i)
+                redo:writeRevoke(noteorevent,'del')
                 return
             end
         end

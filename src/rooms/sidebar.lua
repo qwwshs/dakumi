@@ -44,9 +44,8 @@ function sidebar:update(dt)
     if demo.open then return end
     local layout = self.layout
     local g = self:getGroup(self.displayed_content)
-    if Nui:windowBegin('sidebar', layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background') then
+    if Nui:windowBegin(i18n:get(sidebar.displayed_content), layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background','title') then
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
-        Nui:label(i18n:get(sidebar.displayed_content))
         Nui:label(i18n:get("version") .. DAKUMI._VERSION)
 
         if self.displayed_content ~= 'nil' then

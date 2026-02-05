@@ -147,7 +147,6 @@ function event:place(type,pos)
             end
 
         end
-        redo:writeRevoke("event place",event.local_event)
         sidebar.displayed_content = "event"..int_theevent
         sidebar:to("event",int_theevent)
         event:cleanUp()
