@@ -59,9 +59,9 @@ function GtrackEdit:NuiNext()
     end
 
     if self.w0thenShow.value then
-        chart.track[tostring(istrack)].w0thenShow = 0
-    else
         chart.track[tostring(istrack)].w0thenShow = 1
+    else
+        chart.track[tostring(istrack)].w0thenShow = 0
     end
 end
 

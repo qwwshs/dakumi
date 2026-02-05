@@ -29,20 +29,20 @@ end
 function Gnote:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     Nui:checkbox(i18n:get("note fake"), self.fakev)
-    if not self.fakev.value then
+    if self.fakev.value then
         Nui:label(i18n:get("false"))
     else
         Nui:label(i18n:get("true"))
     end
     if chart.note[sidebar.incoming[1]].type == 'hold' then
         Nui:checkbox(i18n:get("note head"), self.noteHeadv)
-        if not self.noteHeadv.value then
+        if self.noteHeadv.value then
             Nui:label(i18n:get("apply"))
         else
             Nui:label(i18n:get("not apply"))
         end
         Nui:checkbox(i18n:get("wipe head"), self.wipeHeadv)
-        if not self.wipeHeadv.value then
+        if self.wipeHeadv.value then
             Nui:label(i18n:get("apply"))
         else
             Nui:label(i18n:get("not apply"))

@@ -1,6 +1,6 @@
 -- Copyright (C) 2010-2024 qwwshs
 
-DAKUMI = {_VERSION = "0.5.0b1"}
+DAKUMI = {_VERSION = "0.5.0b3"}
 beat = beat
 time = {nowtime = 0 ,alltime = 1}
 chart = {}
@@ -16,7 +16,7 @@ iskeyboard.alt = false --alt按下状态
 iskeyboard.ctrl  = false --ctrl按下状态
 iskeyboard.shift = false --shift按下状态
 
-WINDOW = {w = 1600,h = 900,scale = 1,nowW = 1600,nowH = 900}
+WINDOW = {w = 1600,h = 900,scale = 1,nowW = 1600,nowH = 900,fullscreen = false} --窗口信息
 PATH = {
     i18n = 'i18n/',
     users = 'users/',
@@ -47,35 +47,36 @@ require 'isRequire'
 
 Nui = nuklear.newUI()
 Nui:styleLoadColors({
-    ['text'] = '#afafaf',
-    ['window'] = '#2d2d2d',
-    ['header'] = '#282828',
-    ['border'] = '#414141',
-    ['button'] = '#323232',
-    ['button hover'] = '#282828',
-    ['button active'] = '#232323',
-    ['toggle'] = '#646464',
-    ['toggle hover'] = '#787878',
-    ['toggle cursor'] = '#2d2d2d',
-    ['select'] = '#2d2d2d',
+    ['text'] = '#F0F0F0',                    -- 亮灰色文字，更接近ImGui默认
+    ['window'] = '#181818',                  -- 更深的窗口背景
+    ['header'] = '#202020',                  -- 头部背景
+    ['border'] = '#404040',                  -- 边框颜色
+    ['button'] = '#2D2D2D',                  -- 按钮默认
+    ['button hover'] = '#3D3D3D',            -- 按钮悬停
+    ['button active'] = '#1E6F9F',           -- ImGui风格的蓝色激活状态
+    ['toggle'] = '#2D2D2D',                  -- 切换框背景
+    ['toggle hover'] = '#3D3D3D',            -- 切换框悬停
+    ['toggle cursor'] = '#1E6F9F',           -- 切换框光标（蓝色）
+    ['select'] = '#2d2d2d',                 -- 选择框背景
+    ['select hover'] = '#3D3D3D',            -- 选择框悬停
     ['select active'] = '#232323',
-    ['slider'] = '#262626',
-    ['slider cursor'] = '#646464',
-    ['slider cursor hover'] = '#787878',
-    ['slider cursor active'] = '#969696',
-    ['property'] = '#262626',
-    ['edit'] = '#262626',
-    ['edit cursor'] = '#afafaf',
-    ['combo'] = '#2d2d2d',
-    ['chart'] = '#787878',
-    ['chart color'] = '#2d2d2d',
-    ['chart color highlight'] = '#ff0000',
-    ['scrollbar'] = '#282828',
-    ['scrollbar cursor'] = '#646464',
-    ['scrollbar cursor hover'] = '#787878',
-    ['scrollbar cursor active'] = '#969696',
-    ['tab header'] = '#282828'
-    })
+    ['slider'] = '#2D2D2D',                  -- 滑块背景
+    ['slider cursor'] = '#1E6F9F',           -- 滑块光标（蓝色）
+    ['slider cursor hover'] = '#2596D1',     -- 滑块光标悬停（亮蓝色）
+    ['slider cursor active'] = '#1A5A7A',    -- 滑块光标激活（深蓝色）
+    ['property'] = '#202020',                -- 属性区域
+    ['edit'] = '#2D2D2D',                    -- 编辑框
+    ['edit cursor'] = '#F0F0F0',             -- 编辑框光标
+    ['combo'] = '#2D2D2D',                   -- 组合框
+    ['chart'] = '#3D3D3D',                   -- 图表背景
+    ['chart color'] = '#1E6F9F',             -- 图表颜色（蓝色）
+    ['chart color highlight'] = '#FF5555',   -- 图表高亮（红色）
+    ['scrollbar'] = '#202020',               -- 滚动条背景
+    ['scrollbar cursor'] = '#404040',        -- 滚动条光标
+    ['scrollbar cursor hover'] = '#505050',  -- 滚动条光标悬停
+    ['scrollbar cursor active'] = '#1E6F9F', -- 滚动条光标激活（蓝色）
+    ['tab header'] = '#202020'               -- 标签页头部
+})
 
 --快捷键相关
 key = loadstring(nativefs.read(PATH.key..'key.lua'))() or {}
@@ -101,30 +102,34 @@ function love.update(dt)
     math.randomseed(elapsed_time) --随机数种子
     elapsed_time = elapsed_time + dt
 
-    Nui:frameBegin()
-    Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2)
-    Nui:scale(WINDOW.scale,WINDOW.scale)
-    Nui:styleSetFont(FONT.normal)
-
-    if love.window.getFullscreen()  then  --全屏
+    if love.window.getFullscreen() and not WINDOW.fullscreen then  --全屏
         local w, h = love.graphics.getDesktopDimensions()   
         WINDOW.nowW = w
         WINDOW.nowH = h
         WINDOW.scale = math.min(w / WINDOW.w,h / WINDOW.h)
+        WINDOW.fullscreen = true
+        love.resize(w,h)
+    elseif not love.window.getFullscreen() and WINDOW.fullscreen then
+        WINDOW.fullscreen = false
+        WINDOW.nowW = WINDOW.w
+        WINDOW.nowH = WINDOW.h
+        WINDOW.scale = 1
+        love.resize(WINDOW.w,WINDOW.h)
     end
 
+    
+    Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2)
+    Nui:scale(WINDOW.scale,WINDOW.scale)
+    Nui:styleSetFont(FONT.normal)
+    
     local original_x, original_y = love.mouse.getPosition( ) --对缩放进行处理
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale)/2  
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale)/2
 
     room("update",dt)
 
-    Nui:frameEnd()
 end
 function love.draw()
-    love.graphics.setScissor((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2,WINDOW.w * WINDOW.scale, WINDOW.h * WINDOW.scale)
-    love.graphics.translate((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2)
-    love.graphics.scale(WINDOW.scale,WINDOW.scale)
 
     room("draw")
     messageBox:draw()
@@ -239,6 +244,11 @@ function love.resize( w, h )
     WINDOW.nowH = h
     WINDOW.scale = math.min(w / WINDOW.w,h / WINDOW.h)
     room("resize", w, h )
+    love.graphics.origin()
+    love.graphics.setScissor((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2,WINDOW.w * WINDOW.scale, WINDOW.h * WINDOW.scale)
+    love.graphics.translate((WINDOW.nowW - WINDOW.w * WINDOW.scale)/2,(WINDOW.nowH - WINDOW.h * WINDOW.scale)/2)
+    love.graphics.scale(WINDOW.scale,WINDOW.scale)
+
 end
 
 
@@ -248,6 +258,51 @@ end
 
 function love.filedropped( file ) --文件拖入
     room("filedropped", file )
+end
+
+
+
+function love.run()
+	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
+
+	-- We don't want the first frame's dt to include time taken by love.load.
+	if love.timer then love.timer.step() end
+
+	local dt = 0
+
+	-- Main loop time.
+	return function()
+		-- Process events.
+		if love.event then
+			love.event.pump()
+			for name, a,b,c,d,e,f in love.event.poll() do
+				if name == "quit" then
+					if not love.quit or not love.quit() then
+						return a or 0
+					end
+				end
+				love.handlers[name](a,b,c,d,e,f)
+			end
+		end
+
+		-- Update dt, as we'll be passing it to update
+		if love.timer then dt = love.timer.step() end
+
+		-- Call update and draw
+        Nui:frameBegin()
+		if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
+        Nui:frameEnd()
+
+		if love.graphics and love.graphics.isActive() then
+			love.graphics.clear(love.graphics.getBackgroundColor())
+
+			if love.draw then love.draw() end
+
+			love.graphics.present()
+		end
+
+		if love.timer then love.timer.sleep(0.001) end
+	end
 end
 
 -- 错误处理
