@@ -101,14 +101,13 @@ function note:place(note_type,pos)
         end
     end
     if note_type ~= "hold" or note.hold_type == 2 then --长条尾放置完成
-        redo:writeRevoke("note place",note.local_tab)
+        note:holdCleanUp()
         note:sort()
     end
 end
 function note:sort()
         table.sort(chart.note,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
         note.local_tab = {}
-        note:holdCleanUp()
 end
 function note:getHoldTable()
     return note.local_hold

@@ -8,27 +8,31 @@ ctrl.copy_tab = {
     type = "", --类型是复制 还是裁剪
     pos = "",  --位置是游玩区域还是编辑区域
 }
-function ctrl:copy_sub(new_table, type)
-    for i, v in ipairs(self.copy_tab[type]) do
-        if table.eq(self.copy_tab[type][i], new_table) then
-            table.remove(self.copy_tab[type], i)
+function ctrl:copy_sub(new_table, istype)
+    if istype ~= "note" and istype ~= "event" then return end
+    for i, v in ipairs(self.copy_tab[istype]) do
+        if table.eq(self.copy_tab[istype][i], new_table) then
+            table.remove(self.copy_tab[istype], i)
         end
     end
 end
 
-function ctrl:copy_add(new_table, type)
-    for i = 1, #self.copy_tab[type] do
-        if table.eq(self.copy_tab[type][i], new_table) then --去重
+function ctrl:copy_add(new_table, istype)
+    if istype ~= "note" and istype ~= "event" then return end
+    for i = 1, #self.copy_tab[istype] do
+        if table.eq(self.copy_tab[istype][i], new_table) then --去重
             return
         end
     end
-    self.copy_tab[type][#self.copy_tab[type] + 1] = new_table
-    table.sort(self.copy_tab[type], function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+
+    self.copy_tab[istype][#self.copy_tab[istype] + 1] = new_table
+    table.sort(self.copy_tab[istype], function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
 end
 
-function ctrl:copy_exist(new_table, type)
-    for i = 1, #self.copy_tab[type] do
-        if table.eq(self.copy_tab[type][i], new_table) then --去重
+function ctrl:copy_exist(new_table, istype)
+    if istype ~= "note" and istype ~= "event" then return end
+    for i = 1, #self.copy_tab[istype] do
+        if table.eq(self.copy_tab[istype][i], new_table) then --去重
             return true
         end
     end
@@ -270,34 +274,26 @@ function ctrl:keypressed(key)
     elseif input('deleteSelect') or input('deleteAllSelect') then
         sidebar:to("nil")
         local all = input('deleteAllSelect')
-        local local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then
-            redo:writeRevoke("copy delete", table.copy(self.copy_tab))
-        else
-            redo:writeRevoke("copy delete", { note = table.copy(self.copy_tab.note), event = {} })
-        end
-
-        for i = 1, #chart.note do
-            if not table.eq(self.copy_tab.note[1], chart.note[i]) then
-                local_tab[#local_tab + 1] = chart.note[i]
-            else
-                table.remove(self.copy_tab.note, 1)
-            end
-        end
-        chart.note = table.copy(local_tab)
-
-        local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a全部删除
-            for i = 1, #chart.event do
-                if not table.eq(self.copy_tab.event[1], chart.event[i]) then
-                    local_tab[#local_tab + 1] = chart.event[i]
-                else
-                    table.remove(self.copy_tab.event, 1)
+        chart:push()
+        for _, v in ipairs(self.copy_tab.note) do
+            for i = 1, #chart.note do
+                if table.eq(self.copy_tab.note[1], chart.note[i]) then
+                    table.remove(self.copy_tab.note, 1)
+                    chart:delete(chart.note[i])
                 end
             end
-            chart.event = table.copy(local_tab)
         end
-
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a全部删除
+            for _, v in ipairs(self.copy_tab.event) do
+                for i = 1, #chart.event do
+                    if table.eq(self.copy_tab.event[1], chart.event[i]) then
+                        table.remove(self.copy_tab.event, 1)
+                        chart:delete(chart.event[i])
+                    end
+                end
+            end
+        end
+        chart:pop()
 
         self.copy_tab = {
             note = {},
@@ -344,76 +340,67 @@ function ctrl:keypressed(key)
         if self.copy_tab.note[1] and self.copy_tab.pos == 'play' and not all then     --不完全复制
             frist_beat = self.copy_tab.note[1].beat
         end
-        for i = 1, #copy_tab2.note do     --轨道修改
-            if self.copy_tab.pos ~= 'play' then
+
+        for i = 1, #copy_tab2.note do     
+            if self.copy_tab.pos ~= 'play' then --轨道修改
                 copy_tab2.note[i].track = track.track
             end
-            copy_tab2.note[i].beat = beat:add(beat:sub(copy_tab2.note[i].beat, frist_beat), to_beat)
+
+            copy_tab2.note[i].beat = beat:add(beat:sub(copy_tab2.note[i].beat, frist_beat), to_beat) --beat修改
             if copy_tab2.note[i].type == "hold" then
                 copy_tab2.note[i].beat2 = beat:add(beat:sub(copy_tab2.note[i].beat2, frist_beat), to_beat)
             end
         end
         for i = 1, #copy_tab2.event do
-            local track_info = fTrack:get_track_info(copy_tab2.event[i].track)
-            if self.copy_tab.pos ~= 'play' then
-                copy_tab2.event[i].track = track.track
+            local isevent = copy_tab2.event[i]
+            local track_info = fTrack:get_track_info(isevent.track)
+            if self.copy_tab.pos ~= 'play' then --轨道修改
+                isevent.track = track.track
             end
-            copy_tab2.event[i].beat = beat:add(beat:sub(copy_tab2.event[i].beat, frist_beat), to_beat)
-            copy_tab2.event[i].beat2 = beat:add(beat:sub(copy_tab2.event[i].beat2, frist_beat), to_beat)
-            if (input('flipPaste') or input('flipPasteAll')) and (copy_tab2.event[i].type == "x" or track_info.type == "lposrpos") then     --取反
-                copy_tab2.event[i].from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].from
-                copy_tab2.event[i].to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - copy_tab2.event[i].to
+            isevent.beat = beat:add(beat:sub(isevent.beat, frist_beat), to_beat)
+            isevent.beat2 = beat:add(beat:sub(isevent.beat2, frist_beat), to_beat)
+            if (input('flipPaste') or input('flipPasteAll')) and (isevent.type == "x" or track_info.type == "lposrpos") then     --取反
+                isevent.from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - isevent.from
+                isevent.to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - isevent.to
             end
         end
+        chart:push()
+
         --写入谱面内
         for i = 1, #copy_tab2.note do
-            chart.note[#chart.note + 1] = table.copy(copy_tab2.note[i])
+            chart:add(table.copy(copy_tab2.note[i]))
         end
         if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a完全复制
             for i = 1, #copy_tab2.event do
-                chart.event[#chart.event + 1] = table.copy(copy_tab2.event[i])
+                chart:add(table.copy(copy_tab2.event[i]))
             end
         end
-        fEvent:sort()
-        fNote:sort()
-
+        
         if self.copy_tab.type == "copy" then
-            if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a完全复制
-                redo:writeRevoke("copy", table.copy(copy_tab2))
-            else
-                redo:writeRevoke("copy", { note = table.copy(copy_tab2.note), event = {} })
-            end
+            chart:pop()
             return
         end
 
-        --x
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     --x
-            redo:writeRevoke("cropping", { table.copy(self.copy_tab), table.copy(copy_tab2) })
-        else
-            redo:writeRevoke("cropping",
-                { { note = table.copy(self.copy_tab.note), event = {} }, { note = table.copy(copy_tab2.note), event = {} } })
-        end
-        --x 删除原来的
-        local local_tab = {}
-        for i = 1, #chart.note do
-            if not table.eq(self.copy_tab.note[1], chart.note[i]) then
-                local_tab[#local_tab + 1] = chart.note[i]
-            else
-                table.remove(self.copy_tab.note, 1)
-            end
-        end
-        chart.note = table.copy(local_tab)
-        local_tab = {}
-        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a对event操作
-            for i = 1, #chart.event do
-                if not table.eq(self.copy_tab.event[1], chart.event[i]) then
-                    local_tab[#local_tab + 1] = chart.event[i]
-                else
-                    table.remove(self.copy_tab.event, 1)
+        --剪贴
+        for _, v in ipairs(self.copy_tab.note) do
+            for i = 1, #chart.note do
+                if table.eq(self.copy_tab.note[1], chart.note[i]) then
+                    table.remove(self.copy_tab.note, 1)
+                    chart:delete(chart.note[i])
                 end
             end
-            chart.event = table.copy(local_tab)
         end
+        if self.copy_tab.pos ~= 'play' or (self.copy_tab.pos == 'play' and all) then     -- a全部删除
+            for _, v in ipairs(self.copy_tab.event) do
+                for i = 1, #chart.event do
+                    if table.eq(self.copy_tab.event[1], chart.event[i]) then
+                        table.remove(self.copy_tab.event, 1)
+                        chart:delete(chart.event[i])
+                    end
+                end
+            end
+        end
+        chart:pop()
     end
 end
 
