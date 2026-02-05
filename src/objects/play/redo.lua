@@ -29,7 +29,6 @@ function redo:writeRevoke(tab,istype)
         end
     end
     self.redo = {}
-    log(revoke_tab)
     table.insert(self.revoke, revoke_tab)
 end
 --所有写入的tab类型有
@@ -37,7 +36,6 @@ end
 function redo:keypressed(key)
 
     if input('undo') and self.revoke[#self.revoke] then --撤销上一步操作
-        log(self.revoke[#self.revoke])
         self.redo[#self.redo + 1] = self.revoke[#self.revoke]
         
         for _,note in ipairs(self.revoke[#self.revoke].del.note) do
@@ -70,7 +68,6 @@ function redo:keypressed(key)
         table.remove(self.revoke)
 
     elseif input('redoing') and self.redo[#self.redo] then --重做上一步操作
-        log(self.redo[#self.revoke])
         self.revoke[#self.revoke] = self.redo[#self.redo]
         
         for _,note in ipairs(self.revoke[#self.revoke].add.note) do
