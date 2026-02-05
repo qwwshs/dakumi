@@ -9,31 +9,50 @@ function alt:keypressed(key)
     local note_or_event_index = sidebar.incoming[1]
     if input('dragHead') then --拖头
         if is_note then
-            chart.note[note_or_event_index].beat = beat:toNearby(beat:yToBeat(mouse.y))
-            fNote:sort()
+            local isnote = table.copy(chart.note[note_or_event_index])
+            isnote.beat = beat:toNearby(beat:yToBeat(mouse.y))
+            chart:push()
+            chart:add(isnote)
+            chart:delete(chart.note[note_or_event_index])
+            chart:pop()
             sidebar:to("nil")
         end
         if is_event then
-            chart.event[note_or_event_index].beat = beat:toNearby(beat:yToBeat(mouse.y))
-            fEvent:sort()
+            local isevent = table.copy(chart.event[note_or_event_index])
+            isevent.beat = beat:toNearby(beat:yToBeat(mouse.y))
+            chart:push()
+            chart:add(isevent)
+            chart:delete(chart.event[note_or_event_index])
+            chart:pop()
             sidebar:to("nil")
         end
+        sidebar:to("nil")
     end
     if input('dragTail') then --拖尾
         if is_note and chart.note[note_or_event_index].beat2 then
             if beat:get(beat:toNearby(beat:yToBeat(mouse.y))) <= beat:get(chart.note[note_or_event_index].beat) then
                 return
             end
-            chart.note[note_or_event_index].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
-            fNote:sort()
+            local isnote = table.copy(chart.note[note_or_event_index])
+            isnote.beat2 = beat:toNearby(beat:yToBeat(mouse.y))
+            chart:push()
+            chart:add(isnote)
+            chart:delete(chart.note[note_or_event_index])
+            chart:pop()
+
             sidebar:to("nil")
         end
         if is_event then
             if beat:get(beat:toNearby(beat:yToBeat(mouse.y))) <= beat:get(chart.event[note_or_event_index].beat) then
                 return
             end
-            chart.event[note_or_event_index].beat2 = beat:toNearby(beat:yToBeat(mouse.y))
-            fEvent:sort()
+            local isevent = table.copy(chart.event[note_or_event_index])
+            isevent.beat2 = beat:toNearby(beat:yToBeat(mouse.y))
+            chart:push()
+            chart:add(isevent)
+            chart:delete(chart.event[note_or_event_index])
+            chart:pop()
+            
             sidebar:to("nil")
         end
     end
