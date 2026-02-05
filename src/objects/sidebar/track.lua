@@ -4,7 +4,7 @@ Gtrack.type = "track"
 Gtrack.range = {x = {from = {value = '0'},to = {value = '0'}},w = {from = {value = '0'},to = {value = '0'}}} --轨道搜索范围
 Gtrack.layout = require 'config.layouts.sidebar'.track
 Gtrack.turnOnFilter = {}
-Gtrack.turnOnFilter.value = true --Nui的开关是反的 开启筛选
+Gtrack.turnOnFilter.value = false --筛选
 function Gtrack:Nui()
     local layout = self.layout
     local allTrack = fTrack:track_get_all_track()
@@ -19,7 +19,7 @@ function Gtrack:Nui()
         local x = allTrackPos[v].x
         local w = allTrackPos[v].w
 
-        if ((xf and xt) or (wf and wt)) and not self.turnOnFilter.value then
+        if ((xf and xt) or (wf and wt)) and self.turnOnFilter.value then
             if xf and xt and not (math.intersect(xf,xt,x,x)) and not (wf and wt)  then
                 goto next
             elseif wf and wt and not (math.intersect(wf,wt,w,w)) and not (xf and xt) then
