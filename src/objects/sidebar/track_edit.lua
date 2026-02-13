@@ -5,20 +5,16 @@ GtrackEdit.layout = require 'config.layouts.sidebar'.track_edit
 GtrackEdit.track = 0
 GtrackEdit.trackName = {value = ''}
 GtrackEdit.trackType = {value = 1} --1:xw 2:lposrpos
-GtrackEdit.w0thenShow = {value = false} --Nui的开关是反的
-
+GtrackEdit.w0thenShow = {value = false}
+GtrackEdit.parentTrack = {value = 0} --为0时无父轨道
 function GtrackEdit:to(istrack)
     self.track = istrack
-    if not chart.track[tostring(istrack)] then --防止不连续索引带来的问题
-        chart.track[tostring(istrack)] = {
-            name = '',
-            w0thenShow = 0,
-            type = 'xw'
-        }
+    if not chart.track[tostring(istrack)] then
+        chart.track[tostring(istrack)] = table.copy(meta_track.__index)
     end
     local track_obj = chart.track[tostring(istrack)]
     self.trackName.value = track_obj.name
-
+    self.parentTrack.value = track_obj.parent
     if track_obj.type == 'xw' then
         self.trackType.value = 1
     elseif track_obj.type == 'lposrpos' then
@@ -45,8 +41,11 @@ function GtrackEdit:Nui()
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     Nui:checkbox(i18n:get('do_not_hide'), self.w0thenShow)
-    
 
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    Nui:label(i18n:get('parent'))
+    Nui:edit('field', self.parentTrack)
+    
 end
 function GtrackEdit:NuiNext()
     local istrack = self.track
@@ -63,6 +62,8 @@ function GtrackEdit:NuiNext()
     else
         chart.track[tostring(istrack)].w0thenShow = 0
     end
+
+    chart.track[tostring(istrack)].parent = tonumber(self.parentTrack.value) or 0
 end
 
 return GtrackEdit

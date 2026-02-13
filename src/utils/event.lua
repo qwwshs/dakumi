@@ -27,8 +27,9 @@ function event:getTrans(isevent,t)
     end
 end
 
-function event:get(track,isbeat,original) --得到event此时的宽和高
+function event:get(track,isbeat,original,parent_tab) --得到event此时的宽和高
     local original = original or false --是否获得原值（不进行lrpos转换）
+    local parent_tab = parent_tab or {} --父轨道表 递归时传入
     local now_w = 0
     local now_x = 0
     local now_x_ed = false --已经计算
@@ -58,6 +59,19 @@ function event:get(track,isbeat,original) --得到event此时的宽和高
         local rpos = now_w
         now_x = (lpos + rpos) /2
         now_w = rpos - lpos
+    end
+    if track_info.parent ~= 0 then --有父轨道
+        parent_tab[track] = true --记录父轨道 避免重复计算
+        if parent_tab[track_info.parent] then --父轨道在递归中已经计算过了 避免死循环
+            return now_x,now_w
+        end
+        local parent_x,parent_w = self:get(track_info.parent, isbeat, original,parent_tab)
+
+        now_x = now_x + parent_x
+        if track_info.type == 'lposrpos' then
+            now_w = now_w + parent_w
+        end
+        
     end
     return now_x,now_w
 end
