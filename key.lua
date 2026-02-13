@@ -32,4 +32,5 @@ return {
     dragHead = {'alt','z'}, --拖头
     dragTail = {'alt','x'}, --拖尾
     adjustEventValue = {'alt','t'}, --调整event数值
+    flipUpsideDownEvent = {'alt','u'}, --上下翻转event
 }

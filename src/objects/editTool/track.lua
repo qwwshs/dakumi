@@ -43,7 +43,7 @@ function track:Nui() --渲染
         Nui:edit('field', self.useToFence)
 
         if Nui:button("",isImage.down) then
-            track.fence = math.max(track.fence - 1,1)
+            track.fence = math.max(track.fence - 1,0)
             self.useToFence.value = tostring(track.fence)
         end
         

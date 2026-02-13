@@ -99,4 +99,5 @@ return {
     ['hide'] = '隐藏',
     ['track_name'] = '轨道名称',
     ['frame_rate'] = '帧率',
+    ['parent'] = '父轨道'
 }

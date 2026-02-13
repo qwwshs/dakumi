@@ -126,7 +126,16 @@ function alt:keypressed(key)
             end
             sidebar:to('event',note_or_event_index)
         end
-     end
+    end
+    if input('flipUpsideDownEvent') then
+        if is_event and chart.event[note_or_event_index] then
+            local from,to = chart.event[note_or_event_index].to,chart.event[note_or_event_index].from
+            chart.event[note_or_event_index].from = from
+            chart.event[note_or_event_index].to = to
+            log('flip')
+            sidebar:to('event',note_or_event_index)
+        end
+    end
 end
 
 return alt

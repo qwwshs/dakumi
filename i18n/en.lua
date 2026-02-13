@@ -98,5 +98,6 @@ return {
     ['do_not_hide'] = 'do not hide',
     ['track_name'] = 'track name',
     ['hide'] = 'hide',
-    ['frame_rate'] = 'frame rate'
+    ['frame_rate'] = 'frame rate',
+    ['parent'] = 'parent'
 }

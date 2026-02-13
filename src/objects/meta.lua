@@ -44,6 +44,16 @@ meta_note = { --谱面音符格式 元表
         fake = 0,
     }
 }
+
+meta_track = { --谱面轨道格式 元表
+    __index = {
+        name = '',
+        w0thenShow = 0,
+        type = 'xw',
+        parent = 0
+    }
+}
+
 local meta_chart_push = {
     now = false,
     add = {event = {}, note = {}},
@@ -88,8 +98,13 @@ function meta_chart.__index:update()
             chart.note[i].wipe_head = chart.note[i].wipe_head or 0
         end
     end
-    --track填充
-
+    
+    --track 父坐标填充
+    for i,v in pairs(chart.track) do
+        if v.parent == nil then
+            v.parent = 0
+        end
+    end
 end
 
 function meta_chart.__index:load()

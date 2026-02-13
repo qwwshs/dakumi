@@ -72,11 +72,7 @@ end
 
 function fTrack:get_track_info(track)
     if not chart.track[tostring(track)] then
-        chart.track[tostring(track)] = {
-                name = '',
-                w0thenShow = 0,
-                type = 'xw'
-            }
+        chart.track[tostring(track)] = table.copy(meta_track.__index)
     end
     return chart.track[tostring(track)]
 end
