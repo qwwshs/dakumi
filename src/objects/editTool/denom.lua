@@ -18,7 +18,9 @@ end
 function denom:wheelmoved(x,y)
     --beat更改
         local temp = settings.contact_roller--临时数值
-
+        if input('accelerate') then
+            temp = temp * 4
+        end
         if y > 0 then
             temp = temp/ denom.denom
         else
