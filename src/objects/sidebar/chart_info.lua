@@ -76,7 +76,7 @@ function GchartInfo:Nui()
     end
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
-    if Nui:button(i18n:get('save')) then
+    if ui:tip(i18n:get('save')) then
         chart.info.chartor = self.chartor_v.value or ""
         chart.info.artist = self.artist_v.value or ""
         chart.info.chart_name = self.chart_name_v.value or ""

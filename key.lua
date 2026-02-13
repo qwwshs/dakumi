@@ -18,6 +18,7 @@ return {
     flipPasteAll = {'ctrl','a','b'}, --取反event粘贴,包括event(为了统一)
     flipPaste = {'ctrl','b'}, --取反event粘贴
     cut = {'ctrl','x'}, --剪切
+    accelerate = {'ctrl'}, --滚动加速
  
     deleteSelect = {'ctrl','d'}, --删除所选
     deleteAllSelect = {'ctrl','a','d'}, --删除,包括event的所选

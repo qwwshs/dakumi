@@ -1,6 +1,6 @@
 --note和event的复制粘贴
 local ctrl = object:new('ctrl')
-ctrl.mouse_start_pos = { x = 0, y = 0 } --鼠标按下的时候的x和y
+ctrl.mouse_start_pos = { x = 0, y = 0, down = false } --鼠标按下的时候的x和y 以及是否按下
 ctrl.meta_copy_tab = {}
 ctrl.copy_tab = {
     note = {},
@@ -43,10 +43,15 @@ function ctrl:get_copy()
     return self.copy_tab
 end
 
+function ctrl:update(dt)
+    if not love.mouse.isDown(1) then
+        self.mouse_start_pos.down = false
+    end
+end
 function ctrl:draw()
     local note_h = settings.note_height --25 * denom.scale
     local note_w = play.layout.edit.noteW
-    if love.mouse.isDown(1) then        --复制框
+    if self.mouse_start_pos.down then        --复制框
         love.graphics.setColor(play.colors.copySelectFill)
         love.graphics.rectangle("fill", self.mouse_start_pos.x, self.mouse_start_pos.y,
             mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
@@ -85,7 +90,7 @@ function ctrl:draw()
                 y2 = beat:toY(self.copy_tab.note[i].beat2)
             end
             if y < 0 - note_h then break end                                                --超出范围
-            if (not (y2 > settings.judge_line_y + note_h or y < 0 - note_h)) and (not (y > settings.judge_line_y and chart.note[i].fake == 1)) then
+            if math.intersect(y,y2,settings.judge_line_y + note_h,0 - note_h) and (not (y > settings.judge_line_y and chart.note[i].fake == 1)) then
                 if y ~= y2 and y > settings.judge_line_y then y = settings.judge_line_y end --hold头保持在线上
 
                 if self.copy_tab.note[i].type ~= "hold" then
@@ -141,7 +146,7 @@ function ctrl:mousepressed(x, y, button)
     end
 
     if love.mouse.isDown(1) then
-        self.mouse_start_pos = { x = mouse.x, y = mouse.y }
+        self.mouse_start_pos = { x = mouse.x, y = mouse.y,down = true }
     end
 end
 

@@ -57,7 +57,7 @@ function Gsettings:Nui()
         end
     end
 
-    if Nui:button(i18n:get('save')) then
+    if ui:tip(i18n:get('save')) then
         for i,v in ipairs(self.setting_type) do
             settings[v[1]] = tonumber(v.value) or 0
             --特殊处理

@@ -15,7 +15,7 @@ function Gpreference:Nui()
     Nui:label(i18n:get"event_scale")
     Nui:edit('field',self.event_scale_v)
 
-    if Nui:button(i18n:get('save')) then
+    if ui:tip(i18n:get('save')) then
         local old = chart.preference.x_offset
         chart.preference.x_offset = tonumber(self.x_offset_v.value) or 0
         chart.preference.event_scale = tonumber(self.event_scale_v.value) or 100

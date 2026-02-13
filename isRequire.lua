@@ -31,7 +31,7 @@ fTrack = require("src.utils.track")
 require('src.objects.messageBox')
 require('src/objects.i18n')
 require('src.objects.allImage')
-
+ui = require("src.objects.ui")
 
 require("src.rooms.edit")
 

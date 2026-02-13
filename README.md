@@ -63,6 +63,8 @@ copy /b love.exe+dakumi.love dakumi.exe
 
 - [7zip](https://github.com/ip7z/7zip)
 
+- [yaml](https://github.com/exosite/lua-yaml)
+
 ## 开源许可
 
 dakumi遵循宽松的MIT协议

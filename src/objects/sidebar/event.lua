@@ -160,6 +160,22 @@ end
 function Gevent:NuiNext() --更新信息
     local v = chart.event[sidebar.incoming[1]]
     if not v then return end
+    
+    if iskeyboard['return'] then --对from以及to进行计算
+        pcall(function ()
+            self.fromv.value = loadstring("return "..self.fromv.value)()
+            if type(self.fromv.value) ~= "number" then
+                self.fromv.value = 0
+            end
+        end)
+        pcall(function ()
+            self.tov.value = loadstring("return "..self.tov.value)()
+            if type(self.tov.value) ~= "number" then
+                self.tov.value = 0
+            end
+        end)
+    end
+
     v.from = tonumber(self.fromv.value) or 0
     v.to = tonumber(self.tov.value) or 0
     if self.transType.value == 1 then
