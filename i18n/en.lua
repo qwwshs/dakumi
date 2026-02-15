@@ -99,5 +99,6 @@ return {
     ['track_name'] = 'track name',
     ['hide'] = 'hide',
     ['frame_rate'] = 'frame rate',
-    ['parent'] = 'parent'
+    ['parent'] = 'parent',
+    ['track_type'] = 'track type',
 }

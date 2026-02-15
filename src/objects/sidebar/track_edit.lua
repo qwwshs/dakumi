@@ -36,7 +36,7 @@ function GtrackEdit:Nui()
     Nui:label(i18n:get('track_name'))
     Nui:edit('field', self.trackName)
 
-    Nui:label(i18n:get('note_type'))
+    Nui:label(i18n:get('track_type'))
     Nui:combobox(self.trackType, {'xw','lposrpos'})
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
