@@ -65,6 +65,12 @@ copy /b love.exe+dakumi.love dakumi.exe
 
 - [yaml](https://github.com/exosite/lua-yaml)
 
+- [moonshine](https://github.com/vrld/moonshine)
+
+- [hump](https://github.com/vrld/hump)
+
+- [lovefft](https://github.com/Gennadiyev/lovefft)
+
 ## 开源许可
 
 dakumi遵循宽松的MIT协议
