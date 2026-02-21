@@ -5,6 +5,7 @@ nuklear = require 'nuklear'            --图形界面
 serpent = require("src.utils.serpent") --lua序列化
 input = require("src.utils.input")   --输入处理
 yaml = require("src.utils.yaml")     --YAML解析
+timer = require("src.utils.timer")     --计时器
 
 require('src.utils.file')
 require('src.utils.pass')

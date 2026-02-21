@@ -10,6 +10,7 @@ menu            = room:new('menu')
 room:addRoom(menu)
 menu:addObject(require 'src.objects.menu.select_music')
 menu:addObject(require 'src.objects.menu.select_chart')
+menu:addObject(require 'src.objects.menu.FFT')
 
 --选择的歌曲的房间
 menu.chartTab = {}                                                     --所有谱面的文件夹
@@ -23,8 +24,29 @@ menu.musicPath = ''
 
 local menuUI = require 'src.objects.menu.ui'
 
+function menu:check(istype,file) --检查格式是否正确
+    if istype == 'chart' then
+        local s = pcall(function() file = dkjson.decode(file) end)
+        local is_true_chart = true
+        if not s then
+            log("It is " .. type(file))
+            log(file)
+            is_true_chart = false
+            file = {}
+            return is_true_chart
+        end
+        return is_true_chart
+    elseif istype == 'bg' then
+        return pcall(function() nativefs.mount(PATH.base) love.graphics.newImage(file) nativefs.unmount() end)
+    elseif istype == 'music' then
+        return pcall(function() nativefs.mount(PATH.base) love.audio.newSource(file, "stream") nativefs.unmount() end)
+    end
+
+end
+
 function menu:select_music()
     if menu.chartTab[menu.selectMusicPos] then
+        love.audio.stop()  --停止上一个歌曲
         menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
         --输出选择到的谱面的谱面信息
         nativefs.mount(PATH.base)
@@ -32,15 +54,13 @@ function menu:select_music()
         local file_tab = love.filesystem.getDirectoryItems(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos]) --得到谱面文件夹下的谱面
         for i, v in ipairs(file_tab) do
             local v_extemsion = getFileExtension(v)
-            log("found file:",v_extemsion)
+            print("found file:",v_extemsion)
             if table.find(file_extension.chart, v_extemsion) then                                                                          --谱面文件
                 local info = love.filesystem.read(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v)
-                local s = pcall(function() info = dkjson.decode(info) end)
-                local is_true_chart = true
-                if not s then
-                    log("It is " .. type(info))
-                    log(info)
-                    is_true_chart = false
+                local is_true_chart = menu:check('chart', info)
+                if is_true_chart then
+                    info = dkjson.decode(info)
+                else
                     info = {}
                 end
                 table.fill(info, meta_chart.__index)
@@ -57,34 +77,48 @@ function menu:select_music()
                 end
             end
             if table.find(file_extension.bg, getFileExtension(v)) then --bg
-                menu.chartInfo.bg = love.graphics.newImage(PATH.usersPath.chart ..
-                menu.chartTab[menu.selectMusicPos] .. "/" .. v)
-
-                bg = menu.chartInfo.bg
                 menu.bgPath = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v
+                if menu:check('bg', menu.bgPath) then
+                    menu.chartInfo.bg = love.graphics.newImage(PATH.usersPath.chart ..
+                    menu.chartTab[menu.selectMusicPos] .. "/" .. v)
+                    bg = menu.chartInfo.bg
+                else
+                    menu.chartInfo.bg = nil
+                    bg = nil
+                    log("bg file error")
+                end
             end
         end
         table.fill(chart, meta_chart.__index)
         for i, v in ipairs(file_tab) do                                                     --因为一些数据在chart里面 所以分开读
             local v_extemsion = getFileExtension(v)
             if table.find(file_extension.music, getFileExtension(v)) then --歌曲
-                love.audio.stop()                                                           --停止上一个歌曲
-                menu.chartInfo.song = love.audio.newSource(
-                PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v, "stream")
-                love.audio.setVolume(settings.music_volume / 100)                           --设置音量大小
-                menu.chartInfo.song:play()
+                love.audio.stop() --停止上一个歌曲
+                if menu:check('music',PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v) then                         
+                    menu.chartInfo.song = love.audio.newSource(
+                    PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v, "stream")
+                    love.audio.setVolume(settings.music_volume / 100)                           --设置音量大小
+                    menu.chartInfo.song:play()
 
-                --读取音频信息
-                music = menu.chartInfo.song
-                menu.musicPath = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v
-                time.alltime = music:getDuration() + chart.offset / 1000
-                beat.allbeat = beat:toBeat(chart.bpm_list, time.alltime)
+                    --读取音频信息
+                    music = menu.chartInfo.song
+                    menu.musicPath = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/" .. v
+                    time.alltime = music:getDuration() + chart.offset / 1000
+                    beat.allbeat = beat:toBeat(chart.bpm_list, time.alltime)
+                else
+                    log("music file error")
+                    menu.chartInfo.song = nil
+                    music = nil
+                    time.alltime = 0
+                    beat.allbeat = 0
+                end
+                
             end
         end
-        love.audio.stop()  --停止上一个歌曲
-
+        
         nativefs.unmount()
     end
+    self('select_music')
 end
 
 function menu:flushed()                                                    --刷新
@@ -162,6 +196,18 @@ end
 
 function menu:update(dt)
     menu('update', dt)
+
+    --更新music时间
+    if menu.chartInfo.song then
+        time.nowtime = time.nowtime + dt
+        beat.nowbeat = beat:toBeat(chart.bpm_list,time.nowtime)
+    else
+        time.nowtime = 0
+    end
+    if chart and chart.bpm_list and #chart.bpm_list > 0 then
+        beat.nowbeat = beat:toBeat(chart.bpm_list,time.nowtime)
+    end
+
     if Nui:windowBegin('chartTool', layout.chartTool.x, layout.chartTool.y, layout.chartTool.w, layout.chartTool.h, 'border') then
         Nui:layoutRow('dynamic', layout.chartTool.h, layout.chartTool.cols)
         for i, obj in ipairs(menuUI.chartTool) do

@@ -9,7 +9,7 @@ buttonMusicPlay.img2 = isImage.pause
 function buttonMusicPlay:click()
     if not music then return end
     music_play = not music_play
-    music:seek(time.nowtime - chart.offset / 1000 )
+    music:seek(math.max(0, time.nowtime - chart.offset / 1000) )
     buttonMusicPlay.img,buttonMusicPlay.img2 = buttonMusicPlay.img2,buttonMusicPlay.img
     buttonMusicPlay.text,buttonMusicPlay.text2 = buttonMusicPlay.text2,buttonMusicPlay.text
 end

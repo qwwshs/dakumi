@@ -22,7 +22,12 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
     end
     log("load chart:",menu.chartInfo.chart_name[menu.selectChartPos].path)
     setmetatable(chart,meta_chart)
+
+    menu('toedit')
+
     chart:load() --初始化
+    time.nowtime = 0
+    beat.nowbeat = 0
     room:to('edit')
     love.window.setTitle(chart.info.song_name.."-"..chart.info.chart_name)
 end
