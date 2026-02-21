@@ -10,4 +10,5 @@ return {
     selectThischartText = {1, 1, 1, 1},
     unSelectThischartText = {1, 1, 1, 0.5},
     errorChart = {1, 0.5, 0.5, 1},
+    fft = {1, 1, 1, 0.5},
 }
