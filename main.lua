@@ -113,6 +113,7 @@ end
 
 function love.update(dt)
     math.randomseed(elapsed_time) --随机数种子
+    timer.update(dt)
     elapsed_time = elapsed_time + dt
 
     if love.window.getFullscreen() and not WINDOW.fullscreen then --全屏
@@ -425,7 +426,7 @@ function love.errorhandler(msg)
                 copyToClipboard()
             elseif e == "keypressed" and a == "g" and love.keyboard.isDown("lctrl", "rctrl") then --前往github
                 if love.system then
-                    love.system.openURL("https://github.com/qwwshs/daikumi_editor/")
+                    love.system.openURL(PATH.web.github)
                 end
             elseif e == "touchpressed" then
                 local name = love.window.getTitle()

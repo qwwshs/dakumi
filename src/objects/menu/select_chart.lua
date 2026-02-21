@@ -39,10 +39,11 @@ function select_chart:wheelmoved(x, y)
         if menu.chartInfo.chart_name[menu.selectChartPos] then
             menu.path = menu.chartInfo.chart_name[menu.selectChartPos].path
             local info = love.filesystem.read(menu.path)
-
-            pcall(function() info = dkjson.decode(info) end)
-            if type(info) ~= "table" then
-                log("It is " .. type(info))
+            local is_true_chart = menu:check('chart', info)
+            if is_true_chart then
+                info = dkjson.decode(info)
+            else
+                log("chart file error")
                 menu.chartInfo.chart_name[menu.selectChartPos].is_true_chart = false
                 info = {}
             end
