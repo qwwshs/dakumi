@@ -10,8 +10,10 @@ edit:addGroup(editTool)
 edit:addGroup(play)
 edit:addGroup(sidebar)
 edit:addGroup(demo)
-bezier_index = 1 --默认贝塞尔索引
-easings_index = 1 --默认缓动索引
+transIndex = {
+    bezier = 1, --默认贝塞尔索引
+    easings = 1 --默认缓动索引
+}
 function edit:load()
     self('load')
 end
