@@ -7,7 +7,7 @@ local file_extension = {
     bg = { 'jpg', 'jpeg', 'png' }
 }
 menu                 = room:new('menu')
-menu.color = colors
+menu.color           = colors
 room:addRoom(menu)
 menu:addObject(require 'src.objects.menu.select_music')
 menu:addObject(require 'src.objects.menu.select_chart')
@@ -22,10 +22,25 @@ menu.path = ''
 menu.bgPath = ''
 menu.musicPath = ''
 
-local effect = moonshine(WINDOW.nowW,WINDOW.nowH,moonshine.effects.gaussianblur) -- 高斯模糊
-.chain(moonshine.effects.boxblur) -- 盒模糊
-effect.gaussianblur.sigma = 3.5                          -- 模糊强度
-effect.boxblur.radius = 50                           -- 模糊强度
+local effect = moonshine(WINDOW.nowW, WINDOW.nowH, moonshine.effects.gaussianblur) -- 高斯模糊
+    .chain(moonshine.effects.boxblur)                                            -- 盒模糊
+effect.gaussianblur.sigma = 3.5                                                  -- 模糊强度
+effect.boxblur.radius = 100                                                      -- 模糊强度
+
+local flesh_st = false                                                           --闪烁
+local bg_animation = {
+    usetime = 0.5,
+    st = { alpha = 1 },
+    now = { alpha = 1 },
+    ed = { alpha = 0.5 },
+    trans = 'linear',
+    callback = function() flesh_st = true end,
+    st2 = { alpha = 0.55 },
+    ed2 = { alpha = 0.5 },
+    trans2 = 'linear',
+}
+
+local beat_last = 0 --用于动画
 
 local menuUI = require 'src.objects.menu.ui'
 
@@ -59,6 +74,7 @@ end
 function menu:select_music()
     if menu.chartTab[menu.selectMusicPos] then
         love.audio.stop()                                                           --停止上一个歌曲
+        beat_last = 0
         menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
         --输出选择到的谱面的谱面信息
         nativefs.mount(PATH.base)
@@ -94,6 +110,10 @@ function menu:select_music()
                     menu.chartInfo.bg = love.graphics.newImage(PATH.usersPath.chart ..
                         menu.chartTab[menu.selectMusicPos] .. "/" .. v)
                     bg = menu.chartInfo.bg
+                    bg_animation.now.alpha = bg_animation.st.alpha
+                    flesh_st = false
+                    timer.tween(bg_animation.usetime, bg_animation.now, bg_animation.ed, bg_animation.trans,
+                        bg_animation.callback)
                 else
                     menu.chartInfo.bg = nil
                     bg = nil
@@ -174,7 +194,7 @@ function menu:draw()
     end
     effect.draw( --模糊背景
         function()
-            love.graphics.setColor(1, 1, 1,0.5)
+            love.graphics.setColor(1, 1, 1, bg_animation.now.alpha)
 
             if menu.chartInfo.bg then
                 local bg_width, bg_height = menu.chartInfo.bg:getDimensions() -- 得到宽高
@@ -226,6 +246,16 @@ function menu:update(dt)
     end
     if chart and chart.bpm_list and #chart.bpm_list > 0 then
         beat.nowbeat = beat:toBeat(chart.bpm_list, time.nowtime)
+    end
+    if chart and chart.bpm_list and #chart.bpm_list > 0 and math.floor(beat.nowbeat) ~= beat_last then
+        bg_animation.now.alpha = bg_animation.st2.alpha
+        beat_last = math.floor(beat.nowbeat)
+        if flesh_st then
+            timer.tween(
+            beat:toTime(chart.bpm_list, math.floor(beat.nowbeat) + 1) -
+            beat:toTime(chart.bpm_list, math.floor(beat.nowbeat)), bg_animation.now, bg_animation.ed2,
+                bg_animation.trans2)
+        end
     end
 
     if Nui:windowBegin('chartTool', layout.chartTool.x, layout.chartTool.y, layout.chartTool.w, layout.chartTool.h, 'border') then

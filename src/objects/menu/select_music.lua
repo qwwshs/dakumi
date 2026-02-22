@@ -27,11 +27,17 @@ function select_music:draw()
 
 
     for i, v in ipairs(menu.chartTab) do
+        --分割线
+        love.graphics.setColor(colors.line4)
+        love.graphics.rectangle("line", layout.musicSelect.x, (i - menu.selectMusicPos) * layout.musicSelect.musicH - layout.musicSelect.musicH / 2 + middle, layout.musicSelect.w,
+        layout.musicSelect.musicH)
         if i == menu.selectMusicPos then
             love.graphics.setColor(colors.selectThisMusicText)
         else
             love.graphics.setColor(colors.unSelectThisMusicText)
         end
+
+
         love.graphics.printf(v, layout.musicSelect.x,
             (i - menu.selectMusicPos) * layout.musicSelect.musicH + middle - fontHeight / 2, layout.musicSelect.w,
             "center")

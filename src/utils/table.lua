@@ -58,7 +58,7 @@ function table.copy(original)
 end  
 
 function table.find(array, element)  --元素查询
-    for _, value in ipairs(array) do  
+    for _, value in pairs(array) do  
         if value == element then  
             return true  
         end  

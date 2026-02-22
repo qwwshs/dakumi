@@ -2,6 +2,7 @@ return {
     line1 = {1, 1, 1, 0.2},
     line2 = {1, 1, 1, 0.5},
     line3 = {1, 1, 1, 1},
+    line4 = {1, 1, 1, 0.1},
     bg = {0.2, 0.2, 0.2, 0.7},
     selectThisMusicTextBg = {1, 1, 1, 0.2},
     selectThisMusicText = {1, 1, 1, 1},
