@@ -27,7 +27,7 @@ local effect = moonshine(WINDOW.nowW, WINDOW.nowH, moonshine.effects.gaussianblu
 effect.gaussianblur.sigma = 3.5                                                  -- 模糊强度
 effect.boxblur.radius = 100                                                      -- 模糊强度
 
-local flesh_st = false                                                           --闪烁
+local flesh_st = false                                                           --bg闪烁
 local bg_animation = {
     usetime = 0.5,
     st = { alpha = 1 },
@@ -39,6 +39,14 @@ local bg_animation = {
     ed2 = { alpha = 0.5 },
     trans2 = 'linear',
 }
+local bg2_animation = {
+    usetime = 0.5,
+    st = { scale = 0.5 },
+    now = { scale = 0.5 },
+    ed = { scale = 1 },
+    trans = 'out-cubic',
+}
+
 
 local beat_last = 0 --用于动画
 
@@ -114,6 +122,9 @@ function menu:select_music()
                     flesh_st = false
                     timer.tween(bg_animation.usetime, bg_animation.now, bg_animation.ed, bg_animation.trans,
                         bg_animation.callback)
+
+                    bg2_animation.now.scale = bg2_animation.st.scale
+                    timer.tween(bg2_animation.usetime, bg2_animation.now, bg2_animation.ed, bg2_animation.trans)
                 else
                     menu.chartInfo.bg = nil
                     bg = nil
@@ -129,7 +140,7 @@ function menu:select_music()
                 if menu:check('music', now_file_path .. v) then
                     menu.chartInfo.song = love.audio.newSource(
                         now_file_path .. v, "stream")
-                    love.audio.setVolume(settings.music_volume / 100) --设置音量大小
+                    menu.chartInfo.song:setVolume(settings.music_volume / 100) --设置音量大小
                     menu.chartInfo.song:play()
 
                     --读取音频信息
@@ -206,21 +217,21 @@ function menu:draw()
     )
     love.graphics.setColor(1, 1, 1)
 
-    if menu.chartInfo.bg then
+    if menu.chartInfo.bg then --背景
         local bg_width, bg_height = menu.chartInfo.bg:getDimensions() -- 得到宽高
         local bg_scale_h
         local bg_scale_w
-        bg_scale_h = 1 / bg_height * layout.bg.size
-        bg_scale_w = 1 / bg_height * layout.bg.size
-        love.graphics.draw(menu.chartInfo.bg, layout.bg.x - layout.bg.size / 2 / bg_height * bg_width,
+        bg_scale_h = 1 / bg_height * layout.bg.size * bg2_animation.now.scale
+        bg_scale_w = 1 / bg_height * layout.bg.size * bg2_animation.now.scale
+        love.graphics.draw(menu.chartInfo.bg, layout.bg.x - layout.bg.size / 2 / bg_height * bg_width * bg2_animation.now.scale,
             layout.bg.y - layout.bg.size / 2, 0, bg_scale_w, bg_scale_h)
         love.graphics.rectangle('fill',
-            layout.bg.x - layout.bg.size / 2 / bg_height * bg_width - layout.bg.pointSize,
-            layout.bg.y - layout.bg.size / 2 - layout.bg.pointSize, layout.bg.pointSize, layout.bg.pointSize)
+            layout.bg.x - layout.bg.size / 2 / bg_height * bg_width * bg2_animation.now.scale - layout.bg.pointSize,
+            layout.bg.y - layout.bg.size / 2 - layout.bg.pointSize * bg2_animation.now.scale, layout.bg.pointSize, layout.bg.pointSize)
 
         love.graphics.rectangle('fill',
-            layout.bg.x + layout.bg.size / 2 / bg_height * bg_width + layout.bg.pointSize,
-            layout.bg.y + layout.bg.size / 2 + layout.bg.pointSize, -layout.bg.pointSize, -layout.bg.pointSize)
+            layout.bg.x + layout.bg.size / 2 / bg_height * bg_width * bg2_animation.now.scale + layout.bg.pointSize,
+            layout.bg.y + layout.bg.size / 2 * bg2_animation.now.scale + layout.bg.pointSize, -layout.bg.pointSize, -layout.bg.pointSize)
     end
 
     menu('draw')
