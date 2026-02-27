@@ -30,7 +30,11 @@ function FFT:update(dt)
     end
     -- 处理不同类型的消息
     if message == "success" then
-        loveFFT:setSoundData(data)
+        local s = pcall(function() loveFFT:setSoundData(data) end)
+        if not s then
+            log("FFT data load error")
+            return
+        end
         fft_start = true
     elseif message == "error" then -- 处理错误信息
         log("FFT data load error")

@@ -18,7 +18,7 @@ function select_music:draw()
     love.graphics.rectangle("fill", layout.musicSelect.x - 5, layout.musicSelect.y, 3, layout.musicSelect.h)
 
 
-    local middle = 400
+    local middle = WINDOW.h/2
     local fontHeight = love.graphics.getFont():getHeight()
 
     love.graphics.setColor(colors.selectThisMusicTextBg)

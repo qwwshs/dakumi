@@ -33,7 +33,7 @@ function buttonMusicPlay:update(dt)
 
         if time.nowtime - chart.offset / 1000 >= 0 then
             music:setPitch(musicSpeed.speed)
-            love.audio.setVolume( settings.music_volume / 100 ) --设置音量大小
+            music:setVolume( settings.music_volume / 100 ) --设置音量大小
             music:play()
         end
 

@@ -4,9 +4,13 @@ hit.sh = 1
 hit.ex = 0
 hit.ey = 0
 
-hit.sound = love.audio.newSource('assets/sound/hit.ogg', "stream")
+hit.sound = love.audio.newSource('assets/sound/hit.ogg', "static")
+hit.soundtab = {}
+for i = 1, 5 do
+    hit.soundtab[i] = love.audio.newSource('assets/sound/hit.ogg', "static")
+end
 hit.light = isImage.hit_light
-hit.soundTab = {}
+hit.hittab = {}
 hit.tab = {}
 --用来对照的 true需要播放 false为播放完成
 hit.hit = isImage.hit
@@ -18,11 +22,18 @@ function hit:load()
     local tab = love.filesystem.getDirectoryItems(PATH.usersPath.hit) --得到文件夹下的所有文件
     for i, v in ipairs(tab) do
         if string.find(v, "hit") then
-            self.sound = love.audio.newSource(v, "stream")
+            if not menu:check('music',v) then
+                return
+            end
+            self.sound = love.audio.newSource(v, "static")
+            for _ = 1, 5 do
+                hit.soundtab[_] = love.audio.newSource('assets/sound/hit.ogg', "static")
+            end
             break
         end
     end
 end
+
 
 function hit:Setup(x, y, w, h)
     local sw = w / play.layout.demo.w
@@ -34,35 +45,45 @@ function hit:Setup(x, y, w, h)
 end
 
 function hit:update(dt)
+    if settings.hit == 0 and settings.hit_sound == 0 then
+        return
+    end
+    local will_play_sound_number = 0
+    local now_track = play:get_all_track_pos()
     for i = 1, #chart.note do
         local noteBeat = beat:get(chart.note[i].beat)
         local noteTrack = chart.note[i].track
-
-        self.soundTab[noteBeat] = self.soundTab[noteBeat] or {}
-        self.soundTab[noteBeat][noteTrack] = self.soundTab[noteBeat][noteTrack] or {}
-        if not self.soundTab[noteBeat][noteTrack][chart.note[i].type] and not (chart.note[i].fake == 1) then --不存在 记录
-            self.soundTab[noteBeat][noteTrack][chart.note[i].type] = true
-            if noteBeat <= beat.nowbeat then
-                self.soundTab[noteBeat][noteTrack][chart.note[i].type] = false
+        self.hittab[noteBeat] = self.hittab[noteBeat] or {}
+        self.hittab[noteBeat][noteTrack] = self.hittab[noteBeat][noteTrack] or {}
+        local will_play = self.hittab[noteBeat][noteTrack]
+        if not will_play[chart.note[i].type] and not (chart.note[i].fake == 1) then --不存在 记录
+            will_play[chart.note[i].type] = true
+            if noteBeat <= beat.nowbeat then --时间过了 不播放
+                will_play[chart.note[i].type] = false
             end
         end
         if noteBeat < beat.nowbeat and --播放
-            self.soundTab[noteBeat][noteTrack][chart.note[i].type] then
-            local x, w = fEvent:get(noteTrack, beat.nowbeat)
-            self.soundTab[noteBeat][noteTrack][chart.note[i].type] = false                                            --播放完成
+            will_play[chart.note[i].type] then
+            local x, w = now_track[noteTrack].x, now_track[noteTrack].w
+            will_play[chart.note[i].type] = false                                            --播放完成
 
             if self.sound and settings.hit_sound == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) then --播放
-                love.audio.setVolume(settings.hit_volume / 100)                                                       --设置音量大小
-                self.sound:seek(0)
-                self.sound:play()
+                will_play_sound_number = will_play_sound_number + 1
             end
             if settings.hit == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) and time.nowtime - beat:toTime(chart.bpm_list,noteBeat) < 0.5 then
                 self.tab[#self.tab + 1] = { x = fTrack:to_play_track_x(x), time = time.nowtime, track = noteTrack }
             end
         end
-        if noteBeat >= beat.nowbeat then
-            self.soundTab[noteBeat][noteTrack][chart.note[i].type] = true --未播放
+        if noteBeat >= beat.nowbeat then --时间未到 记录
+            will_play[chart.note[i].type] = true --未播放
         end
+    end
+    hit.sound:setVolume(settings.hit_volume / 100)                                                       --设置音量大小
+    will_play_sound_number = math.min(will_play_sound_number, 5) --限制同时播放的音效数量，避免过多重叠
+    for i = 1,will_play_sound_number do
+        self.soundtab[i]:setVolume(settings.hit_volume / 100) 
+        self.soundtab[i]:seek(0) --重置音效播放位置
+        self.soundtab[i]:play()
     end
 end
 
