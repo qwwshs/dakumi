@@ -163,7 +163,13 @@ function Gevent:NuiNext() --更新信息
     
     if iskeyboard['return'] then --对from以及to进行计算
         pcall(function ()
-            self.fromv.value = loadstring("return "..self.fromv.value)()
+            self.fromv.value = loadstring(
+            [[
+            local now = {x = 0,w = 0}
+            now.x,now.w = fEvent:get(track.track,beat.nowbeat,true)
+            local r = math.random
+            return 
+            ]]..self.fromv.value)()
             if type(self.fromv.value) ~= "number" then
                 self.fromv.value = 0
             end

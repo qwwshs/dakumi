@@ -14,6 +14,43 @@ function demoInEdit:load()
     self.layout = play.layout.edit
 end
 
+function demoInEdit:drawSample(pos, istrack)  
+    local one_track_w = self.layout.oneTrackW  
+    local interval = self.layout.interval  
+    local track_x, track_y, track_w, track_h = self.layout.x, self.layout.y, self.layout.w, self.layout.h  
+    local pos = pos or track_x  
+    --绘制波形图  
+    local sound_data_count = music_data:getSampleCount()  
+    local channel_count = music_data:getChannelCount()
+    local sampleRate = music_data:getSampleRate()
+    local time_end = math.ceil(beat:toTime(chart.bpm_list,math.min(beat:yToBeat(0),beat.allbeat)) - chart.offset / 1000)
+    local time_now = math.floor(math.max(time.nowtime,0) - chart.offset / 1000)
+    love.graphics.setColor(1,1,1,0.3)  
+    local time_step = 0.005
+
+    for istime = time_now, time_end-time_step, time_step do
+        for i = 1, channel_count do
+            local sample = math.max(math.min(sampleRate * istime,sound_data_count-1),0)
+            local w = music_data:getSample(sample,i) / 2 * interval * 3  
+            local x = pos + interval * 1.5 
+            local y = beat:toY(beat:toBeat(chart.bpm_list, istime + chart.offset / 1000))
+
+            local sample_next = math.max(math.min(sampleRate * (istime+time_step),sound_data_count-1),0)
+            local w_next = music_data:getSample(sample_next,i) / 2 * interval * 3  
+            local x_next = pos + interval * 1.5 
+            local y_next = beat:toY(beat:toBeat(chart.bpm_list, istime + time_step + chart.offset / 1000))
+
+            love.graphics.polygon('fill',
+                x, y,
+                x + w, y,
+                x_next + w_next, y_next,
+                x_next, y_next
+            )
+        end
+        
+    end
+end
+
 function demoInEdit:draw(pos, istrack)
     local one_track_w = self.layout.oneTrackW
     local interval = self.layout.interval
@@ -23,8 +60,13 @@ function demoInEdit:draw(pos, istrack)
     local all_track = fTrack:track_get_all_track()
     local note_h = settings.note_height --25 * denom.scale
     local _scale_h = 1 / self._height * note_h
-    pos = pos or track_x
+    local pos = pos or track_x
     istrack = istrack or track.track
+
+    if settings.wavfrom == 1 then
+        self:drawSample(pos, istrack)
+    end
+
     love.graphics.setColor(1,1,1) --轨道
     love.graphics.rectangle("line", pos, 0, one_track_w, track_h)
 
@@ -198,6 +240,7 @@ function demoInEdit:draw(pos, istrack)
     end
     love.graphics.print(i18n:get('track') .. ":" .. istrack, pos, settings.judge_line_y + 60)
     love.graphics.print(i18n:get('track_name') .. ":" .. track_info.name, pos, settings.judge_line_y + 80)
+
 end
 
 return demoInEdit

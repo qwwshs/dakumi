@@ -28,7 +28,7 @@ function buttonMusicPlay:update(dt)
         if not music then return end
         
         if math.abs(music:tell("seconds") - (time.nowtime - chart.offset / 1000)) >= 0.05 then --疑似love2d有bug 音频在刚播放0.5s内时间对不上
-            music:seek(time.nowtime - chart.offset / 1000 ) --补正播放差值
+            music:seek(math.max(time.nowtime - chart.offset / 1000 ,0)) --补正播放差值
         end
 
         if time.nowtime - chart.offset / 1000 >= 0 then
@@ -45,7 +45,7 @@ function buttonMusicPlay:update(dt)
                 music:seek(time.nowtime - chart.offset / 1000 )
         else -- 超时
             music:seek(0)
-            love.audio.setVolume( 0 ) --设置音量大小
+            music_play = false
             time.nowtime = chart.offset / 1000
         end
     end

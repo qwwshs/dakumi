@@ -1,5 +1,6 @@
 local fftSize = ...
 local fft = require("src.utils.luafft")
+local timer = require("love.timer")
 local inChannel = love.thread.getChannel("toFFT")
 
 local fftSizeInv = 1 / fftSize -- Because multiplication is slightly faster
@@ -20,5 +21,7 @@ while true do
         end
         -- Send the result to the main thread
         love.thread.getChannel("fft"):push(fftArray)
+    else
+        timer.sleep(0.1) -- Sleep to prevent this thread from consuming too much CPU
     end
 end

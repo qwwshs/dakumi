@@ -126,7 +126,7 @@ function play:draw()
 
     self('draw')
 
-    love.graphics.setColor(1, 1, 1) --总note event 数
+    love.graphics.setColor(1, 1, 1) --总 note event 数
     local str = 'note: ' .. #chart.note .. '  event: ' .. #chart.event
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 

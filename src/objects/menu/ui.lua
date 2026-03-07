@@ -28,6 +28,7 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
     chart:load() --初始化
     time.nowtime = 0
     beat.nowbeat = 0
+    music_data = love.sound.newSoundData(menu.musicPath)
     room:to('edit')
     love.window.setTitle(chart.info.song_name.."-"..chart.info.chart_name)
 end
