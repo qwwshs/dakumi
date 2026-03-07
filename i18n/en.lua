@@ -101,4 +101,5 @@ return {
     ['frame_rate'] = 'frame rate',
     ['parent'] = 'parent',
     ['track_type'] = 'track type',
+    ['wavfrom'] = 'wavfrom',
 }

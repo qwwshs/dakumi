@@ -23,6 +23,7 @@ Gsettings.setting_type = { --输入类型
     {'hit_volume',"edit"},
     {'hit',"switch",1},
     {'hit_sound',"switch",1},
+    {'wavfrom',"switch",1},
     {'track_w_scale',"edit"},
     {'language',"combobox",i18n:get_languages_table(),i18n:get_now_language_in_table(settings.language)},
     {'contact_roller',"edit"},

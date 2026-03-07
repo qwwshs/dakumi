@@ -101,4 +101,5 @@ return {
     ['frame_rate'] = '帧率',
     ['parent'] = '父轨道',
     ['track_type'] = '轨道类型',
+    ['wavfrom'] = '波形图',
 }

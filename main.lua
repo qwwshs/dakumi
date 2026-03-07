@@ -6,16 +6,20 @@ time             = { nowtime = 0, alltime = 1 }
 chart            = {}
 bg               = nil
 music            = nil
+music_data       = nil
 music_play       = false
 mouse            = { x = 0, y = 0, down = false } --鼠标按下状态
-elapsed_time     = 0                -- 已运行时间
-FONT             = { normal = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 13), plus = love.graphics.newFont(
-"assets/fonts/LXGWNeoXiHei.ttf", 26) }
+elapsed_time     = 0                              -- 已运行时间
+FONT             = {
+    normal = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 13),
+    plus = love.graphics.newFont(
+        "assets/fonts/LXGWNeoXiHei.ttf", 26)
+}
 
-iskeyboard       = {}                                                           --key的按下状态
-iskeyboard.alt   = false                                                        --alt按下状态
-iskeyboard.ctrl  = false                                                        --ctrl按下状态
-iskeyboard.shift = false                                                        --shift按下状态
+iskeyboard       = {}                                                                            --key的按下状态
+iskeyboard.alt   = false                                                                         --alt按下状态
+iskeyboard.ctrl  = false                                                                         --ctrl按下状态
+iskeyboard.shift = false                                                                         --shift按下状态
 
 WINDOW           = { w = 1600, h = 900, scale = 1, nowW = 1600, nowH = 900, fullscreen = false } --窗口信息
 PATH             = {
@@ -33,7 +37,7 @@ PATH             = {
     },
     editToolData = '',
     defaultBezier = '',
-    base = love.filesystem.getSourceBaseDirectory(),  --保存路径
+    base = love.filesystem.getSourceBaseDirectory(), --保存路径
     web = {
         github = "https://github.com/qwwshs/daikumi/",
         dakumi = "https://dakumi.qwwshs.top"
@@ -43,18 +47,19 @@ PATH             = {
 
 love.keyboard.setKeyRepeat(true) --键重复
 love.graphics.setFont(FONT.normal)
-
+FONT.normal:setFilter("linear", "nearest")
+FONT.plus:setFilter("linear", "nearest")
 require 'isRequire'
 
 Nui = nuklear.newUI()
 Nui:styleLoadColors({
-    ['text'] = '#F0F0F0',                    -- 亮灰色文字，更接近ImGui默认
-    ['window'] = '#181818',                  -- 更深的窗口背景
+    ['text'] = '#FFFFFF',                    -- 亮灰色文字
+    ['window'] = '#000000',                  -- 更深的窗口背景
     ['header'] = '#202020',                  -- 头部背景
-    ['border'] = '#404040',                  -- 边框颜色
-    ['button'] = '#2D2D2D',                  -- 按钮默认
+    ['border'] = '#000000',                  -- 边框颜色
+    ['button'] = '#000000',                  -- 按钮默认
     ['button hover'] = '#3D3D3D',            -- 按钮悬停
-    ['button active'] = '#1E6F9F',           -- ImGui风格的蓝色激活状态
+    ['button active'] = '#7C7D80',           -- ImGui风格的蓝色激活状态
     ['toggle'] = '#2D2D2D',                  -- 切换框背景
     ['toggle hover'] = '#3D3D3D',            -- 切换框悬停
     ['toggle cursor'] = '#1E6F9F',           -- 切换框光标（蓝色）
@@ -79,7 +84,60 @@ Nui:styleLoadColors({
     ['tab header'] = '#202020'               -- 标签页头部
 })
 
-
+Nui:stylePush {
+    ['window'] = { ['rounding'] = 0 },
+    ['button'] = {
+        ['rounding'] = 0,
+        ['text alignment'] = 'centered',     -- 文字居中
+        -- 图片对齐需要通过 image padding 来调整
+        ['image padding'] = { x = 0, y = 0 } -- 移除图片内边距
+    },
+    ['contextual button'] = { ['rounding'] = 0 },
+    ['menu button'] = { ['rounding'] = 0 },
+    ['selectable'] = { ['rounding'] = 0 },
+    ['slider'] = { ['rounding'] = 0 },
+    ['progress'] = {
+        ['rounding'] = 0,
+        ['cursor rounding'] = 0
+    },
+    ['property'] = {
+        ['rounding'] = 0,
+        ['edit'] = {
+            ['rounding'] = 0,
+            ['scrollbar'] = {
+                ['rounding'] = 0,
+                ['rounding cursor'] = 0
+            }
+        }
+    },
+    ['edit'] = {
+        ['rounding'] = 0,
+        ['scrollbar'] = {
+            ['rounding'] = 0,
+            ['rounding cursor'] = 0
+        }
+    },
+    ['chart'] = { ['rounding'] = 0 },
+    ['scrollh'] = {
+        ['rounding'] = 0,
+        ['rounding cursor'] = 0
+    },
+    ['scrollv'] = {
+        ['rounding'] = 0,
+        ['rounding cursor'] = 0
+    },
+    ['tab'] = {
+        ['rounding'] = 0,
+        ['tab maximize button'] = { ['rounding'] = 0 },
+        ['tab minimize button'] = { ['rounding'] = 0 },
+        ['node maximize button'] = { ['rounding'] = 0 },
+        ['node minimize button'] = { ['rounding'] = 0 }
+    },
+    ['combo'] = {
+        ['rounding'] = 0,
+        ['button'] = { ['rounding'] = 0 }
+    }
+}
 room:load("start")
 
 function love.load()
@@ -136,7 +194,7 @@ function love.update(dt)
     Nui:scale(WINDOW.scale, WINDOW.scale)
     Nui:styleSetFont(FONT.normal)
 
-    local original_x, original_y = love.mouse.getPosition()  --对缩放进行处理
+    local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
 
@@ -263,11 +321,11 @@ function love.resize(w, h)
     love.graphics.scale(WINDOW.scale, WINDOW.scale)
 end
 
-function love.directorydropped(path)   --文件夹拖入
+function love.directorydropped(path) --文件夹拖入
     room("directorydropped", path)
 end
 
-function love.filedropped(file)   --文件拖入
+function love.filedropped(file) --文件拖入
     room("filedropped", file)
 end
 
