@@ -54,9 +54,9 @@ function edit:quit()
     self('quit')
 end
 
-edit:addGroup(editTool)
+
 edit:addGroup(play)
 edit:addGroup(sidebar)
 edit:addGroup(demo)
-
+edit:addGroup(editTool)
 room:addRoom(edit)
