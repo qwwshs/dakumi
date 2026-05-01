@@ -2,9 +2,6 @@ local demo = group:new('demo') --演示界面
 demo.layout = require 'config.layouts.demo'
 demo.colors = require 'config.colors.demo'
 demo.open = false              --演示界面开关
-demo:addObject(require 'src.objects.demo.demoPlay')
-demo:addObject(require 'src.objects.demo.hit')
-demo:addObject(require 'src.objects.demo.comboAndScore')
 function demo:keypressed(key)
     if input('demo') then
         demo.open = not demo.open
@@ -43,5 +40,9 @@ function demo:update(dt)
     end
     self('update', dt)
 end
+
+demo:addObject(require 'src.objects.demo.demoPlay')
+demo:addObject(require 'src.objects.demo.hit')
+demo:addObject(require 'src.objects.demo.comboAndScore')
 
 return demo

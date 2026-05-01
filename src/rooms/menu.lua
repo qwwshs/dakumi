@@ -9,9 +9,7 @@ local file_extension = {
 menu                 = room:new('menu')
 menu.color           = colors
 room:addRoom(menu)
-menu:addObject(require 'src.objects.menu.select_music')
-menu:addObject(require 'src.objects.menu.select_chart')
-menu:addObject(require 'src.objects.menu.FFT')
+
 
 --选择的歌曲的房间
 menu.chartTab = {}                                                          --所有谱面的文件夹
@@ -358,3 +356,7 @@ function menu:filedropped(file) -- 文件拖入
     nativefs.unmount()
     menu:flushed() --重新加载
 end
+
+menu:addObject(require 'src.objects.menu.select_music')
+menu:addObject(require 'src.objects.menu.select_chart')
+menu:addObject(require 'src.objects.menu.FFT')

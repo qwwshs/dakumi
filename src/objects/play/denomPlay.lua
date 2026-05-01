@@ -1,13 +1,15 @@
 
 --denom播放
 denomPlay = object:new('denomPlay')
-
-function denomPlay:draw()
 local beat_y = 0
-    local fontHeight = love.graphics.getFont():getHeight() --字体高度
-    local print_w = 35
+local fontHeight = love.graphics.getFont():getHeight() --字体高度
+local print_w = 35
+function denomPlay:draw()
+    local isbeat = 1
+    local isdenom = 1
+    local r,g,b = 1,1,1
     for i = 0, beat.allbeat * denom.denom do
-        local isbeat = i/denom.denom
+        isbeat = i/denom.denom
         beat_y = beat:toY(isbeat)
         if beat_y > WINDOW.h then
             goto next
@@ -26,8 +28,8 @@ local beat_y = 0
         goto next
 
         ::denom::
-            local isdenom =math.floor(isbeat * denom.denom) - math.floor(isbeat) * denom.denom
-            local r,g,b = unpack(play.colors.denom)
+            isdenom =math.floor(isbeat * denom.denom) - math.floor(isbeat) * denom.denom
+            r,g,b = unpack(play.colors.denom)
             if denom.denom % 3 == 0 and denom.denom % 4 ~= 0 then
                 r,g,b = unpack(play.colors.denom3and4)
             end
@@ -48,9 +50,10 @@ local beat_y = 0
         --鼠标指针所在位置所对应的beat渲染
         if play:mouseInPlay() then--在play里面
             --根据距离反推出beat
-            local mouse_nearby_y = beat:toY(beat:get(beat:toNearby(beat:yToBeat(mouse.y))))
             love.graphics.setColor(play.colors.mouseBeat)
-            love.graphics.rectangle("fill",play.layout.right_boundary,mouse_nearby_y,play.layout.left_boundary-play.layout.right_boundary,2)
+            love.graphics.rectangle("fill",play.layout.right_boundary,
+            beat:toY(beat:get(beat:toNearby(beat:yToBeat(mouse.y)))),
+            play.layout.left_boundary-play.layout.right_boundary,2)
         end 
 end
 return denomPlay

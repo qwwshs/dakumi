@@ -102,4 +102,5 @@ return {
     ['parent'] = '父轨道',
     ['track_type'] = '轨道类型',
     ['wavfrom'] = '波形图',
+    ['angle'] = '轨道角度',
 }

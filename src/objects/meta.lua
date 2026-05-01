@@ -266,6 +266,7 @@ meta_settings = { --设置基本格式 元表
         hit = 0,
         hit_sound = 0,
         track_w_scale = 8,
+        angle = 30,
         language = "zh-CN",
         contact_roller = 1, --鼠标滚动系数
         note_height = 75,

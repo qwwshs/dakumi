@@ -1,5 +1,6 @@
 --轨道渲染
 local demoPlay = object:new("demoPlay")
+local layout = require 'config.layouts.play'.demo
 demoPlay.sw = 1
 demoPlay.sh = 1
 demoPlay.ex = 0
@@ -28,19 +29,34 @@ if ui_tab and #ui_tab > 0 then
         end
     end
 end
+
+local to3d_shader = love.graphics.newShader('src/shader/3d.glsl')
+
+
+to3d_shader:send("rectangle",layout.x, layout.y, layout.w, layout.h)
+to3d_shader:send("tanAngle", 1 / math.tan(-70 / 180 * math.pi)) --预计算的 1.0/tan(angle)
+
 function demoPlay:Setup(x,y,w,h)
-    local sw = w / play.layout.demo.w
-    local sh = h / play.layout.demo.h
+    local sw = w / layout.w
+    local sh = h / layout.h
     self.ex = x
     self.ey = y
     self.sw = sw
     self.sh = sh
+    to3d_shader:send("rectangle",layout.x, layout.y, w, h)
+    to3d_shader:send("tanAngle", math.tan(-90+settings.angle / 180 * math.pi)) --预计算的 1.0/tan(angle)
+    to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h )
 end
+
+local previous_frame_beat = 0 -- 上一帧的节拍
+local previous_frame_starting_point = 1 -- 上一帧的遍历起点
+
 function demoPlay:draw()
     local sw = self.sw
     local sh = self.sh
     local ex = self.ex
     local ey = self.ey
+--    if demo.open then love.graphics.setShader(to3d_shader) end
     love.graphics.push()
     love.graphics.translate(ex,ey)
     local judgePos = settings.judge_line_y *sh
@@ -60,8 +76,7 @@ function demoPlay:draw()
     love.graphics.setColor(0,0,0,0.5 * effect.track_alpha / 100 )  --底板
 
     for i=1 ,#all_track do --轨道底板绘制
-            local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
-            x,w = fTrack:to_play_track(x,w) --为了居中
+            local x,w = all_track_pos[all_track[i]].track_x,all_track_pos[all_track[i]].track_w
             x = x * sw
             w = w * sw
         if w ~= 0 then
@@ -71,8 +86,7 @@ function demoPlay:draw()
 
     for i=1 ,#all_track do --轨道侧线绘制
             local track_info = fTrack:get_track_info(all_track[i])
-            local x,w = all_track_pos[all_track[i]].x,all_track_pos[all_track[i]].w
-            x,w = fTrack:to_play_track(x,w) --为了居中
+            local x,w = all_track_pos[all_track[i]].track_x,all_track_pos[all_track[i]].track_w
             x = x * sw
             w = w * sw
             if track.track == all_track[i] and (not demo.open ) then --选择到的底板
@@ -123,12 +137,33 @@ function demoPlay:draw()
     local note_h = settings.note_height*sh --25 * denom.scale
     local _width, _height = demoPlay.ui.note:getDimensions() -- 得到宽高
     love.graphics.setColor(1,1,1,effect.note_alpha / 100)
+    local end_beat = beat:yToBeat(0)
+    local noteBeat = 0
+    local noteBeat2 = 0
+    local _scale_w
+    local _scale_h
+    local _scale_h2
+
+    local isnote
+    local x,w,y,y2
 
     --展示侧note渲染
     local spacing = 20*sw --note和track的间距
-        for i = 1,#chart.note do
-            local isnote = chart.note[i]
-            local x,w = fTrack:to_play_track(all_track_pos[isnote.track].x,all_track_pos[isnote.track].w)
+
+     --减少重复遍历
+    local index_start = 1
+    if beat.nowbeat > previous_frame_beat then
+        index_start = math.max(1, previous_frame_starting_point)
+    end
+    previous_frame_beat = beat.nowbeat
+    previous_frame_starting_point = 0
+
+        for i = index_start,#chart.note do
+            isnote = chart.note[i]
+            noteBeat = beat:get(isnote.beat)
+            noteBeat2 = beat:get(isnote.beat2 or isnote.beat)
+            if noteBeat > end_beat then break end
+            x,w =  all_track_pos[isnote.track].track_x,all_track_pos[isnote.track].track_w
             x = x * sw
             w = w * sw
 
@@ -139,26 +174,27 @@ function demoPlay:draw()
                 w = spacing
             end
             x = x - w /2
-            local y = beat:toY(isnote.beat)
-            local y2 = y
+            y = beat:toY(noteBeat)
+            y2 = y
             if isnote.type == "hold" then
-                y2 = beat:toY(isnote.beat2)
+                y2 = beat:toY(noteBeat2)
             end
             y = y * sh
             y2 = y2 * sh
-            local _scale_w = 1 / _width * w
+            _scale_w = 1 / _width * w
 
-            local _scale_h = 1 / _height * note_h
-            if y < 0 then break end --超出范围
-            if (not (y2 > judgePos + note_h or y < 0)) and (not  (y > judgePos and isnote.fake == 1 ) )then
+            _scale_h = 1 / _height * note_h
+            if (noteBeat > beat.nowbeat or (noteBeat2 > beat.nowbeat)) and previous_frame_starting_point == 0 then 
+                previous_frame_starting_point = i - 1 
+            end
+
+            if math.intersect(0,judgePos,y,y2) and not (y > judgePos and isnote.fake == 1 ) then
                 if y ~= y2 and y > judgePos then y = judgePos end --hold头保持在线上
 
-                if isnote.type == "note" then
-                    love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
-                elseif isnote.type == "wipe" then
-                    love.graphics.draw(demoPlay.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
+                if isnote.type ~= "hold" then
+                    love.graphics.draw(demoPlay.ui[isnote.type],x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
                 else --hold
-                    local _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
+                    _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
                     love.graphics.draw(demoPlay.ui.hold,x,y-note_h,0,_scale_w,_scale_h)
                     love.graphics.draw(demoPlay.ui.holdBody,x,y2+note_h,0,_scale_w,_scale_h2) --身
                     love.graphics.draw(demoPlay.ui.holdTail,x,y2,0,_scale_w,_scale_h)
@@ -196,6 +232,12 @@ function demoPlay:draw()
 
     love.graphics.rectangle("line",start_x,judgePos-8,end_x - start_x,16) --8是为了对其中心
     love.graphics.pop()
+--    if demo.open then love.graphics.setShader() end
+end
+
+function demoPlay:settings()
+    to3d_shader:send("tanAngle",math.tan((-90+settings.angle) / 180 * math.pi)) --预计算的 1.0/tan(angle)
+    to3d_shader:send("judge", (settings.judge_line_y - layout.y) / self.sh / layout.h )
 end
 
 return demoPlay

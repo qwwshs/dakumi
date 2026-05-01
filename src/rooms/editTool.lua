@@ -1,21 +1,7 @@
 local editTool =  group:new('editTool')
 editTool.layout = require 'config.layouts.editTool'
 editTool.colors = require 'config.colors.editTool'
-editTool:addObject(require 'src.objects.editTool.save')
-musicPlay = require 'src.objects.editTool.musicPlay'
-editTool:addObject(musicPlay)
-denom = require 'src.objects.editTool.denom'
-editTool:addObject(denom)
-track = require 'src.objects.editTool.track'
-editTool:addObject(track) 
-musicSpeed = require 'src.objects.editTool.musicSpeed'
-editTool:addObject(musicSpeed)
-noteFake = require 'src.objects.editTool.noteFake'
-editTool:addObject(noteFake)
-holdNoteHead = require 'src.objects.editTool.holdNoteHead'
-editTool:addObject(holdNoteHead)
-holdWipeHead = require 'src.objects.editTool.holdWipeHead'
-editTool:addObject(holdWipeHead)
+
 
 
 function editTool:load()
@@ -56,7 +42,6 @@ function editTool:update(dt)
     if demo.open then return end
     if Nui:windowBegin('editTool', self.layout.x, self.layout.y, self.layout.w, self.layout.h,'border') then
         Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
-        local isbutton = editTool:getAllTypeObject('button')
         for _,obj in ipairs(editTool.objects) do
             if obj.type == 'button' then
                 goto button
@@ -153,5 +138,20 @@ function editTool:quit()
     self('quit')
 end
 
+editTool:addObject(require 'src.objects.editTool.save')
+musicPlay = require 'src.objects.editTool.musicPlay'
+editTool:addObject(musicPlay)
+denom = require 'src.objects.editTool.denom'
+editTool:addObject(denom)
+track = require 'src.objects.editTool.track'
+editTool:addObject(track) 
+musicSpeed = require 'src.objects.editTool.musicSpeed'
+editTool:addObject(musicSpeed)
+noteFake = require 'src.objects.editTool.noteFake'
+editTool:addObject(noteFake)
+holdNoteHead = require 'src.objects.editTool.holdNoteHead'
+editTool:addObject(holdNoteHead)
+holdWipeHead = require 'src.objects.editTool.holdWipeHead'
+editTool:addObject(holdWipeHead)
 
 return editTool

@@ -141,6 +141,11 @@ Nui:stylePush {
 room:load("start")
 
 function love.load()
+    math.randomseed(os.time()) --随机数种子
+
+    Slab.Initialize()
+    Slab.EnableStats(true)  -- 启用性能统计
+
     --文件夹创建与检查
     nativefs.mount(PATH.base)
     nativefs.createDirectory(PATH.users)
@@ -170,10 +175,10 @@ function love.load()
 end
 
 function love.update(dt)
-    math.randomseed(elapsed_time) --随机数种子
     timer.update(dt)
     elapsed_time = elapsed_time + dt
 
+    
     if love.window.getFullscreen() and not WINDOW.fullscreen then --全屏
         local w, h = love.graphics.getDesktopDimensions()
         WINDOW.nowW = w
@@ -189,15 +194,14 @@ function love.update(dt)
         love.resize(WINDOW.w, WINDOW.h)
     end
 
-
     Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2)
     Nui:scale(WINDOW.scale, WINDOW.scale)
     Nui:styleSetFont(FONT.normal)
-
+    local statHandle = Slab.BeginStat('scale', 'update') -- 开始统计
     local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
-
+    
     room("update", dt)
 end
 
@@ -330,17 +334,16 @@ function love.filedropped(file) --文件拖入
 end
 
 function love.run()
-    if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
+    love.load(love.arg.parseGameArguments(arg), arg)
 
     -- We don't want the first frame's dt to include time taken by love.load.
-    if love.timer then love.timer.step() end
+    love.timer.step()
 
     local dt = 0
 
     -- Main loop time.
     return function()
         -- Process events.
-        if love.event then
             love.event.pump()
             for name, a, b, c, d, e, f in love.event.poll() do
                 if name == "quit" then
@@ -350,25 +353,21 @@ function love.run()
                 end
                 love.handlers[name](a, b, c, d, e, f)
             end
-        end
 
         -- Update dt, as we'll be passing it to update
-        if love.timer then dt = love.timer.step() end
+        dt = love.timer.step()
 
+--        Slab.Update(dt)
         -- Call update and draw
         Nui:frameBegin()
-        if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
+        love.update(dt) -- will pass 0 if love.timer is disabled
         Nui:frameEnd()
-
-        if love.graphics and love.graphics.isActive() then
+        if love.graphics.isActive() then
             love.graphics.clear(love.graphics.getBackgroundColor())
-
-            if love.draw then love.draw() end
-
+            love.draw()
             love.graphics.present()
         end
-
-        if love.timer then love.timer.sleep(0.001) end
+        love.timer.sleep(0.001) --避免100%占用CPU
     end
 end
 
