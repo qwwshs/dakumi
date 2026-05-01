@@ -6,6 +6,12 @@ play.effect = {
     track_line_alpha = 100,
     note_rotate = 0,
 } --影响效果
+local effect_ed = {
+    note_alpha = false,
+    track_alpha = false,
+    track_line_alpha = false,
+    note_rotate = false,
+} --影响效果已经计算
 play.layout = require 'config.layouts.play'
 play.colors = require 'config.colors.play'
 function play:get_all_track_pos()
@@ -25,20 +31,7 @@ function play:get_init_effect()
     } --影响效果
 end
 
-play:addObject(require 'src.objects.play.note')
-play:addObject(require 'src.objects.play.event')
-play:addObject(require 'src.objects.play.demoPlay')
-play:addObject(require 'src.objects.play.demoInEdit')
-play:addObject(require 'src.objects.play.denomPlay')
-play:addObject(require 'src.objects.play.demoNowX')
-play:addObject(require 'src.objects.play.slider')
-redo = require('src/objects/play/redo')
-play:addObject(redo)
-play:addObject(require 'src.objects.play.alt')
-ctrl = require('src.objects.play.ctrl')
-play:addObject(ctrl)
-hit = require 'src.objects.play.hit'
-play:addObject(hit)
+
 
 function play:load()
     self('load')
@@ -61,16 +54,12 @@ end
 
 function play:update(dt)
     self('update', dt)
-    local effect_ed = {
+    effect_ed = {
         note_alpha = false,
         track_alpha = false,
         track_line_alpha = false,
         note_rotate = false,
     }
-    local now_note_alpha_ed = false                                                                                           --已经计算
-    local now_track_alpha_ed = false                                                                                          --已经计算
-    local now_track_line_alpha_ed = false                                                                                     --已经计算
-    local now_note_rotate_ed = false                                                                                          --已经计算
     for i = #chart.effect, 1, -1 do                                                                                           --倒着减小计算量
         if not table.find(effect_ed,false) then --计算完成
             break
@@ -89,7 +78,8 @@ function play:update(dt)
     local all_track = fTrack:track_get_all_track()
     for i = 1, #all_track do
         local x, w = fEvent:get(all_track[i], beat.nowbeat)
-        play.now_all_track_pos[all_track[i]] = { x = x, w = w }
+        local track_x, track_w = fTrack:to_play_track(x, w)
+        play.now_all_track_pos[all_track[i]] = { x = x, w = w , track_x = track_x, track_w = track_w}
     end
 end
 
@@ -149,7 +139,7 @@ function play:draw()
                 for k = 1, 10 do
                     local nowx = fTrack:to_play_track_x(iseffect.from) +
                         fEvent:getTrans(iseffect, k / 10) *
-                        fTrack:to_play_track_x(iseffect.to - iseffect.from)
+                        (fTrack:to_play_track_x(iseffect.to)- fTrack:to_play_track_x(iseffect.from))
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10) --减去一个 (y2 - y)/10是为了与头对齐
                 end
@@ -199,5 +189,24 @@ function play:mousereleased(x, y, button, istouch, presses)
     end
     self('mousereleased', x, y, button, istouch, presses)
 end
+
+function play:settings()
+    self('settings')
+end
+
+play:addObject(require 'src.objects.play.note')
+play:addObject(require 'src.objects.play.event')
+play:addObject(require 'src.objects.play.demoPlay')
+play:addObject(require 'src.objects.play.demoInEdit')
+play:addObject(require 'src.objects.play.denomPlay')
+play:addObject(require 'src.objects.play.demoNowX')
+play:addObject(require 'src.objects.play.slider')
+redo = require('src/objects/play/redo')
+play:addObject(redo)
+play:addObject(require 'src.objects.play.alt')
+ctrl = require('src.objects.play.ctrl')
+play:addObject(ctrl)
+hit = require 'src.objects.play.hit'
+play:addObject(hit)
 
 return play

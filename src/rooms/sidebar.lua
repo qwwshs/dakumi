@@ -1,17 +1,6 @@
 local sidebar = group:new('sidebar')
 sidebar.layout = require 'config.layouts.sidebar'
 
-sidebar:addGroup(require 'src.objects.sidebar.nil')
-sidebar:addGroup(require 'src.objects.sidebar.track')
-sidebar:addGroup(require 'src.objects.sidebar.track_edit')
-sidebar:addGroup(require 'src.objects.sidebar.settings')
-sidebar:addGroup(require 'src.objects.sidebar.preference')
-sidebar:addGroup(require 'src.objects.sidebar.chart_info')
-sidebar:addGroup(require 'src.objects.sidebar.event')
-sidebar:addGroup(require 'src.objects.sidebar.note')
-sidebar:addGroup(require 'src.objects.sidebar.events')
-sidebar:addGroup(require 'src.objects.sidebar.to_takana')
-
 sidebar.displayed_content = "nil" --现在所在的界面
 sidebar.incoming = {}             --传入的参数
 
@@ -95,5 +84,16 @@ end
 function sidebar:mousereleased(x, y, button, istouch, presses)
     self('mousereleased', x, y, button, istouch, presses)
 end
+
+sidebar:addGroup(require 'src.objects.sidebar.nil')
+sidebar:addGroup(require 'src.objects.sidebar.track')
+sidebar:addGroup(require 'src.objects.sidebar.track_edit')
+sidebar:addGroup(require 'src.objects.sidebar.settings')
+sidebar:addGroup(require 'src.objects.sidebar.preference')
+sidebar:addGroup(require 'src.objects.sidebar.chart_info')
+sidebar:addGroup(require 'src.objects.sidebar.event')
+sidebar:addGroup(require 'src.objects.sidebar.note')
+sidebar:addGroup(require 'src.objects.sidebar.events')
+sidebar:addGroup(require 'src.objects.sidebar.to_takana')
 
 return sidebar

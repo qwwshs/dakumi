@@ -1,15 +1,11 @@
 edit = room:new("edit")
-room:addRoom(edit)
 
 play = require 'src.rooms.play'
 sidebar = require 'src.rooms.sidebar'
 editTool = require 'src.rooms.editTool'
 demo = require 'src.rooms.demo'
 
-edit:addGroup(editTool)
-edit:addGroup(play)
-edit:addGroup(sidebar)
-edit:addGroup(demo)
+
 transIndex = {
     bezier = 1, --默认贝塞尔索引
     easings = 1 --默认缓动索引
@@ -50,6 +46,17 @@ function edit:textinput(input)
     self('textinput',input)
 end
 
+function edit:settings()
+    self('settings')
+end
+
 function edit:quit()
     self('quit')
 end
+
+edit:addGroup(editTool)
+edit:addGroup(play)
+edit:addGroup(sidebar)
+edit:addGroup(demo)
+
+room:addRoom(edit)

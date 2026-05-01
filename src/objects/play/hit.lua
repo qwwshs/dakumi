@@ -44,13 +44,28 @@ function hit:Setup(x, y, w, h)
     self.sh = sh
 end
 
+local previous_frame_beat = 0 -- 上一帧的节拍
+local previous_frame_starting_point = 1 -- 上一帧的遍历起点
 function hit:update(dt)
     if settings.hit == 0 and settings.hit_sound == 0 then
         return
     end
+    if not music_play then
+        return
+    end
+    
     local will_play_sound_number = 0
     local now_track = play:get_all_track_pos()
-    for i = 1, #chart.note do
+
+    --减少重复遍历
+    local index_start = 1
+    if beat.nowbeat > previous_frame_beat then
+        index_start = math.max(1, previous_frame_starting_point)
+    end
+    previous_frame_beat = beat.nowbeat
+    previous_frame_starting_point = 0
+
+    for i = index_start, #chart.note do
         local noteBeat = beat:get(chart.note[i].beat)
         local noteTrack = chart.note[i].track
         self.hittab[noteBeat] = self.hittab[noteBeat] or {}
@@ -69,16 +84,20 @@ function hit:update(dt)
 
             if self.sound and settings.hit_sound == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) then --播放
                 will_play_sound_number = will_play_sound_number + 1
+
             end
-            if settings.hit == 1 and music_play and w > 0 and not (chart.note[i].fake == 1) and time.nowtime - beat:toTime(chart.bpm_list,noteBeat) < 0.5 then
+            if settings.hit == 1 and music_play and w > 0 and chart.note[i].fake == 0 and time.nowtime - beat:toTime(chart.bpm_list,noteBeat) < 0.5 then
                 self.tab[#self.tab + 1] = { x = fTrack:to_play_track_x(x), time = time.nowtime, track = noteTrack }
             end
+        end
+        if time.nowtime - beat:toTime(chart.bpm_list,noteBeat) < 0.5 and previous_frame_starting_point == 0 then
+                previous_frame_starting_point = i - 1
         end
         if noteBeat >= beat.nowbeat then --时间未到 记录
             will_play[chart.note[i].type] = true --未播放
         end
     end
-    hit.sound:setVolume(settings.hit_volume / 100)                                                       --设置音量大小
+
     will_play_sound_number = math.min(will_play_sound_number, 5) --限制同时播放的音效数量，避免过多重叠
     for i = 1,will_play_sound_number do
         self.soundtab[i]:setVolume(settings.hit_volume / 100) 
@@ -145,6 +164,7 @@ function hit:draw()
             love.graphics.draw(self.light, x, judgePos - size, 0, hit_light_scale_w * w, hit_light_scale_h * size)
         end
     end
+
     self.tab = local_hit_tab
     love.graphics.pop()
 end

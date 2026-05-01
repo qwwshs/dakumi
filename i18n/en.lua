@@ -102,4 +102,5 @@ return {
     ['parent'] = 'parent',
     ['track_type'] = 'track type',
     ['wavfrom'] = 'wavfrom',
+    ['angle'] = 'angle',
 }
