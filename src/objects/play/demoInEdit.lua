@@ -71,7 +71,7 @@ function demoInEdit:draw(pos, istrack)
     love.graphics.rectangle("line", pos, 0, one_track_w, track_h)
 
     -- 侧线左
-    love.graphics.rectangle("fill", pos, 0, 3, track_h)
+    love.graphics.rectangle("fill", pos, track_y, 3, track_h)
 
     -- x轨道
     love.graphics.rectangle("line", pos + interval, track_y, one_track_w, track_h)
@@ -83,7 +83,7 @@ function demoInEdit:draw(pos, istrack)
     love.graphics.rectangle("fill", pos + one_track_w + interval * 2, track_y, 3, track_h)
 
     --判定线
-    love.graphics.rectangle("fill", pos, settings.judge_line_y, one_track_w + interval * 2, 10)
+    love.graphics.rectangle("line", pos, settings.judge_line_y, one_track_w + interval * 2, 10)
 
 
     love.graphics.setColor(1,1,1)
@@ -220,7 +220,7 @@ function demoInEdit:draw(pos, istrack)
     end
 
     love.graphics.setColor(play.colors.editInJudgheLineDownBg)
-    love.graphics.rectangle("fill", pos, settings.judge_line_y + 10, track_w, WINDOW.h - settings.judge_line_y) --遮罩
+    love.graphics.rectangle("fill", pos, settings.judge_line_y + 10, track_w + 3, WINDOW.h - settings.judge_line_y) --遮罩
     love.graphics.setColor(1,1,1)                                                                          --现在节拍
     love.graphics.print(i18n:get('beat') .. ":" .. math.roundToPrecision(beat.nowbeat, 100), pos, settings.judge_line_y + 20)
     love.graphics.print(i18n:get('time') .. ":" .. math.roundToPrecision(time.nowtime, 100), pos, settings.judge_line_y + 40)

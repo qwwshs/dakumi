@@ -5,9 +5,12 @@ demo.open = false              --演示界面开关
 function demo:keypressed(key)
     if input('demo') then
         demo.open = not demo.open
+        if demo.open then
+            self('opened')
+        end
     end
     --特别的
-    if key == 'space' and demo.open then
+    if input('play') and demo.open then
         musicPlay:click()
     end
     self('keypressed', key)
@@ -39,6 +42,10 @@ function demo:update(dt)
         return
     end
     self('update', dt)
+end
+
+function demo:opened()
+    
 end
 
 demo:addObject(require 'src.objects.demo.demoPlay')
