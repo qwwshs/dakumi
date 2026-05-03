@@ -143,8 +143,8 @@ room:load("start")
 function love.load()
     math.randomseed(os.time()) --随机数种子
 
-    Slab.Initialize()
-    Slab.EnableStats(true)  -- 启用性能统计
+    --Slab.Initialize()
+    --Slab.EnableStats(true)  -- 启用性能统计
 
     --文件夹创建与检查
     nativefs.mount(PATH.base)
@@ -153,22 +153,6 @@ function love.load()
         nativefs.createDirectory(v)
     end
 
-    nativefs.unmount(PATH.base)
-
-    --快捷键相关
-    nativefs.mount(PATH.base)
-
-    local key_file = nativefs.read(PATH.usersPath.key .. 'key.json') or ''
-    local key
-    pcall(function() key = dkjson.decode(key_file) or meta_key.__index end)
-    if type(key) ~= 'table' then
-        key = meta_key.__index
-    end
-    table.fill(key, meta_key.__index)
-    save(dkjson.encode(key, { indent = true }), PATH.usersPath.key .. 'key.json')
-    for i, v in pairs(key) do
-        input:new(i, v)
-    end
     nativefs.unmount(PATH.base)
 
     room("load")
@@ -197,7 +181,7 @@ function love.update(dt)
     Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2)
     Nui:scale(WINDOW.scale, WINDOW.scale)
     Nui:styleSetFont(FONT.normal)
-    local statHandle = Slab.BeginStat('scale', 'update') -- 开始统计
+    --local statHandle = Slab.BeginStat('scale', 'update') -- 开始统计
     local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2

@@ -17,6 +17,11 @@ local Gsettings = group:new('settings')
 Gsettings.type = "settings"
 Gsettings.layout = require('config.layouts.sidebar').settings
 
+local default_trans_index = 1
+if settings.default_trans_type == 'bezier' then
+    default_trans_index = 2
+end
+
 Gsettings.setting_type = { --类型
     { 'hit',            "switch" },
     { 'hit_sound',      "switch" },
@@ -25,6 +30,7 @@ Gsettings.setting_type = { --类型
     { 'wavfrom',        "switch" },
     { 'contact_roller', "edit" },
     { 'auto_save',      "switch" },
+    { 'default_trans_type', "combobox", { 'easings', 'bezier' }, default_trans_index },
     { '',               'separator' },
     { 'bg_alpha',       "PercentageSlider" },
     { 'denom_alpha',    "PercentageSlider" },

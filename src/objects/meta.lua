@@ -268,6 +268,7 @@ meta_settings = { --设置基本格式 元表
         track_w_scale = 8,
         angle = 30,
         language = "zh-CN",
+        default_trans_type = 'easings',
         contact_roller = 1, --鼠标滚动系数
         note_height = 75,
         bg_alpha = 50,

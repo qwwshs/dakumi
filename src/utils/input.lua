@@ -33,4 +33,22 @@ function input:__call(name)
     return true
 end
 
+
+--快捷键相关
+nativefs.mount(PATH.base)
+
+local key_file = nativefs.read(PATH.usersPath.key .. 'key.json') or ''
+local key
+pcall(function() key = dkjson.decode(key_file) or meta_key.__index end)
+if type(key) ~= 'table' then
+    key = meta_key.__index
+end
+table.fill(key, meta_key.__index)
+save(dkjson.encode(key, { indent = true }), PATH.usersPath.key .. 'key.json')
+for i, v in pairs(key) do
+    input:new(i, v)
+end
+nativefs.unmount(PATH.base)
+
+
 return input
