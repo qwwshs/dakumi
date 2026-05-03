@@ -47,8 +47,8 @@ function comboAndScore:update(dt)
             break
         end
     end
-    self.score = tostring(math.floor(1000000 * combo / allTrueNote))
-    self.combo = tostring(combo)
+    self.score = tostring(math.min(math.floor(1000000 * combo / allTrueNote), 1000000))
+    self.combo = tostring(math.min(combo, allTrueNote))
     --补0
     while #self.score < 7 do
         self.score = '0' .. self.score

@@ -5,7 +5,6 @@ nuklear = require 'nuklear'            --图形界面
 Slab = require 'src.utils.Slab.Slab' --图形界面
 SlabDebug = require 'src.utils.Slab.SlabDebug' --图形界面
 serpent = require("src.utils.serpent") --lua序列化
-input = require("src.utils.input")   --输入处理
 yaml = require("src.utils.yaml")     --YAML解析
 timer = require("src.utils.timer")     --计时器
 moonshine = require("src.utils.moonshine")   --后处理特效
@@ -30,6 +29,7 @@ easings = require('src.utils.easings')
 require("src.utils.bezier")
 require("src.utils.math")
 fTrack = require("src.utils.track")
+input = require("src.utils.input")   --输入处理
 
 --属于main
 require('src.objects.messageBox')

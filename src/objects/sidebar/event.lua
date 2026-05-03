@@ -9,6 +9,7 @@ Gevent.tov = {value = '0'}
 Gevent.bezier_index = {value = 1}
 Gevent.bezier = {}
 Gevent.easings_index = {value = 1}
+local Incoming_event --传入的事件 
 local meta_default_bezier = {
     __index ={
         {1,1,1,1}
@@ -30,6 +31,7 @@ setmetatable(Gevent.bezier,meta_default_bezier)
 
 function Gevent:to(event_index)
     local v = chart.event[event_index]
+    Incoming_event = v
     self.fromv.value = tostring(v.from)
     self.tov.value = tostring(v.to)
     self.transv.value = ''
@@ -146,7 +148,14 @@ function Gevent:Nui()
     
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)
     Nui:label(i18n:get("trans_type"))
-    Nui:combobox(self.transType,{'bezier','easings'})
+    if Nui:combobox(self.transType,{'bezier','easings'}) then
+        if self.transType.value == 1 then
+            self.transv.value = table.concat(Incoming_event.trans.trans, ",")
+        elseif self.transType.value == 2 then
+            self.transv.value = tostring(Incoming_event.trans.easings)
+            self.easings_index.value = Incoming_event.trans.easings
+        end
+    end
 
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)

@@ -68,7 +68,7 @@ function demoInEdit:draw(pos, istrack)
     end
 
     love.graphics.setColor(1,1,1) --轨道
-    love.graphics.rectangle("line", pos, 0, one_track_w, track_h)
+    love.graphics.rectangle("line", pos, track_y, one_track_w, track_h)
 
     -- 侧线左
     love.graphics.rectangle("fill", pos, track_y, 3, track_h)
