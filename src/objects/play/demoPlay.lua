@@ -162,7 +162,7 @@ function demoPlay:draw()
             isnote = chart.note[i]
             noteBeat = beat:get(isnote.beat)
             noteBeat2 = beat:get(isnote.beat2 or isnote.beat)
-            if noteBeat > end_beat then break end
+            if noteBeat > end_beat then break end --超过可见范围
             x,w =  all_track_pos[isnote.track].track_x,all_track_pos[isnote.track].track_w
             x = x * sw
             w = w * sw

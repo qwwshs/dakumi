@@ -116,11 +116,11 @@ function hit:draw()
     local ey = self.ey
     local judgePos = settings.judge_line_y * sh
     local size = self.size * sw
+    local delete_it = false --删除这个键
     love.graphics.push()
     love.graphics.translate(ex, ey)
 
-    local local_hit_tab = {}
-    for i = 1, #self.tab do
+    for i,v in pairs(self.tab) do
         local hit_scale_w = 1 / self.hitW * size
         local hit_scale_h = 1 / self.hitH * size
 
@@ -128,25 +128,24 @@ function hit:draw()
         local hit_light_scale_h = 1 / self.lightH
         love.graphics.setColor(1,1,1)
         local hit_time = 0.5
-        local hit_alpha = (time.nowtime - self.tab[i].time) / hit_time
+        local hit_alpha = (time.nowtime - v.time) / hit_time
         hit_alpha = easings.out_quart(hit_alpha)
 
         local hit_light_time = 0.5
-        local hit_light_alpha = (time.nowtime - self.tab[i].time) / hit_light_time
+        local hit_light_alpha = (time.nowtime - v.time) / hit_light_time
         hit_light_alpha = hit_light_alpha * 0.5
 
-        if time.nowtime - self.tab[i].time > hit_time or time.nowtime - self.tab[i].time < 0  then
+        if time.nowtime - v.time > hit_time or time.nowtime - v.time < 0  then
+            delete_it = true
             hit_alpha = 1
-        else
-            local_hit_tab[#local_hit_tab + 1] = self.tab[i]
         end
-        if time.nowtime - self.tab[i].time > hit_light_time or time.nowtime - self.tab[i].time < 0 then
+        if time.nowtime - v.time > hit_light_time or time.nowtime - v.time < 0 then
             hit_light_alpha = 1
         end
 
 
         if music_play then
-            local x = self.tab[i].x * sw - size / 2 * hit_alpha
+            local x = v.x * sw - size / 2 * hit_alpha
             local y = judgePos - size / 2 * hit_alpha
             local w = hit_scale_w * hit_alpha
             local h = hit_scale_h * hit_alpha
@@ -155,7 +154,7 @@ function hit:draw()
 
             love.graphics.draw(self.hit, x, y, 0, w, h)
 
-            local x, w = fTrack:to_play_track(fEvent:get(self.tab[i].track, beat.nowbeat))
+            local x, w = fTrack:to_play_track(fEvent:get(v.track, beat.nowbeat))
             x = x * sw
             w = w * sw
 
@@ -163,9 +162,12 @@ function hit:draw()
 
             love.graphics.draw(self.light, x, judgePos - size, 0, hit_light_scale_w * w, hit_light_scale_h * size)
         end
+        if delete_it then
+            delete_it = false
+            table.remove(self.tab, i)
+        end
     end
 
-    self.tab = local_hit_tab
     love.graphics.pop()
 end
 
