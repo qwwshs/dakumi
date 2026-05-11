@@ -19,6 +19,18 @@ return {
     ['mouse'] = 'mouse',  
     ['vsync'] = 'vsync',  
       
+    -- Equalizer Panel (Gequalizer) - Audio equalizer settings  
+    ['lowgain'] = 'lowgain',  
+    ['lowcut'] = 'lowcut',  
+    ['lowmidgain'] = 'lowmidgain',  
+    ['lowmidfrequency'] = 'lowmidfrequency',  
+    ['lowmidbandwidth'] = 'lowmidbandwidth',  
+    ['highmidgain'] = 'highmidgain',  
+    ['highmidfrequency'] = 'highmidfrequency',  
+    ['highmidbandwidth'] = 'highmidbandwidth',  
+    ['highgain'] = 'highgain',  
+    ['highcut'] = 'highcut',  
+
     -- Chart Info Panel (GchartInfo) - Song metadata and BPM management  
     ['chartor'] = 'chartor',  
     ['artist'] = 'artist',  
@@ -57,6 +69,7 @@ return {
     ['preference'] = 'preference',  
     ['track'] = 'track',  
     ['break'] = 'break',  
+    ['equalizer'] = 'Equalizer',  
       
     -- Event & Track Editing - Event and track editing functionality  
     ['event'] = 'event',  

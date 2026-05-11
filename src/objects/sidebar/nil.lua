@@ -18,6 +18,10 @@ function Gnil:Nui()
         messageBox:add("track")
         sidebar:to("track")
     end
+    if Nui:button(i18n:get('equalizer')) then
+        messageBox:add("equalizer")
+        sidebar:to("equalizer")
+    end
     if Nui:button(i18n:get("takana")) then
         messageBox:add("takana")
         sidebar:to("takana")

@@ -19,6 +19,19 @@ return {
     ['mouse'] = '鼠标显示',
     ['vsync'] = '垂直同步',
 
+    -- Equalizer Panel (Gequalizer) - Audio equalizer settings  
+    ['lowgain'] = '数字低增益',  
+    ['lowcut'] = '低切数字',  
+    ['lowmidgain'] = '低中增益数量',  
+    ['lowmidfrequency'] = '低中频数字',  
+    ['lowmidbandwidth'] = '低中频带数量',  
+    ['highmidgain'] = '数字高中增益',  
+    ['highmidfrequency'] = '数字高中频',  
+    ['highmidbandwidth'] = '高中带宽数量',  
+    ['highgain'] = '数高增益',  
+    ['highcut'] = '数字高切',  
+
+
     -- Chart Info Panel (GchartInfo) - Song metadata and BPM management
     ['chartor'] = '谱师',
     ['artist'] = '艺术家',
@@ -57,6 +70,7 @@ return {
     ['preference'] = '偏好',
     ['track'] = '轨道',
     ['break'] = '返回',
+    ['equalizer'] = '均衡器',  
 
     -- Event & Track Editing - Event and track editing functionality
     ['event'] = '事件',
