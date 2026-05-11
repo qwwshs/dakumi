@@ -14,4 +14,8 @@ function ui:tip(...)
     return res
 end
 
+function ui:transOrgin()
+    Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2)
+    Nui:scale(WINDOW.scale, WINDOW.scale)
+end
 return ui

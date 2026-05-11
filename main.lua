@@ -178,8 +178,7 @@ function love.update(dt)
         love.resize(WINDOW.w, WINDOW.h)
     end
 
-    Nui:translate((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2)
-    Nui:scale(WINDOW.scale, WINDOW.scale)
+    ui:transOrgin()
     Nui:styleSetFont(FONT.normal)
     --local statHandle = Slab.BeginStat('scale', 'update') -- 开始统计
     local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
