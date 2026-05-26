@@ -9,7 +9,7 @@ function Gtakana:Nui()
     if Nui:button(i18n:get('do')) then
         local to_ms = 1000
         --生成takana游玩文件
-        local extra_chart = {}
+        local is_takana_chart = {}
         local all_track = fTrack:track_get_all_track()
         local id = 0
         local takana = {
@@ -30,14 +30,14 @@ function Gtakana:Nui()
         id = id + 1
         --先创建轨道
         for i, v in ipairs(all_track) do
-            extra_chart[v] = {
+            is_takana_chart[v] = {
                 note = {},
                 lpos = {},
                 rpos = {}
             }
         end
         local track_id = 0
-        for istrack, v in pairs(extra_chart) do
+        for istrack, v in pairs(is_takana_chart) do
             v.lpos = {-10}
             v.rpos = {-10}
             local track_component = {

@@ -1,9 +1,9 @@
 local redo = object:new('redo')
-redo.revoke = {} -- 撤销
-redo.redo = {} -- 重做
-function redo:writeRevoke(tab,istype)
+redo.revoke = {}                      -- 撤销
+redo.redo = {}                        -- 重做
+function redo:writeRevoke(tab, istype) --#region写入撤销记录
     local revoke_tab = table.copy(tab)
-    if tab.type then --为单个note或event
+    if tab.type then                  --为单个note或event
         revoke_tab = {
             add = {
                 event = {},
@@ -31,20 +31,20 @@ function redo:writeRevoke(tab,istype)
     self.redo = {}
     table.insert(self.revoke, revoke_tab)
 end
+
 --所有写入的tab类型有
 --copy与 copydelete写法为 {note={...},event={...}}
 function redo:keypressed(key)
-
     if input('undo') and self.revoke[#self.revoke] then --撤销上一步操作
         self.redo[#self.redo + 1] = self.revoke[#self.revoke]
-        
-        for _,note in ipairs(self.revoke[#self.revoke].del.note) do
+
+        for _, note in ipairs(self.revoke[#self.revoke].del.note) do
             table.insert(chart.note, table.copy(note))
         end
-        for _,event in ipairs(self.revoke[#self.revoke].del.event) do
+        for _, event in ipairs(self.revoke[#self.revoke].del.event) do
             table.insert(chart.event, table.copy(event))
         end
-        for _,note in ipairs(self.revoke[#self.revoke].add.note) do
+        for _, note in ipairs(self.revoke[#self.revoke].add.note) do
             for i = 1, #chart.note do
                 if table.eq(chart.note[i], note) then
                     table.remove(chart.note, i)
@@ -52,7 +52,8 @@ function redo:keypressed(key)
                 end
             end
         end
-        for _,event in ipairs(self.revoke[#self.revoke].add.event) do
+
+        for _, event in ipairs(self.revoke[#self.revoke].add.event) do
             for i = 1, #chart.event do
                 if table.eq(chart.event[i], event) then
                     table.remove(chart.event, i)
@@ -60,23 +61,56 @@ function redo:keypressed(key)
                 end
             end
         end
+
+        --修改extra_chart
+
+        for _, note in ipairs(self.revoke[#self.revoke].del.note) do
+            table.insert(extra_chart.track[note.track].note,chart.note[#chart.note])
+        end
+        for _, event in ipairs(self.revoke[#self.revoke].del.event) do
+            table.insert(extra_chart.track[event.track][event.type],chart.event[#chart.event])
+        end
+
+        for _, note in ipairs(self.revoke[#self.revoke].add.note) do
+            for i = 1, #extra_chart.track[note.track].note do
+                if table.eq(extra_chart.track[note.track].note[i], note) then
+                    table.remove(extra_chart.track[note.track].note, i)
+                    break
+                end
+            end
+        end
+
+        for _, event in ipairs(self.revoke[#self.revoke].add.event) do
+            for i = 1, #extra_chart.track[event.track].x do
+                if table.eq(extra_chart.track[event.track].x[i], event) then
+                    table.remove(extra_chart.track[event.track].x, i)
+                    break
+                end
+            end
+            for i = 1, #extra_chart.track[event.track].w do
+                if table.eq(extra_chart.track[event.track].w[i], event) then
+                    table.remove(extra_chart.track[event.track].w, i)
+                    break
+                end
+            end
+        end
+
         fNote:sort()
         fEvent:sort()
-            
+
         sidebar:to("nil")
 
         table.remove(self.revoke)
-
     elseif input('redoing') and self.redo[#self.redo] then --重做上一步操作
         self.revoke[#self.revoke] = self.redo[#self.redo]
-        
-        for _,note in ipairs(self.revoke[#self.revoke].add.note) do
+
+        for _, note in ipairs(self.revoke[#self.revoke].add.note) do
             table.insert(chart.note, table.copy(note))
         end
-        for _,event in ipairs(self.revoke[#self.revoke].add.event) do
+        for _, event in ipairs(self.revoke[#self.revoke].add.event) do
             table.insert(chart.event, table.copy(event))
         end
-        for _,note in ipairs(self.revoke[#self.revoke].del.note) do
+        for _, note in ipairs(self.revoke[#self.revoke].del.note) do
             for i = 1, #chart.note do
                 if table.eq(chart.note[i], note) then
                     table.remove(chart.note, i)
@@ -84,7 +118,7 @@ function redo:keypressed(key)
                 end
             end
         end
-        for _,event in ipairs(self.revoke[#self.revoke].del.event) do
+        for _, event in ipairs(self.revoke[#self.revoke].del.event) do
             for i = 1, #chart.event do
                 if table.eq(chart.event[i], event) then
                     table.remove(chart.event, i)
@@ -92,9 +126,43 @@ function redo:keypressed(key)
                 end
             end
         end
+
+        --修改extra_chart
+
+        for _, note in ipairs(self.revoke[#self.revoke].add.note) do
+            table.insert(extra_chart.track[note.track].note, chart.note[#chart.note])
+        end
+        for _, event in ipairs(self.revoke[#self.revoke].add.event) do
+            table.insert(extra_chart.track[event.track][event.type], chart.event[#chart.event])
+        end
+
+        for _, note in ipairs(self.revoke[#self.revoke].del.note) do
+            for i = 1, #extra_chart.track[note.track].note do
+                if table.eq(extra_chart.track[note.track].note[i], note) then
+                    table.remove(extra_chart.track[note.track].note, i)
+                    break
+                end
+            end
+        end
+
+        for _, event in ipairs(self.revoke[#self.revoke].del.event) do
+            for i = 1, #extra_chart.track[event.track].x do
+                if table.eq(extra_chart.track[event.track].x[i], event) then
+                    table.remove(extra_chart.track[event.track].x, i)
+                    break
+                end
+            end
+            for i = 1, #extra_chart.track[event.track].w do
+                if table.eq(extra_chart.track[event.track].w[i], event) then
+                    table.remove(extra_chart.track[event.track].w, i)
+                    break
+                end
+            end
+        end
+
         fNote:sort()
         fEvent:sort()
-            
+
         sidebar:to("nil")
 
         table.remove(self.redo)

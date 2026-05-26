@@ -150,7 +150,33 @@ end
 function meta_chart.__index:load()
     self:update()
     save(chart, 'chart.json')
-
+    extra_chart = {
+        track = {}
+    }
+    --遍历event，将event按照类别和轨道分
+    for i = 1, #chart.event do
+        local e = chart.event[i]
+        if extra_chart.track[e.track] == nil then
+            extra_chart.track[e.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[e.track][e.type], e)
+    end
+    --遍历note，将note按照轨道分
+    for i = 1, #chart.note do
+        local n = chart.note[i]
+        if extra_chart.track[n.track] == nil then
+            extra_chart.track[n.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[n.track].note, n)
+    end
 end
 
 function meta_chart.__index:push()
@@ -189,6 +215,49 @@ function meta_chart.__index:pop()
             end
         end
     end
+
+    --更新extra_chart
+    for _,v in ipairs(meta_chart_push.add.event) do
+        if extra_chart.track[v.track] == nil then
+            extra_chart.track[v.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[v.track][v.type], v)
+    end
+    for _,v in ipairs(meta_chart_push.add.note) do
+        if extra_chart.track[v.track] == nil then
+            extra_chart.track[v.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[v.track].note, v)
+    end
+
+    for _,v in ipairs(meta_chart_push.del.event) do
+        if extra_chart.track[v.track] then
+            for i = 1, #extra_chart.track[v.track][v.type] do
+                if table.eq(extra_chart.track[v.track][v.type][i], v) then
+                    table.remove(extra_chart.track[v.track][v.type], i)
+                    break
+                end
+            end
+        end
+    end
+    for _,v in ipairs(meta_chart_push.del.note) do
+        if extra_chart.track[v.track] then
+            for i = 1, #extra_chart.track[v.track].note do
+                if table.eq(extra_chart.track[v.track].note[i], v) then
+                    table.remove(extra_chart.track[v.track].note, i)
+                    break
+                end
+            end
+        end
+    end
     --填入redo
     redo:writeRevoke(meta_chart_push)
 
@@ -212,6 +281,15 @@ function meta_chart.__index:add(noteorevent)
         table.insert(self.event,noteorevent)
         redo:writeRevoke(noteorevent,'add')
         fEvent:sort()
+        --更新extra_chart
+        if extra_chart.track[noteorevent.track] == nil then
+            extra_chart.track[noteorevent.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[noteorevent.track][noteorevent.type], noteorevent)
     elseif isnotetype then
         if meta_chart_push.now then
             table.insert(meta_chart_push.add.note, noteorevent)
@@ -220,6 +298,15 @@ function meta_chart.__index:add(noteorevent)
         table.insert(self.note,noteorevent)
         redo:writeRevoke(noteorevent,'add')
         fNote:sort()
+        --更新extra_chart
+        if extra_chart.track[noteorevent.track] == nil then
+            extra_chart.track[noteorevent.track] = {
+                x = {},
+                w = {},
+                note = {}
+            }
+        end
+        table.insert(extra_chart.track[noteorevent.track].note, noteorevent)
     end
     
 end
@@ -239,7 +326,16 @@ function meta_chart.__index:delete(noteorevent)
                 end
                 table.remove(self.event, i)
                 redo:writeRevoke(noteorevent,'del')
-                return
+                break
+            end
+        end
+        --更新extra_chart
+        if extra_chart.track[noteorevent.track] then
+            for i = 1, #extra_chart.track[noteorevent.track][noteorevent.type] do
+                if table.eq(extra_chart.track[noteorevent.track][noteorevent.type][i], noteorevent) then
+                    table.remove(extra_chart.track[noteorevent.track][noteorevent.type], i)
+                    return
+                end
             end
         end
     elseif isnotetype then
@@ -251,7 +347,16 @@ function meta_chart.__index:delete(noteorevent)
                 end
                 table.remove(self.note, i)
                 redo:writeRevoke(noteorevent,'del')
-                return
+                break
+            end
+        end
+        --更新extra_chart
+        if extra_chart.track[noteorevent.track] then
+            for i = 1, #extra_chart.track[noteorevent.track].note do
+                if table.eq(extra_chart.track[noteorevent.track].note[i], noteorevent) then
+                    table.remove(extra_chart.track[noteorevent.track].note, i)
+                    return
+                end
             end
         end
     end

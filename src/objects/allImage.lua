@@ -10,6 +10,7 @@ isImage = {
     pause = love.graphics.newImage("assets/img/pause.png"),
     github = love.graphics.newImage("assets/img/github-mark-white.png"),
     dakumi = love.graphics.newImage("assets/img/icon.png"),
+    dakumi_pixel = love.graphics.newImage("assets/img/dakumi-pixel.png"),
     note = love.graphics.newImage("assets/img/note.png"),
     wipe = love.graphics.newImage("assets/img/wipe.png"),
     hold_head = love.graphics.newImage("assets/img/hold_head.png"),
