@@ -107,6 +107,9 @@ function note:place(note_type,pos)
 end
 function note:sort()
         table.sort(chart.note,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
+        for i,v in pairs(extra_chart.track) do
+            table.sort(v.note,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
+        end
         note.local_tab = {}
 end
 function note:getHoldTable()

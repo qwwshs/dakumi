@@ -51,7 +51,7 @@ function demoInEdit:drawSample(pos, istrack)
 end
 
 local previous_frame_beat = 0           -- 上一帧的节拍
-local previous_frame_starting_point = 1 -- 上一帧的遍历起点
+local previous_frame_starting_point = 1 -- 上一帧的遍历起点（note）
 local previous_frame_starting_point_event = 1 -- 上一帧的event遍历起点
 
 function demoInEdit:draw(pos, istrack)
@@ -93,11 +93,15 @@ function demoInEdit:draw(pos, istrack)
     --note(edit区域渲染)
     --减少重复遍历
     local index_start = 1
+    local index_start_event = 1
     if beat.nowbeat > previous_frame_beat then
         index_start = math.max(1, previous_frame_starting_point)
+        index_start_event = math.max(1, previous_frame_starting_point_event)
     end
     previous_frame_starting_point = 0
-
+    previous_frame_starting_point_event = 0
+    previous_frame_beat = beat.nowbeat
+    
     local note_h2 = 0
     local _scale_h2 = 0
     local y = 0
@@ -168,16 +172,10 @@ function demoInEdit:draw(pos, istrack)
         love.graphics.rectangle("fill", pos, y2, one_track_w, y - y2)
     end
 
-    if beat.nowbeat > previous_frame_beat then
-        index_start = math.max(1, previous_frame_starting_point_event)
-    end
-    previous_frame_beat = beat.nowbeat
-    previous_frame_starting_point_event = 0
-
     --event渲染
     local event_h = settings.note_height
     local event_w = 75
-    for i = index_start, #chart.event do
+    for i = index_start_event, #chart.event do
         if chart.event[i].track == istrack then
             love.graphics.setColor(1, 1, 1)
             local y = beat:toY(chart.event[i].beat)

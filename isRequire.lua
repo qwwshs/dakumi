@@ -13,6 +13,7 @@ require('src.utils.file')
 require('src.utils.pass')
 
 require("src.utils.room")
+require("src.utils.window")
 require('src/objects/meta')
 
 require("src.utils.beat")

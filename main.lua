@@ -4,6 +4,7 @@ DAKUMI           = { _VERSION = "0.5.0c" }
 beat             = beat
 time             = { nowtime = 0, alltime = 1 }
 chart            = {}
+extra_chart      = {} --解决chart遍历慢的问题
 bg               = nil
 music            = nil
 music_data       = nil
@@ -142,7 +143,6 @@ room:load("start")
 
 function love.load()
     math.randomseed(os.time()) --随机数种子
-
     --Slab.Initialize()
     --Slab.EnableStats(true)  -- 启用性能统计
 
@@ -350,7 +350,7 @@ function love.run()
             love.draw()
             love.graphics.present()
         end
-        love.timer.sleep(0.001) --避免100%占用CPU
+        --love.timer.sleep(0.001) --避免100%占用CPU
     end
 end
 
