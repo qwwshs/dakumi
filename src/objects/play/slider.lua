@@ -18,7 +18,7 @@ function slider:draw()
     love.graphics.setColor(editTool.colors.sliderLine)
     love.graphics.rectangle('line', self.x, self.y, self.w, self.h) -- 框
     love.graphics.setColor(editTool.colors.progress)
-    love.graphics.rectangle('fill', self.x, self.now_y, self.w, 4) --现在所在位置点
+    love.graphics.rectangle('fill', self.x+10/2, self.now_y, self.w-10, slider.h-self.now_y+self.y) --现在所在位置点
 end
 
 function slider:update(dt)
@@ -31,7 +31,7 @@ function slider:update(dt)
         self.now_y = y1
         time.nowtime = -(self.now_y - self.y - self.h) / self.h * time.alltime
         beat.nowbeat = beat:toBeat(chart.bpm_list, time.nowtime)
-        if Nui:windowBegin("slider", self.x, self.y,0,0) then
+        if Nui:windowBegin("slider", self.x, self.y,0,0,'background') then
             Nui:tooltip("nowtime" .. ":" .. math.roundToPrecision(time.nowtime, 100) .. " " .. "beat" .. ":" .. math.roundToPrecision(beat.nowbeat, 100))
         end
         Nui:windowEnd()

@@ -5,6 +5,8 @@ return {
     ['hit_volume'] = 'hit volume',  
     ['hit'] = 'hit',  
     ['hit_sound'] = 'hit sound',  
+    ['hit_time'] = 'hit time',  
+    ['hit_light_time'] = 'hit light time',  
     ['wavfrom'] = 'wavfrom',  
     ['track_w_scale'] = 'track w scale',  
     ['angle'] = 'angle',  

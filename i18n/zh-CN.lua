@@ -5,6 +5,8 @@ return {
     ['hit_volume'] = '打击音量',
     ['hit'] = '打击',
     ['hit_sound'] = '打击音',
+    ['hit_time'] = '打击时长',  
+    ['hit_light_time'] = '打击光时长',  
     ['wavfrom'] = '波形图',
     ['track_w_scale'] = '轨道宽度缩放',
     ['angle'] = '轨道角度',
