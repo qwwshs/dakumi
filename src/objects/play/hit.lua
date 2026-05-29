@@ -14,9 +14,24 @@ hit.hittab = {}
 hit.tab = {}
 --用来对照的 true需要播放 false为播放完成
 hit.hit = isImage.hit
+
+hit.size = require 'config.layouts.play'.demo.hitSzie
+
+local ui_tab = nativefs.getDirectoryItems(PATH.usersPath.ui) --得到文件夹下的所有文件
+if ui_tab and #ui_tab > 0 then
+    for i=1,#ui_tab do
+        local v = ui_tab[i]
+        if string.find(v,"hit") then
+            hit.hit = love.graphics.newImage(PATH.usersPath.ui..v)
+        elseif string.find(v,"hit_light") then
+            hit.light = love.graphics.newImage(PATH.usersPath.ui..v)
+        end
+    end
+end
+
 hit.lightW, hit.lightH = hit.light:getDimensions() -- 得到宽高
 hit.hitW, hit.hitH = hit.hit:getDimensions()       -- 得到宽高
-hit.size = require 'config.layouts.play'.demo.hitSzie
+
 function hit:load()
     -- 读取音频文件
     local tab = love.filesystem.getDirectoryItems(PATH.usersPath.hit) --得到文件夹下的所有文件
@@ -127,13 +142,13 @@ function hit:draw()
         local hit_light_scale_w = 1 / self.lightW
         local hit_light_scale_h = 1 / self.lightH
         love.graphics.setColor(1,1,1)
-        local hit_time = 0.5
+        local hit_time = settings.hit_time
         local hit_alpha = (time.nowtime - v.time) / hit_time
         hit_alpha = easings.out_quart(hit_alpha)
 
-        local hit_light_time = 0.5
+        local hit_light_time = settings.hit_light_time
         local hit_light_alpha = (time.nowtime - v.time) / hit_light_time
-        hit_light_alpha = hit_light_alpha * 0.5
+        hit_light_alpha = hit_light_alpha * 0.5 --最大透明度为0.5
 
         if time.nowtime - v.time > hit_time or time.nowtime - v.time < 0  then
             delete_it = true

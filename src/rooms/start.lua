@@ -15,7 +15,7 @@ function start:load()
         love.window.setIcon(love.image.newImageData('assets/img/dakumi-pixel.png'))
         icon = 'dakumi-pixel'
     else
-        love.window.setIcon(love.image.newImageData('assets/img/icon.png'))
+        love.window.setIcon(love.image.newImageData('assets/img/icon_32.png'))
     end
 end
 
@@ -23,6 +23,7 @@ function start:draw()
     love.graphics.setColor(1, 1, 1, 1)
     if icon == 'dakumi-pixel' then
         local _width, _height = ui_dakumi_pixel:getDimensions( ) -- 得到宽高
+        ui_dakumi_pixel:setFilter("nearest", "nearest")
         local _scale = 1 / _height * 300
         love.graphics.draw(ui_dakumi_pixel, 0, 0, 0, _scale, _scale)
     elseif icon == 'dakumi' then

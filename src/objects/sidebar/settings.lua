@@ -26,6 +26,8 @@ Gsettings.setting_type = { --类型
     { 'hit',            "switch" },
     { 'hit_sound',      "switch" },
     { 'hit_volume',     "PercentageSlider" },
+    { 'hit_time',       "edit" },
+    { 'hit_light_time', "edit" },
     { '',               'separator' },
     { 'wavfrom',        "switch" },
     { 'contact_roller', "edit" },
