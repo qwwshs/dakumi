@@ -30,43 +30,51 @@ end
 
 local event_ed = {
     x = false,
-    w = false
+    w = false,
+    lpos = false,
+    rpos = false
 }
 function event:get(istrack, isbeat, original, parent_tab) --得到event此时的宽和高
-    local original = original or false                 --是否获得原值（不进行lrpos转换）
-    local parent_tab = parent_tab or {}                --父轨道表 递归时传入
+    local original = original or false                    --是否获得原值（不进行lrpos转换）
+    local parent_tab = parent_tab or {}                   --父轨道表 递归时传入
+    local return_x = 0                                    --因为加了lrpos 所以分开来算
+    local return_w = 0
     local now = {
-        x = 0,
-        w = 0
+        x = {0,beat = 0,type = "x"},
+        w = {0,beat = 0,type = "w"},
+        lpos = {0,beat = 0,type = "lpos"},
+        rpos = {0,beat = 0,type = "rpos"},
     }
 
     if extra_chart.track[istrack] then
         --从extra_chart里找event
-        for i = #extra_chart.track[istrack].x, 1, -1 do
-            local isevent = extra_chart.track[istrack].x[i]
-            local beat1 = beat:get(isevent.beat)
-            local beat2 = beat:get(isevent.beat2) or beat1
-            if ((beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat) then
-                now.x = isevent.from +
-                (isevent.to - isevent.from) * self:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
-                break
+        local function getNumAndBeat(istype)
+            for i = #extra_chart.track[istrack][istype], 1, -1 do
+                local isevent = extra_chart.track[istrack][istype][i]
+                local beat1 = beat:get(isevent.beat)
+                local beat2 = beat:get(isevent.beat2) or beat1
+                if ((beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat) then
+                    now[istype] = {isevent.from +
+                        (isevent.to - isevent.from) * self:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1)), beat = beat2, type = istype}
+                    if beat2 >= isbeat then
+                        now[istype].beat = isbeat
+                    end
+                    return
+                end
             end
         end
-        for i = #extra_chart.track[istrack].w, 1, -1 do
-            local isevent = extra_chart.track[istrack].w[i]
-            local beat1 = beat:get(isevent.beat)
-            local beat2 = beat:get(isevent.beat2) or beat1
-            if ((beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat) then
-                now.w = isevent.from +
-                (isevent.to - isevent.from) * self:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
-                break
-            end
-        end
-    else
-    --缺少索引
+
+        getNumAndBeat("x")
+        getNumAndBeat("w")
+        getNumAndBeat("lpos")
+        getNumAndBeat("rpos")
+    else        --缺少索引
+
         event_ed.x = false
         event_ed.w = false
-        for i = #chart.event, 1, -1 do         --倒着减小计算量
+        event_ed.lpos = false
+        event_ed.rpos = false
+        for i = #chart.event, 1, -1 do              --倒着减小计算量
             if not table.find(event_ed, false) then --计算完成
                 break
             end
@@ -75,8 +83,8 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
                 local beat2 = beat:get(chart.event[i].beat2) or beat1
                 local isevent = chart.event[i]
                 if ((beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat) and not event_ed[isevent.type] then
-                    now[isevent.type] = isevent.from +
-                    (isevent.to - isevent.from) * self:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
+                    now[isevent.type][1] = isevent.from +
+                        (isevent.to - isevent.from) * self:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
                     event_ed[isevent.type] = true
                 end
             end
@@ -85,29 +93,59 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
     end
     local track_info = fTrack:get_track_info(track)
     if track_info.type == 'lposrpos' and not original then --将x w 转换为 lpos rpos
-        local lpos = now.x
-        local rpos = now.w
-        now.x = (lpos + rpos) / 2
-        now.w = rpos - lpos
+        local lpos = now.x[1]
+        local rpos = now.w[1]
+        now.x[1] = (lpos + rpos) / 2
+        now.w[1] = rpos - lpos
     end
+    --将now里的元素按照beat大小排序
+    --转换now表为数组以排序
+    now = {now.x, now.w, now.lpos, now.rpos}
+    table.sort(now, function(a, b) return a.beat > b.beat end)
+    local temp_tab = {}
+    temp_tab[now[1].type] = now[1]
+    temp_tab[now[2].type] = now[2]
+    if temp_tab.x and temp_tab.w then
+        return_x = temp_tab.x[1]
+        return_w = temp_tab.w[1]
+    elseif temp_tab.lpos and temp_tab.rpos then
+        return_x = (temp_tab.lpos[1] + temp_tab.rpos[1]) / 2
+        return_w = temp_tab.rpos[1] - temp_tab.lpos[1]
+    elseif temp_tab.x and temp_tab.lpos then
+        return_x = temp_tab.x[1]
+        return_w = (temp_tab.x[1] - temp_tab.lpos[1]) * 2
+    elseif temp_tab.x and temp_tab.rpos then
+        return_x = temp_tab.x[1]
+        return_w = (temp_tab.rpos[1] - temp_tab.x[1]) * 2
+    elseif temp_tab.w and temp_tab.rpos then
+        return_x = temp_tab.rpos[1] - temp_tab.w[1] / 2
+        return_w = temp_tab.w[1]
+    elseif temp_tab.w and temp_tab.lpos then
+        return_x = temp_tab.lpos[1] + temp_tab.w[1] / 2
+        return_w = temp_tab.w[1]
+    end
+
     if track_info.parent ~= 0 then            --有父轨道
         parent_tab[track] = true              --记录父轨道 避免重复计算
         if parent_tab[track_info.parent] then --父轨道在递归中已经计算过了 避免死循环
-            return now.x, now.w
+            return return_x,return_w
         end
         local parent_x, parent_w = self:get(track_info.parent, isbeat, original, parent_tab)
 
-        now.x = now.x + parent_x
+        return_x = return_x + parent_x
         if track_info.type == 'lposrpos' then
-            now.w = now.w + parent_w
+            return_w = return_w + parent_w
         end
     end
-    return now.x, now.w
+    
+    --找x，w，lpos，rpos的beat中最小的两项
+
+    return return_x, return_w
 end
 
 -- event函数
 function event:click(type, pos) --被点击
-    sidebar:to("nil")          --界面清除
+    sidebar:to("nil")           --界面清除
     --检测区间
     local pos_interval = 20 * math.min(denom.scale, 1)
     --根据距离反推出beat
@@ -127,7 +165,7 @@ function event:click(type, pos) --被点击
     end
 end
 
-function event:delete(type, pos)
+function event:delete(istype, pos)
     sidebar:to("nil") --界面清除
     --删除检测区间
     local pos_interval = 20 * math.min(denom.scale, 1)
@@ -138,7 +176,7 @@ function event:delete(type, pos)
         local isevent = chart.event[i]
         local beat1 = beat:get(isevent.beat)
         local beat2 = beat:get(isevent.beat2) or beat1
-        if isevent.track == track.track and isevent.type == type and
+        if isevent.track == track.track and isevent.type == istype and
             (math.intersect(beat1, beat2, event_beat_down, event_beat_up)) then
             chart:delete(isevent)
             return
@@ -146,13 +184,13 @@ function event:delete(type, pos)
     end
 end
 
-function event:place(type, pos)
+function event:place(istype, pos)
     --根据距离反推出beat
     local event_beat = beat:toNearby(beat:yToBeat(pos))
 
     if event.hold_type == 0 then --放置头
         event.local_event = table.copy(meta_event.__index)
-        event.local_event.type = type
+        event.local_event.type = istype
         event.local_event.track = track.track
         event.local_event.beat = { event_beat[1], event_beat[2], event_beat[3] }
         event.local_event.trans.easings = transIndex.easings
@@ -163,11 +201,15 @@ function event:place(type, pos)
             event.local_event.trans.type = 'bezier'
         end
         event.hold_type = 1
-        local x, w = event:get(event.local_event.track, beat:get(event.local_event.beat), true)  --把数值设定为上次event结尾的数值
-        if type == "x" then
+        local x, w = event:get(event.local_event.track, beat:get(event.local_event.beat), true) --把数值设定为上次event结尾的数值
+        if istype == "x" then
             event.local_event.from, event.local_event.to = x, x
-        else
+        elseif istype == "w" then
             event.local_event.from, event.local_event.to = w, w
+        elseif istype == "lpos" then
+            event.local_event.from, event.local_event.to = x - w / 2, x - w / 2
+        elseif istype == "rpos" then
+            event.local_event.from, event.local_event.to = x + w / 2, x + w / 2
         end
     elseif event.hold_type == 1 then
         event.local_event.beat2 = { event_beat[1], event_beat[2], event_beat[3] }
@@ -203,9 +245,9 @@ end
 function event:sort()
     --对event进行排序
     table.sort(chart.event, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
-    for i,v in pairs(extra_chart.track) do
-        table.sort(v.x,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
-        table.sort(v.w,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
+    for i, v in pairs(extra_chart.track) do
+        table.sort(v.x, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+        table.sort(v.w, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
     end
 end
 

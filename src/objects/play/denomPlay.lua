@@ -25,7 +25,11 @@ function denomPlay:draw()
         ::beat::
         love.graphics.setColor(play.colors.beat)                                                          -- 节拍线颜色
         love.graphics.rectangle("fill", play.layout.left_boundary, beat_y, play.layout.right_boundary, 1) -- 节拍线
-        love.graphics.printf(math.floor(isbeat), play.layout.right_boundary + 5, beat_y - fontHeight / 2, print_w, "left")
+        love.graphics.push()
+            love.graphics.translate(play.layout.right_boundary + fontHeight + 2, beat_y )
+            love.graphics.rotate(math.rad(90))
+            love.graphics.printf(math.floor(isbeat),0,0, print_w, "center")
+        love.graphics.pop()
         goto next
 
         ::denom::

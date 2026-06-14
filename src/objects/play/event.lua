@@ -6,20 +6,13 @@ function eventEdit:keypressed(key)
     end
     local isEdit = input('placeEvent')
     local isDelete = input('delete')
-    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
-    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
-    if isEdit and isXEvent then
-       fEvent:place("x",mouse.y)
-        messageBox:add("event x place")
-    elseif isEdit and isWEvent then -- w
-        fEvent:place("w",mouse.y)
-        messageBox:add("event w place")
-    elseif isDelete and isXEvent then -- x delete
-            fEvent:delete("x",mouse.y)
-            messageBox:add("event x place")
-    elseif isDelete and isWEvent then -- w delete
-            fEvent:delete("w",mouse.y)
-            messageBox:add("event w place")
+
+    if isEdit and trackSequence:getType(mouse.x) then
+       fEvent:place(trackSequence:getType(mouse.x),mouse.y)
+        messageBox:add("event " .. trackSequence:getType(mouse.x) .. " place")
+    elseif isDelete and trackSequence:getType(mouse.x) then -- x delete
+            fEvent:delete(trackSequence:getType(mouse.x),mouse.y)
+            messageBox:add("event " .. trackSequence:getType(mouse.x) .. " delete")
     end
 end
 
@@ -27,14 +20,9 @@ function eventEdit:mousepressed(x,y)
     if not(mouse.y >= self.layout.y) then
         return
     end
-    local isXEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval,self.layout.x + self.layout.interval * 2)
-    local isWEvent = math.intersect(mouse.x,mouse.x,self.layout.x + self.layout.interval * 2,self.layout.x + self.layout.interval * 3)
-    if isXEvent then
-        fEvent:click("x",mouse.y)
-        messageBox:add("event x click")
-    elseif isWEvent then
-        fEvent:click("w",mouse.y)
-        messageBox:add("event w click")
+    if trackSequence:getType(mouse.x) then
+        fEvent:click(trackSequence:getType(mouse.x),mouse.y)
+        messageBox:add("event " .. trackSequence:getType(mouse.x) .. " click")
     end
 end
 
