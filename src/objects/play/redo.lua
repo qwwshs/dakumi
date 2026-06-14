@@ -81,16 +81,12 @@ function redo:keypressed(key)
         end
 
         for _, event in ipairs(self.revoke[#self.revoke].add.event) do
-            for i = 1, #extra_chart.track[event.track].x do
-                if table.eq(extra_chart.track[event.track].x[i], event) then
-                    table.remove(extra_chart.track[event.track].x, i)
-                    break
-                end
-            end
-            for i = 1, #extra_chart.track[event.track].w do
-                if table.eq(extra_chart.track[event.track].w[i], event) then
-                    table.remove(extra_chart.track[event.track].w, i)
-                    break
+            for _,index in ipairs(event_type) do
+                for i = 1, #extra_chart.track[event.track][index] do
+                    if table.eq(extra_chart.track[event.track][index][i], event) then
+                        table.remove(extra_chart.track[event.track][index], i)
+                        break
+                    end
                 end
             end
         end
@@ -146,16 +142,12 @@ function redo:keypressed(key)
         end
 
         for _, event in ipairs(self.revoke[#self.revoke].del.event) do
-            for i = 1, #extra_chart.track[event.track].x do
-                if table.eq(extra_chart.track[event.track].x[i], event) then
-                    table.remove(extra_chart.track[event.track].x, i)
-                    break
-                end
-            end
-            for i = 1, #extra_chart.track[event.track].w do
-                if table.eq(extra_chart.track[event.track].w[i], event) then
-                    table.remove(extra_chart.track[event.track].w, i)
-                    break
+            for _,index in ipairs(event_type) do
+                for i = 1, #extra_chart.track[event.track][index] do
+                    if table.eq(extra_chart.track[event.track][index][i], event) then
+                        table.remove(extra_chart.track[event.track][index], i)
+                        break
+                    end
                 end
             end
         end

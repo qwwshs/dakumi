@@ -1,17 +1,54 @@
 --edit区域渲染
 local demoInEdit = object:new('demoInEdit')
 
+trackSequence = {
+    'note','x','w','lpos','rpos',
+    note = 1,
+    x = 2,
+    w = 3,
+    lpos = 4,
+    rpos = 5,
+} --edit区域每个轨道的类型顺序
+
+function trackSequence:getRange(istype)
+    if not self[istype] then
+        love.window.showMessageBox("debug", "getRange:"..istype, "info")
+    end
+    return play.layout.edit.x + play.layout.edit.interval * (self[istype]-1),
+        play.layout.edit.x + play.layout.edit.interval * (self[istype])
+end
+
+function trackSequence:getType(x)
+    for i, v in pairs(self) do
+        if type(i) == 'string' and type(v) == 'number' then
+            local x1, x2 = self:getRange(i)
+            if x >= x1 and x < x2 then
+                return i
+            end
+        end
+    end
+end
+
+local trackleft = {} --每个轨道的左边距
+
 function demoInEdit:load()
     self.ui_note = isImage.note
     self.ui_wipe = isImage.wipe
     self.ui_hold = isImage.hold_head
     self.ui_hold_body = isImage.hold_body
     self.ui_hold_tail = isImage.hold_tail
-    self.note_w = 75
+    self.note_w = play.layout.edit.interval
 
     self._width, self._height = self.ui_note:getDimensions() -- 得到宽高
     self._scale_w = 1 / self._width * self.note_w
     self.layout = play.layout.edit
+    trackleft  = {
+        note = trackSequence:getRange('note'),
+        x = trackSequence:getRange('x'),
+        w = trackSequence:getRange('w'),
+        lpos = trackSequence:getRange('lpos'),
+        rpos = trackSequence:getRange('rpos'),
+    }
 end
 
 function demoInEdit:drawSample(pos, istrack)
@@ -70,24 +107,18 @@ function demoInEdit:draw(pos, istrack)
         self:drawSample(pos, istrack)
     end
 
-    love.graphics.setColor(1, 1, 1) --轨道
-    love.graphics.rectangle("line", pos, track_y, one_track_w, track_h)
+    for i = 1, #trackSequence do
+        love.graphics.rectangle("line", pos + interval * (i-1), track_y,interval , track_h)
+    end
 
     -- 侧线左
     love.graphics.rectangle("fill", pos, track_y, 3, track_h)
 
-    -- x轨道
-    love.graphics.rectangle("line", pos + interval, track_y, one_track_w, track_h)
-
-    -- w轨道
-    love.graphics.rectangle("line", pos + interval * 2, track_y, one_track_w, track_h)
-
     -- 侧线右
-    love.graphics.rectangle("fill", pos + one_track_w + interval * 2, track_y, 3, track_h)
+    love.graphics.rectangle("fill", pos + interval * #trackSequence, track_y, 3, track_h)
 
     --判定线
-    love.graphics.rectangle("line", pos, settings.judge_line_y, one_track_w + interval * 2, 10)
-
+    love.graphics.rectangle("line", pos, settings.judge_line_y, track_w, 10)
 
     love.graphics.setColor(1, 1, 1)
     --note(edit区域渲染)
@@ -116,27 +147,27 @@ function demoInEdit:draw(pos, istrack)
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if previous_frame_starting_point == 0 then previous_frame_starting_point = i end
                 if chart.note[i].type == "note" then
-                    love.graphics.draw(self.ui_note, pos, y - note_h, 0, self._scale_w, _scale_h)
+                    love.graphics.draw(self.ui_note, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)
                 elseif chart.note[i].type == "wipe" then
-                    love.graphics.draw(self.ui_wipe, pos, y - note_h, 0, self._scale_w, _scale_h)
+                    love.graphics.draw(self.ui_wipe, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)
                 else --hold
                     note_h2 = y - y2 - note_h * 2
                     _scale_h2 = 1 / self._height * note_h2
-                    love.graphics.draw(self.ui_hold, pos, y - note_h, 0, self._scale_w, _scale_h)        -- 头
-                    love.graphics.draw(self.ui_hold_tail, pos, y2, 0, self._scale_w, _scale_h)           -- 尾
-                    love.graphics.draw(self.ui_hold_body, pos, y2 + note_h, 0, self._scale_w, _scale_h2) --身
+                    love.graphics.draw(self.ui_hold, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)        -- 头
+                    love.graphics.draw(self.ui_hold_tail, trackleft.note, y2, 0, self._scale_w, _scale_h)           -- 尾
+                    love.graphics.draw(self.ui_hold_body, trackleft.note, y2 + note_h, 0, self._scale_w, _scale_h2) --身
                     if chart.note[i].note_head == 1 then
-                        love.graphics.draw(self.ui_note, pos, y - note_h, 0, self._scale_w / 2, _scale_h)
+                        love.graphics.draw(self.ui_note, trackleft.note, y - note_h, 0, self._scale_w / 2, _scale_h)
                     end
                     if chart.note[i].wipe_head == 1 then
-                        love.graphics.draw(self.ui_wipe, pos + self.note_w / 2, y - note_h, 0, self._scale_w / 2,
+                        love.graphics.draw(self.ui_wipe, trackleft.note + self.note_w / 2, y - note_h, 0, self._scale_w / 2,
                             _scale_h)
                     end
                 end
                 if chart.note[i].fake and chart.note[i].fake == 1 then --假note
                     love.graphics.setColor(play.colors.isFakeNote)
-                    love.graphics.rectangle('line', pos, y - note_h, self.note_w, note_h)
-                    love.graphics.printf('false', pos, y - note_h, one_track_w, 'center')
+                    love.graphics.rectangle('line', trackleft.note, y - note_h, self.note_w, note_h)
+                    love.graphics.printf('false', trackleft.note, y - note_h, interval, 'center')
                     love.graphics.setColor(1, 1, 1)
                 end
             elseif y < -note_h then
@@ -153,9 +184,9 @@ function demoInEdit:draw(pos, istrack)
         local note_h2 = y - y2 - note_h * 2
         local _scale_h2 = 1 / self._height * note_h2
         if math.intersect(y, y2, track_y + track_h + note_h, -note_h) then
-            love.graphics.draw(self.ui_hold, pos, y - note_h, 0, self._scale_w, _scale_h)        --头
-            love.graphics.draw(self.ui_hold_body, pos, y2 + note_h, 0, self._scale_w, _scale_h2) --身
-            love.graphics.draw(self.ui_hold_tail, pos, y2, 0, self._scale_w, _scale_h)           --尾
+            love.graphics.draw(self.ui_hold, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)        --头
+            love.graphics.draw(self.ui_hold_body, trackleft.note, y2 + note_h, 0, self._scale_w, _scale_h2) --身
+            love.graphics.draw(self.ui_hold_tail, trackleft.note, y2, 0, self._scale_w, _scale_h)           --尾
         end
     end
 
@@ -169,12 +200,13 @@ function demoInEdit:draw(pos, istrack)
             y2 = beat:toY(chart.note[note_index].beat2)
         end
         love.graphics.setColor(play.colors.selectingNote)
-        love.graphics.rectangle("fill", pos, y2, one_track_w, y - y2)
+        love.graphics.rectangle("fill", trackleft.note, y2, interval, y - y2)
     end
 
     --event渲染
     local event_h = settings.note_height
-    local event_w = 75
+    local event_w = play.layout.edit.oneTrackW
+
     for i = index_start_event, #chart.event do
         if chart.event[i].track == istrack then
             love.graphics.setColor(1, 1, 1)
@@ -182,24 +214,21 @@ function demoInEdit:draw(pos, istrack)
             local y2 = beat:toY(chart.event[i].beat2)
             local event_h2 = y - y2 - event_h * 2
             local _scale_h2 = 1 / self._height * event_h2
-            local x_pos = pos + interval
-            if chart.event[i].type == "w" then
-                x_pos = pos + interval * 2
-            end
+            local x_pos = trackleft[chart.event[i].type]
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if previous_frame_starting_point_event == 0 then previous_frame_starting_point_event = i end
                 love.graphics.draw(self.ui_hold, x_pos, y - event_h, 0, self._scale_w, _scale_h)        -- 头
-                love.graphics.printf(chart.event[i].from, x_pos, y - event_h, one_track_w, 'center')
+                love.graphics.printf(chart.event[i].from, x_pos, y - event_h, interval, 'center')
                 love.graphics.draw(self.ui_hold_body, x_pos, y2 + event_h, 0, self._scale_w, _scale_h2) --身
 
                 love.graphics.draw(self.ui_hold_tail, x_pos, y2, 0, self._scale_w, _scale_h)            --尾
-                love.graphics.printf(chart.event[i].to, x_pos, y2, one_track_w, 'center')
+                love.graphics.printf(chart.event[i].to, x_pos, y2, interval, 'center')
                 -- beizer曲线
                 for k = 1, 10 do
                     local nowx = (chart.event[i].from - chart.preference.event_scale) / chart.preference.event_scale *
-                        one_track_w + x_pos + one_track_w / 2 +
+                        interval + x_pos + interval / 2 +
                         fEvent:getTrans(chart.event[i], k / 10) *
-                        ((chart.event[i].to - chart.event[i].from) / chart.preference.event_scale * one_track_w) --减去50是为了使50居中
+                        ((chart.event[i].to - chart.event[i].from) / chart.preference.event_scale * interval) --减去50是为了使50居中
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)                --减去一个 (y2 - y)/10是为了与头对齐
                 end
@@ -216,11 +245,8 @@ function demoInEdit:draw(pos, istrack)
         local y2 = beat:toY(beat:toNearby(beat:yToBeat(mouse.y)))
         local event_h2 = y - y2 - event_h * 2
         local _scale_h2 = 1 / self._height * event_h2
-        local x_pos = pos + interval
+        local x_pos = trackleft[thelocal_event.type]
 
-        if thelocal_event.type == "w" then
-            x_pos = pos + interval * 2
-        end
         if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
             love.graphics.draw(self.ui_hold, x_pos, y - note_h, 0, self._scale_w, _scale_h)         --头
             love.graphics.draw(self.ui_hold_body, x_pos, y2 + event_h, 0, self._scale_w, _scale_h2) --身
@@ -234,11 +260,7 @@ function demoInEdit:draw(pos, istrack)
         local y = beat:toY(chart.event[event_index].beat)
         local y2 = beat:toY(chart.event[event_index].beat2)
         love.graphics.setColor(play.colors.selectingEvent)
-        if chart.event[event_index].type == "x" then
-            love.graphics.rectangle("fill", pos + interval, y2, one_track_w, y - y2)
-        else
-            love.graphics.rectangle("fill", pos + interval * 2, y2, one_track_w, y - y2)
-        end
+        love.graphics.rectangle("fill", trackleft[chart.event[event_index].type], y2, interval, y - y2)
     end
 
     love.graphics.setColor(play.colors.editInJudgheLineDownBg)
@@ -250,17 +272,10 @@ function demoInEdit:draw(pos, istrack)
         settings.judge_line_y + 40)
     local now_x, now_w = fEvent:get(istrack, beat.nowbeat, true)
     local track_info = fTrack:get_track_info(istrack)
-    if track_info.type == 'xw' then
-        love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100,
+    love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100,
             settings.judge_line_y + 20)
-        love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200,
+    love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200,
             settings.judge_line_y + 20)
-    elseif track_info.type == 'lposrpos' then
-        love.graphics.print(i18n:get('lpos') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100,
-            settings.judge_line_y + 20)
-        love.graphics.print(i18n:get('rpos') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200,
-            settings.judge_line_y + 20)
-    end
     if track_info.w0thenShow == 0 then
         love.graphics.print(i18n:get('hide'), pos + 200, settings.judge_line_y + 40)
     else

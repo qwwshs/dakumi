@@ -93,6 +93,17 @@ meta_track = { --谱面轨道格式 元表
         parent = 0
     }
 }
+meta_extra_chart_track = { --谱面额外轨道格式 元表
+        x = {},
+        w = {},
+        lpos = {},
+        rpos = {},
+        note = {}
+}
+
+
+event_type = {'x','w','lpos','rpos'}
+
 
 local meta_chart_push = {
     now = false,
@@ -157,11 +168,7 @@ function meta_chart.__index:load()
     for i = 1, #chart.event do
         local e = chart.event[i]
         if extra_chart.track[e.track] == nil then
-            extra_chart.track[e.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[e.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[e.track][e.type], e)
     end
@@ -169,11 +176,7 @@ function meta_chart.__index:load()
     for i = 1, #chart.note do
         local n = chart.note[i]
         if extra_chart.track[n.track] == nil then
-            extra_chart.track[n.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[n.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[n.track].note, n)
     end
@@ -219,21 +222,13 @@ function meta_chart.__index:pop()
     --更新extra_chart
     for _,v in ipairs(meta_chart_push.add.event) do
         if extra_chart.track[v.track] == nil then
-            extra_chart.track[v.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[v.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[v.track][v.type], v)
     end
     for _,v in ipairs(meta_chart_push.add.note) do
         if extra_chart.track[v.track] == nil then
-            extra_chart.track[v.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[v.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[v.track].note, v)
     end
@@ -265,10 +260,9 @@ function meta_chart.__index:pop()
     meta_chart_push.del = {event = {}, note = {}}
 end
 
-
 function meta_chart.__index:add(noteorevent)
     --判断类型
-    local iseventtype = noteorevent.type == 'x' or noteorevent.type == 'w'
+    local iseventtype = table.find(event_type, noteorevent.type)
     local isnotetype = noteorevent.type == 'note' or noteorevent.type == 'hold' or noteorevent.type == 'wipe'
     if not iseventtype and not isnotetype then
         return
@@ -283,11 +277,7 @@ function meta_chart.__index:add(noteorevent)
         fEvent:sort()
         --更新extra_chart
         if extra_chart.track[noteorevent.track] == nil then
-            extra_chart.track[noteorevent.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[noteorevent.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[noteorevent.track][noteorevent.type], noteorevent)
     elseif isnotetype then
@@ -300,11 +290,7 @@ function meta_chart.__index:add(noteorevent)
         fNote:sort()
         --更新extra_chart
         if extra_chart.track[noteorevent.track] == nil then
-            extra_chart.track[noteorevent.track] = {
-                x = {},
-                w = {},
-                note = {}
-            }
+            extra_chart.track[noteorevent.track] = table.copy(meta_extra_chart_track)
         end
         table.insert(extra_chart.track[noteorevent.track].note, noteorevent)
     end
@@ -312,7 +298,7 @@ function meta_chart.__index:add(noteorevent)
 end
 
 function meta_chart.__index:delete(noteorevent)
-    local iseventtype = noteorevent.type == 'x' or noteorevent.type == 'w'
+    local iseventtype = table.find(event_type, noteorevent.type)
     local isnotetype = noteorevent.type == 'note' or noteorevent.type == 'hold' or noteorevent.type == 'wipe'
     if not iseventtype and not isnotetype then
         return

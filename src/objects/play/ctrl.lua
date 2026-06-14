@@ -104,11 +104,7 @@ function ctrl:draw()
     for i = 1, #self.copy_tab.event do
         local y = beat:toY(self.copy_tab.event[i].beat)
         local y2 = beat:toY(self.copy_tab.event[i].beat2)
-        local x_pos = play.layout.edit.x + play.layout.edit.interval
-        if self.copy_tab.event[i].type == "w" then
-            x_pos = play.layout.edit.x + play.layout.edit.interval * 2
-        end
-
+        local x_pos = trackSequence:getRange(self.copy_tab.event[i].type)
         if self.copy_tab.event[i].track == track.track then
             if math.intersect(y,y2,0 - note_h,WINDOW.h + note_h) then
                 love.graphics.rectangle("fill", x_pos, y2, note_w, y - y2)
@@ -119,23 +115,19 @@ end
 
 function ctrl:mousepressed(x, y, button)
     if love.mouse.isDown(2) then                                                     --单选
-        if math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval *2) then --event x
-            if self:copy_exist(chart.event[fEvent:click("x", mouse.y)], "event") then --存在就取消勾选
-                self:copy_sub(chart.event[fEvent:click("x", mouse.y)], "event")
-            else
-                self:copy_add(chart.event[fEvent:click("x", mouse.y)], "event")
-            end
-        elseif math.intersect(x,x,play.layout.edit.x + play.layout.edit.interval * 2,play.layout.edit.x + play.layout.edit.interval *3) then --event w
-            if self:copy_exist(chart.event[fEvent:click("w", mouse.y)], "event") then --存在就取消勾选
-                self:copy_sub(chart.event[fEvent:click("w", mouse.y)], "event")
-            else
-                self:copy_add(chart.event[fEvent:click("w", mouse.y)], "event")
-            end
-        elseif math.intersect(x,x,play.layout.edit.x,play.layout.edit.x + play.layout.edit.interval) then --note
+        local track_type = trackSequence:getType(mouse.x) --获取鼠标所在轨道
+        if not track_type then return end
+        if track_type == 'note' then
             if self:copy_exist(chart.note[fNote:click(mouse.y)], "note") then --存在就取消勾选
                 self:copy_sub(chart.note[fNote:click(mouse.y)], "note")
             else
                 self:copy_add(chart.note[fNote:click(mouse.y)], "note")
+            end
+        else
+            if self:copy_exist(chart.event[fEvent:click(track_type, mouse.y)], "event") then --存在就取消勾选
+                self:copy_sub(chart.event[fEvent:click(track_type, mouse.y)], "event")
+            else
+                self:copy_add(chart.event[fEvent:click(track_type, mouse.y)], "event")
             end
         end
         messageBox:add("add copy")
@@ -224,12 +216,7 @@ function ctrl:mousereleased(x, y)
 
     if math.intersect(x,self.mouse_start_pos.x,play.layout.edit.x + play.layout.edit.interval,play.layout.edit.x + play.layout.edit.interval * 3) then --在event轨道
         for i = 1, #chart.event do
-            local event_x_min = play.layout.edit.x + play.layout.edit.interval
-            local event_x_max = play.layout.edit.x + play.layout.edit.interval + play.layout.edit.oneTrackW
-            if chart.event[i].type == "w" then
-                event_x_min = play.layout.edit.x + play.layout.edit.interval * 2
-                event_x_max = play.layout.edit.x + play.layout.edit.interval * 2 + play.layout.edit.oneTrackW
-            end
+            local event_x_min,event_x_max = trackSequence:getRange(chart.event[i].type)
             if math.intersect(x,self.mouse_start_pos.x,event_x_min,event_x_max) then
                 local isbeat = beat:get(chart.event[i].beat)
                 local isbeat2 = beat:get(chart.event[i].beat2)
@@ -364,7 +351,8 @@ function ctrl:keypressed(key)
             end
             isevent.beat = beat:add(beat:sub(isevent.beat, frist_beat), to_beat)
             isevent.beat2 = beat:add(beat:sub(isevent.beat2, frist_beat), to_beat)
-            if (input('flipPaste') or input('flipPasteAll')) and (isevent.type == "x" or track_info.type == "lposrpos") then     --取反
+            local need_flip_event = {'x','lpos','rpos'}
+            if (input('flipPaste') or input('flipPasteAll')) and (table.find(need_flip_event, isevent.type)) then     --取反
                 isevent.from = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - isevent.from
                 isevent.to = 2*(chart.preference.x_offset + chart.preference.event_scale/2) - isevent.to
             end
