@@ -36,23 +36,30 @@ function fTrack:track_get_max_track() --得到最大的轨道
     end
     return max_track
 end
-function fTrack:track_get_near_fence() --得到附近的栅栏
-    local min = 1
-    for i = 1,track.fence do
-        if math.abs((play.layout.demo.w / track.fence * min)  - mouse.x)> math.abs((play.layout.demo.w / track.fence * i)  - mouse.x) then
-            min = i
-        end
-    end
-    return min
-end
-function fTrack:track_get_near_fence_x() --得到附近的栅栏所对应的play区域的x
-    local pos = 0
-    if track.fence == 0 then
-        pos = (mouse.x - fTrack:get_track_offset()) / settings.track_w_scale / 100 * chart.preference.event_scale
-    else
-        pos = (chart.preference.event_scale / track.fence * fTrack:track_get_near_fence()) - chart.preference.x_offset
-    end
-    return pos
+function fTrack:track_get_near_fence() --得到附近的栅栏  
+    local min = 1  
+    local track_start_x = fTrack:to_play_track(-chart.preference.x_offset, 0)  
+    local track_end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale, 0)  
+    local track_width = track_end_x - track_start_x  
+      
+    for i = 1, track.fence do  
+        if math.abs((track_width / track.fence * min) - (mouse.x - track_start_x)) >   
+           math.abs((track_width / track.fence * i) - (mouse.x - track_start_x)) then  
+            min = i  
+        end  
+    end  
+    return min  
+end  
+  
+function fTrack:track_get_near_fence_x() --得到附近的栅栏所对应的chart区域的x  
+    local pos = 0  
+    if track.fence == 0 then  
+        local track_start_x = fTrack:to_play_track(-chart.preference.x_offset, 0)  
+        pos = (mouse.x - track_start_x) / settings.track_w_scale / 100 * chart.preference.event_scale  
+    else  
+        pos = (chart.preference.event_scale / track.fence * fTrack:track_get_near_fence()) - chart.preference.x_offset  
+    end  
+    return pos  
 end
 function fTrack:track_get_all_track() --得到所有的轨道
     local temp_track = {}

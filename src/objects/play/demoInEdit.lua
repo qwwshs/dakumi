@@ -1,34 +1,6 @@
 --edit区域渲染
 local demoInEdit = object:new('demoInEdit')
 
-trackSequence = {
-    'note','x','w','lpos','rpos',
-    note = 1,
-    x = 2,
-    w = 3,
-    lpos = 4,
-    rpos = 5,
-} --edit区域每个轨道的类型顺序
-
-function trackSequence:getRange(istype)
-    if not self[istype] then
-        love.window.showMessageBox("debug", "getRange:"..istype, "info")
-    end
-    return play.layout.edit.x + play.layout.edit.interval * (self[istype]-1),
-        play.layout.edit.x + play.layout.edit.interval * (self[istype])
-end
-
-function trackSequence:getType(x)
-    for i, v in pairs(self) do
-        if type(i) == 'string' and type(v) == 'number' then
-            local x1, x2 = self:getRange(i)
-            if x >= x1 and x < x2 then
-                return i
-            end
-        end
-    end
-end
-
 local trackleft = {} --每个轨道的左边距
 
 function demoInEdit:load()
@@ -225,10 +197,10 @@ function demoInEdit:draw(pos, istrack)
                 love.graphics.printf(chart.event[i].to, x_pos, y2, interval, 'center')
                 -- beizer曲线
                 for k = 1, 10 do
-                    local nowx = (chart.event[i].from - chart.preference.event_scale) / chart.preference.event_scale *
-                        interval + x_pos + interval / 2 +
+                    local nowx = (chart.event[i].from - chart.preference.x_offset) / chart.preference.event_scale *
+                        interval + x_pos +
                         fEvent:getTrans(chart.event[i], k / 10) *
-                        ((chart.event[i].to - chart.event[i].from) / chart.preference.event_scale * interval) --减去50是为了使50居中
+                        ((chart.event[i].to - chart.event[i].from) / chart.preference.event_scale * interval)
                     local nowy = y + (y2 - y) * k / 10
                     love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)                --减去一个 (y2 - y)/10是为了与头对齐
                 end

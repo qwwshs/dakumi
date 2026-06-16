@@ -11,7 +11,8 @@ meta_key = {
     trackDown = {'left'}, --轨道减1
     denomUp = {'up'}, --节拍分度+1
     denomDown = {'down'}, --节拍分度-1
-
+    directEventEditing = {'capslock'}, --event直观编辑
+    
     select = {'shift'}, --框选确认
     copy = {'ctrl','c'}, --复制
     paste = {'ctrl','v'}, --粘贴
@@ -103,6 +104,36 @@ meta_extra_chart_track = { --谱面额外轨道格式 元表
 
 
 event_type = {'x','w','lpos','rpos'}
+
+trackSequence = {
+    'note','x','w','lpos','rpos',
+    note = 1,
+    x = 2,
+    w = 3,
+    lpos = 4,
+    rpos = 5,
+} --edit区域每个轨道的类型顺序
+
+
+function trackSequence:getRange(istype)
+    if not self[istype] then
+        love.window.showMessageBox("debug", "getRange:"..istype, "info")
+    end
+    return play.layout.edit.x + play.layout.edit.interval * (self[istype]-1),
+        play.layout.edit.x + play.layout.edit.interval * (self[istype])
+end
+
+function trackSequence:getType(x)
+    for i, v in pairs(self) do
+        if type(i) == 'string' and type(v) == 'number' then
+            local x1, x2 = self:getRange(i)
+            if x >= x1 and x < x2 then
+                return i
+            end
+        end
+    end
+end
+
 
 
 local meta_chart_push = {

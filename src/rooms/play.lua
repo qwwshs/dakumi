@@ -31,8 +31,6 @@ function play:get_init_effect()
     } --影响效果
 end
 
-
-
 function play:load()
     self('load')
 end
@@ -60,8 +58,8 @@ function play:update(dt)
         track_line_alpha = false,
         note_rotate = false,
     }
-    for i = #chart.effect, 1, -1 do                                                                                           --倒着减小计算量
-        if not table.find(effect_ed,false) then --计算完成
+    for i = #chart.effect, 1, -1 do              --倒着减小计算量
+        if not table.find(effect_ed, false) then --计算完成
             break
         end
         local iseffect = chart.effect[i]
@@ -69,7 +67,8 @@ function play:update(dt)
         local beat2 = iseffect.beat2
         if iseffect then
             if ((beat:get(beat) <= beat.nowbeat and beat:get(beat2) > beat.nowbeat) or (beat:get(beat2) <= beat.nowbeat)) and not effect_ed[iseffect.type] then
-                play.effect[iseffect.type] = iseffect.from + (iseffect.to-iseffect.from) * self:getTrans(iseffect,(beat.nowbeat-beat1)/(beat2-beat1))
+                play.effect[iseffect.type] = iseffect.from +
+                    (iseffect.to - iseffect.from) * self:getTrans(iseffect, (beat.nowbeat - beat1) / (beat2 - beat1))
                 effect_ed[iseffect.type] = true
             end
         end
@@ -79,7 +78,7 @@ function play:update(dt)
     for i = 1, #all_track do
         local x, w = fEvent:get(all_track[i], beat.nowbeat)
         local track_x, track_w = fTrack:to_play_track(x, w)
-        play.now_all_track_pos[all_track[i]] = { x = x, w = w , track_x = track_x, track_w = track_w}
+        play.now_all_track_pos[all_track[i]] = { x = x, w = w, track_x = track_x, track_w = track_w }
     end
 end
 
@@ -108,7 +107,7 @@ function play:draw()
         end
 
         love.graphics.draw(bg, self.layout.x + self.layout.w / 2 - (bg_width * bg_scale_w) / 2, 0, 0, bg_scale_w,
-            bg_scale_h)                                                                                                       --居中显示
+            bg_scale_h) --居中显示
 
         love.graphics.setStencilTest()
     end
@@ -121,27 +120,24 @@ function play:draw()
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
     --event渲染 于demo侧
-    local event_h = settings.note_height
-    local event_w = 75
-    for i = #chart.event, 1, -1 do
-        local iseffect = chart.event[i]
-        if iseffect.track == track.track then
-            if iseffect.type == "w" then
-                love.graphics.setColor(self.colors.wEventInDemo)
-            elseif iseffect.type == "x" then
-                love.graphics.setColor(self.colors.xEventInDemo)
-            end
-            local y = beat:toY(iseffect.beat)
-            local y2 = beat:toY(iseffect.beat2)
-            local event_h2 = y - y2 - event_h * 2
+    for _, eventType in pairs(event_type) do
+        love.graphics.setColor(self.colors.eventInDemo[eventType])
+        if not extra_chart.track[track.track] then
+            print(track.track)
+            break
+        end
+        for i = #extra_chart.track[track.track][eventType], 1, -1 do
+            local isevent = extra_chart.track[track.track][eventType][i]
+            local y = beat:toY(isevent.beat)
+            local y2 = beat:toY(isevent.beat2)
             if not (y2 > WINDOW.h or y < 0) then
                 -- beizer曲线
-                for k = 1, 10 do
-                    local nowx = fTrack:to_play_track_x(iseffect.from) +
-                        fEvent:getTrans(iseffect, k / 10) *
-                        (fTrack:to_play_track_x(iseffect.to)- fTrack:to_play_track_x(iseffect.from))
-                    local nowy = y + (y2 - y) * k / 10
-                    love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10) --减去一个 (y2 - y)/10是为了与头对齐
+                for k = 1, 100 do
+                    local nowx = fTrack:to_play_track_x(isevent.from) +
+                        fEvent:getTrans(isevent, k / 100) *
+                        (fTrack:to_play_track_x(isevent.to) - fTrack:to_play_track_x(isevent.from))
+                    local nowy = y + (y2 - y) * k / 100
+                    love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 100, 5, (y2 - y) / 100) --减去一个 (y2 - y)/10是为了与头对齐
                 end
             elseif y2 > WINDOW.h then
                 break
@@ -150,14 +146,18 @@ function play:draw()
     end
 
     --栅栏绘制
+    local track_start_x = fTrack:to_play_track(-chart.preference.x_offset, 0)
+    local track_end_x = fTrack:to_play_track(-chart.preference.x_offset + chart.preference.event_scale, 0)
+    local track_width = track_end_x - track_start_x
+
     love.graphics.setColor(self.colors.fence)
     for i = 1, track.fence do
-        love.graphics.rectangle("fill", (self.layout.demo.w + self.layout.demo.x) / track.fence * i, self.layout.demo.y,
+        love.graphics.rectangle("fill", track_start_x + track_width / track.fence * i, self.layout.demo.y,
             2, self.layout.demo.h)
     end
-    if self.layout.demo.w / track.fence * fTrack:track_get_near_fence() < self.layout.demo.w then
+    if track_width / track.fence * fTrack:track_get_near_fence() < track_width then
         love.graphics.setColor(self.colors.nearFence)
-        love.graphics.rectangle("fill", self.layout.demo.w / track.fence * fTrack:track_get_near_fence(),
+        love.graphics.rectangle("fill", track_start_x + track_width / track.fence * fTrack:track_get_near_fence(),
             self.layout.demo.y, 2, self.layout.demo.h)
     end
 end
@@ -181,6 +181,38 @@ function play:mousepressed(x, y, button, istouch, presses)
         return
     end
     self('mousepressed', x, y, button, istouch, presses)
+
+    
+    if self:mouseInDemo() and love.mouse.isDown(1) and not directEventEditing.open then -- 选择轨道 在demo区域
+        messageBox:add("track click")
+        local local_track = {}
+        for i = 1, #chart.event do                                   --点击轨道进入轨道的编辑事件
+            if not table.find(local_track, chart.event[i].track) then --不存在 记录
+                local track_x, track_w = fEvent:get(chart.event[i].track, beat.nowbeat)
+                track_x, track_w = fTrack:to_play_track(track_x, track_w)
+                if math.intersect(x, x, track_x, track_w + track_x) then
+                    local_track[#local_track + 1] = chart.event[i].track
+                end
+            end
+            if beat:get(chart.event[i].beat) > beat.nowbeat then
+                break
+            end
+        end
+        for i = 1, #local_track do
+            if local_track[i] == track.track then --这么写的意义是为了多轨道重叠的时候能顺利的选到全部轨道
+                if i + 1 <= #local_track then
+                    track:to('track', local_track[i + 1])
+                    break
+                else
+                    track:to('track', local_track[1])
+                    break
+                end
+            elseif not table.find(local_track, track.track) then --没点到当前轨道
+                track:to('track', local_track[i])
+                break
+            end
+        end
+    end
 end
 
 function play:mousereleased(x, y, button, istouch, presses)
@@ -208,5 +240,6 @@ ctrl = require('src.objects.play.ctrl')
 play:addObject(ctrl)
 hit = require 'src.objects.play.hit'
 play:addObject(hit)
-
+directEventEditing = require 'src.objects.play.directEventEditing'
+play:addObject(directEventEditing)
 return play
