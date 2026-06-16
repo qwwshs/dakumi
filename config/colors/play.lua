@@ -1,8 +1,12 @@
 return {
     fence = {1, 1, 1, 0.5},
     nearFence = {0, 1, 1, 0.7},
-    xEventInDemo = {0, 1, 1, 1},
-    wEventInDemo = {1, 1, 1, 1},
+    eventInDemo = {
+        x = {0, 1, 1, 1},
+        w = {1, 0, 1, 1},
+        lpos = {1, 1, 0, 1},
+        rpos = {0, 0, 1, 1},
+    },
     copySelectFill = {0, 1, 1, 0.4},
     copySelectLine = {0, 1, 1, 1},
     copyAndPaste = {0, 1, 1, 0.5},
