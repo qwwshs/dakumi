@@ -49,6 +49,14 @@ return {
     ['x_offset'] = 'x offset',  
     ['event_scale'] = 'event scale',  
     ["Whether to offset the previously written event value"] = "Whether to offset the previously written event value",  
+
+    -- direct event editing
+    ['add control point'] = 'add control point',
+    ['delete control point'] = 'delete control point',
+    ['switch trans type'] = 'switch trans type',
+    ['switch the curve to the next type'] = 'switch the curve to the next type',
+    ['switch the curve back to the previous type'] = 'switch the curve back to the previous type',
+
       
     -- Menu Interface - Chart management operations  
     ['edit'] = 'edit',  

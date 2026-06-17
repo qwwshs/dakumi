@@ -143,7 +143,8 @@ room:load("start")
 
 function love.load()
     math.randomseed(os.time()) --随机数种子
-    --Slab.Initialize()
+    Slab.Initialize()
+    Slab.PushFont(FONT.normal)
     --Slab.EnableStats(true)  -- 启用性能统计
 
     --文件夹创建与检查
@@ -160,9 +161,9 @@ end
 
 function love.update(dt)
     timer.update(dt)
+    Slab.Update(dt)
     elapsed_time = elapsed_time + dt
 
-    
     if love.window.getFullscreen() and not WINDOW.fullscreen then --全屏
         local w, h = love.graphics.getDesktopDimensions()
         WINDOW.nowW = w
@@ -191,6 +192,7 @@ end
 function love.draw()
     room("draw")
     messageBox:draw()
+    Slab.Draw()
     Nui:draw()
 end
 

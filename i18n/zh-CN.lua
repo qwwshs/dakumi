@@ -51,6 +51,13 @@ return {
     ['event_scale'] = '事件缩放',
     ["Whether to offset the previously written event value"] = '是否将之前写的event数值进行偏移',
 
+    -- direct event editing
+    ['add control point'] = '增加控制点',
+    ['delete control point'] = '删除控制点',
+    ['switch trans type'] = '切换trans类型',
+    ['switch the curve to the next type'] = '切换为下一过渡曲线',
+    ['switch the curve back to the previous type'] = '切换为上一过渡曲线',
+
     -- Menu Interface - Chart management operations
     ['edit'] = '编辑',
     ['new chart'] = '新建谱面',
