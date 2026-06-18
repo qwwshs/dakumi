@@ -14,7 +14,7 @@ function redo:writeRevoke(tab, istype) --#region写入撤销记录
                 note = {}
             }
         }
-        if tab.type == 'x' or tab.type == 'w' then
+        if table.find(trackSequence,tab.type) then
             if istype == 'add' then
                 table.insert(revoke_tab.add.event, table.copy(tab))
             elseif istype == 'del' then

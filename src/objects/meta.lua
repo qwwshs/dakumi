@@ -229,8 +229,6 @@ function meta_chart.__index:pop()
     for _,v in ipairs(meta_chart_push.add.note) do
         table.insert(chart.note, v)
     end
-    fNote:sort()
-    fEvent:sort()
     --删去event
     for _,v in ipairs(meta_chart_push.del.event) do
         for i = 1, #chart.event do
@@ -289,6 +287,8 @@ function meta_chart.__index:pop()
 
     meta_chart_push.add = {event = {}, note = {}}
     meta_chart_push.del = {event = {}, note = {}}
+    fNote:sort()
+    fEvent:sort()
 end
 
 function meta_chart.__index:add(noteorevent)

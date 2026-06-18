@@ -238,7 +238,9 @@ function event:sort()
     table.sort(chart.event, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
     for i, v in pairs(extra_chart.track) do
         for _,event_type in ipairs(trackSequence) do
-            table.sort(v[trackSequence._], function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+            if v[event_type] then
+                table.sort(v[event_type], function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+            end
         end
     end
 end
