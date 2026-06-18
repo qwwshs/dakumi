@@ -1,7 +1,12 @@
 --note和event的复制粘贴
 local ctrl = object:new('ctrl')
 ctrl.mouse_start_pos = { x = 0, y = 0, down = false } --鼠标按下的时候的x和y 以及是否按下
-ctrl.meta_copy_tab = {}
+ctrl.meta_copy_tab = {
+    note = {},
+    event = {},
+    type = "", --类型是复制 还是裁剪
+    pos = "",  --位置是游玩区域还是编辑区域
+}
 ctrl.copy_tab = {
     note = {},
     event = {},
@@ -254,6 +259,9 @@ function ctrl:keypressed(key)
         self:mousereleased(mouse.x, mouse.y)
     end
 
+    if key == 'escape' then --取消框选
+        self.copy_tab = table.copy(self.meta_copy_tab)
+    end
     if not iskeyboard.ctrl then
         return
     end

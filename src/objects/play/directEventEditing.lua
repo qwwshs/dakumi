@@ -69,17 +69,22 @@ function directEventEditing:update(dt)
     if love.mouse.isDown(1) then
         if self.catch_point == 'head' then --拖动头
             local now_beat = beat:toNearby(beat:yToBeat(mouse.y))
-            isevent.beat = now_beat
+            if beat:get(now_beat) < beat:get(isevent.beat2) then
+                isevent.beat = now_beat
+            end
 
             --有fance就吸附
             local now_from = fTrack:track_get_near_fence_x()
-            isevent.from = now_from
+            isevent.from =  math.roundToPrecision(now_from,1000)
         elseif self.catch_point == 'tail' then --拖动尾
             local now_beat = beat:toNearby(beat:yToBeat(mouse.y))
-            isevent.beat2 = now_beat
+            if beat:get(now_beat) > beat:get(isevent.beat) then
+                isevent.beat2 = now_beat
+            end
+
             --有fance就吸附
             local now_to = fTrack:track_get_near_fence_x()
-            isevent.to = now_to
+            isevent.to = math.roundToPrecision(now_to,1000)
         end
         if isevent.trans.type == 'bezier' then
             local bezier_points = {}
@@ -97,8 +102,8 @@ function directEventEditing:update(dt)
                     local nowx = mouse.x
                     local nowy = mouse.y
                     --进行缩放
-                    nowx = (nowx - c_x) / (c_x2 - c_x)
-                    nowy = (nowy - c_y) / (c_y2 - c_y)
+                    nowx = math.roundToPrecision((nowx - c_x) / (c_x2 - c_x),1000)
+                    nowy = math.roundToPrecision((nowy - c_y) / (c_y2 - c_y),1000)
                     isevent.trans.trans[(index - 1) * 2 + 1] = nowx
                     isevent.trans.trans[(index - 1) * 2 + 2] = nowy
                 end

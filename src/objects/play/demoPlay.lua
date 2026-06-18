@@ -14,6 +14,7 @@ demoPlay.ui.holdBody = isImage.hold_body2
 demoPlay.ui.holdTail = isImage.hold_tail2
 local ui_tab = nativefs.getDirectoryItems(PATH.usersPath.ui) --得到文件夹下的所有文件
 if ui_tab and #ui_tab > 0 then
+nativefs.mount(PATH.base)
     for i=1,#ui_tab do
         local v = ui_tab[i]
         if string.find(v,"note") then
@@ -28,6 +29,7 @@ if ui_tab and #ui_tab > 0 then
             demoPlay.ui.holdTail = love.graphics.newImage(PATH.usersPath.ui..v)
         end
     end
+nativefs.unmount()
 end
 
 local to3d_shader = love.graphics.newShader('src/shader/3d.glsl')

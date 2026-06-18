@@ -38,9 +38,14 @@ function sidebar:update(dt)
         Nui:label(i18n:get("version") .. DAKUMI._VERSION)
 
         if self.displayed_content ~= 'nil' then
-            if Nui:button(i18n:get("break")) then
-                messageBox:add("track")
-                sidebar:to("nil")
+            if Nui:button(i18n:get("break")) or (Nui:windowIsHovered() and iskeyboard['escape'] ) then
+                messageBox:add("break")
+                if g.nowBreak then g:nowBreak() end
+                if g and g.breakroom then
+                    sidebar:to(g.breakroom)
+                else
+                    sidebar:to("nil")
+                end
                 g = self:getGroup(self.displayed_content)
             end
         end
