@@ -91,13 +91,7 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
         end
         print('old')
     end
-    local track_info = fTrack:get_track_info(track)
-    if track_info.type == 'lposrpos' and not original then --将x w 转换为 lpos rpos
-        local lpos = now.x[1]
-        local rpos = now.w[1]
-        now.x[1] = (lpos + rpos) / 2
-        now.w[1] = rpos - lpos
-    end
+    local track_info = fTrack:get_track_info(istrack)
     --将now里的元素按照beat大小排序
     --转换now表为数组以排序
     now = {now.x, now.w, now.lpos, now.rpos}
@@ -126,16 +120,13 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
     end
 
     if track_info.parent ~= 0 then            --有父轨道
-        parent_tab[track] = true              --记录父轨道 避免重复计算
+        parent_tab[istrack] = true              --记录父轨道 避免重复计算
         if parent_tab[track_info.parent] then --父轨道在递归中已经计算过了 避免死循环
             return return_x,return_w
         end
         local parent_x, parent_w = self:get(track_info.parent, isbeat, original, parent_tab)
 
         return_x = return_x + parent_x
-        if track_info.type == 'lposrpos' then
-            return_w = return_w + parent_w
-        end
     end
     
     --找x，w，lpos，rpos的beat中最小的两项
@@ -246,8 +237,9 @@ function event:sort()
     --对event进行排序
     table.sort(chart.event, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
     for i, v in pairs(extra_chart.track) do
-        table.sort(v.x, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
-        table.sort(v.w, function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+        for _,event_type in ipairs(trackSequence) do
+            table.sort(v[trackSequence._], function(a, b) return beat:get(a.beat) < beat:get(b.beat) end)
+        end
     end
 end
 

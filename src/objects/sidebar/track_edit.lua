@@ -1,5 +1,6 @@
 --编辑track属性
 local GtrackEdit = group:new('track edit')
+GtrackEdit.breakroom = 'track'
 GtrackEdit.type = "track edit"
 GtrackEdit.layout = require 'config.layouts.sidebar'.track_edit
 GtrackEdit.track = 0
