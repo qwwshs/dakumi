@@ -4,8 +4,19 @@ speed.type = 'custom'
 speed.text = 'speed'
 speed.layout = require 'config.layouts.editTool'
 speed.useToSpeed = {value = "1"}
+speed.usemouse = false
 
+function speed:wheelmovedInEditTool(x, y)
+    if self.usemouse then
+        if y > 0 then
+            self:to(self.speed+0.1)
+        elseif y < 0 then
+            self:to(math.max(self.speed-0.1,0.1))
+        end
+    end
+end
 function speed:Nui() --渲染
+    self.usemouse = false
     if Nui:groupBegin(self.text,'border') then
         Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
         Nui:label(i18n:get(self.text))
@@ -13,8 +24,13 @@ function speed:Nui() --渲染
             self.speed = self.speed + 0.1
             self.useToSpeed.value = tostring(self.speed)
         end
-        Nui:edit('field', self.useToSpeed)
-
+        local active = Nui:edit('field', self.useToSpeed)
+        if active == 'active' then
+            mouse.cursor = 'sizens'
+            if iskeyboard['ctrl'] then
+                self.usemouse = true
+            end
+        end
         if Nui:button("",isImage.down) then
             self.speed = math.max(self.speed-0.1,0.1)
             self.useToSpeed.value = tostring(self.speed)

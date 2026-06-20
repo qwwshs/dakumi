@@ -1,8 +1,7 @@
 local noteEdit = object:new('noteEdit') --避免重名
 noteEdit.layout = require 'config.layouts.play'
 function noteEdit:keypressed(key)
-    local track_l,track_r = trackSequence:getRange('note')
-    if not ((math.intersect(mouse.x,mouse.x,track_l,track_r) or
+    if not ((trackSequence:getType(mouse.x) == 'note' or
          math.intersect(mouse.x,mouse.x,self.layout.demo.x,self.layout.demo.x + self.layout.demo.w)) and mouse.y >= self.layout.y) then 
         return
     end
@@ -28,14 +27,14 @@ end
 
 function noteEdit:mousepressed(x,y,button)
     local track_l,track_r = trackSequence:getRange('note')
-    if math.intersect(mouse.x,mouse.x,track_l,track_r) and love.mouse.isDown(1) then -- 选择note 在edit区域
+    if trackSequence:getType(mouse.x) == 'note' and love.mouse.isDown(1) then -- 选择note 在edit区域
         local pos = fNote:click(mouse.y)
         if pos then
             sidebar:to('note',pos)
+            messageBox:add("note click")
         else
             sidebar.displayed_content = 'nil'
         end
-        messageBox:add("note click")
     end
 end
 

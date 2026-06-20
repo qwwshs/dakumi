@@ -1,41 +1,35 @@
 uniform float rectangle[4]; // 矩形数组 [x, y, width, height]
 uniform float tanAngle;
-uniform float judge; // 透视参考点的Y坐标（相对于矩形中心的比例，范围-1到1）
+uniform float judge; // 判定线在矩形内的位置比例 (0~1, 0=顶部, 1=底部)
 
 vec4 position(mat4 transform_projection, vec4 vertex_position)
 {
-    
     // 获取矩形参数
     float x_start = rectangle[0];
     float y_start = rectangle[1];
     float width = rectangle[2];
     float height = rectangle[3];
     
-    // 转换为相对于矩形中心的坐标
-    float centerX = x_start + width / 2.0;
-    float centerY = y_start + height / 2.0;
+    // 转换为矩形内的归一化坐标 (0~1)
+    float relX = (vertex_position.x - x_start) / width;
+    float relY = (vertex_position.y - y_start) / height;
     
-    float relX = vertex_position.x - centerX;
-    float relY = vertex_position.y - centerY;
+    // 透视强度
+    float perspStrength = max(tanAngle, 0.001);
     
-    // 计算在judge位置处的透视因子应该为1
-    // judge的取值范围：-1（底部）到1（顶部），0表示中心
-    // 公式：perspFactor = 1.0 + (relY - judgeY) * k
-    // 其中judgeY = judge * (height / 2.0)
-    float judgeY = judge * (height / 2.0);
-    float perspStrength = 1.0 / tanAngle; // 透视强度
+    // 透视因子：判定线(relY=judge)处为1，越往下(relY>judge)收缩，越往上(relY<judge)放大
+    float perspFactor = 1.0 + (judge - relY) * perspStrength;
     
-    // 修正后的透视因子，使得在judgeY处perspFactor = 1
-    float perspFactor = 1.0 + (relY - judgeY) * (perspStrength / (height / 2.0));
-    perspFactor = max(0.1, perspFactor);  // 防止过度拉伸
+    // 限制透视范围
+    perspFactor = max(0.3, min(perspFactor, 10.0));
     
-    // 应用透视
-    float x3d = relX / perspFactor;
-    float y3d = relY;  // Y坐标保持不变
+    // 应用透视：x 以矩形中心为基准缩放
+    // 同时 y 也根据透视因子调整，保持像素点之间的相对位置正确
+    float x3d = (relX - 0.5) / perspFactor + 0.5;
     
     // 转换回屏幕坐标
-    float screenX = centerX + x3d;
-    float screenY = centerY + y3d;
+    float screenX = x_start + x3d * width;
+    float screenY = vertex_position.y;
     
     return transform_projection * vec4(screenX, screenY, 0.0, 1.0);
 }

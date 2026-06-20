@@ -36,7 +36,7 @@ local to3d_shader = love.graphics.newShader('src/shader/3d.glsl')
 
 
 to3d_shader:send("rectangle",layout.x, layout.y, layout.w, layout.h)
-to3d_shader:send("tanAngle", 1 / math.tan(-70 / 180 * math.pi)) --预计算的 1.0/tan(angle)
+to3d_shader:send("tanAngle", math.tan(10 / 180 * math.pi)) --透视强度
 
 function demoPlay:Setup(x,y,w,h)
     local sw = w / layout.w
@@ -46,8 +46,8 @@ function demoPlay:Setup(x,y,w,h)
     self.sw = sw
     self.sh = sh
     to3d_shader:send("rectangle",layout.x, layout.y, w, h)
-    to3d_shader:send("tanAngle", math.tan(-90+settings.angle / 180 * math.pi)) --预计算的 1.0/tan(angle)
-    to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h )
+        to3d_shader:send("tanAngle", math.tan(settings.angle / 180 * math.pi)) --透视强度
+        to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h)
 end
 
 local previous_frame_beat = 0 -- 上一帧的节拍
@@ -58,7 +58,7 @@ function demoPlay:draw()
     local sh = self.sh
     local ex = self.ex
     local ey = self.ey
---    if demo.open then love.graphics.setShader(to3d_shader) end
+    if demo.open then love.graphics.setShader(to3d_shader) end
     love.graphics.push()
     love.graphics.translate(ex,ey)
     local judgePos = settings.judge_line_y *sh
@@ -170,10 +170,10 @@ function demoPlay:draw()
             w = w * sw
 
             x = x + w /2
-            if w > spacing*2 then --增加间隙
-                w = w - spacing
-            elseif w <= spacing*2 and w > spacing  then
-                w = spacing
+            if math.abs(w) > spacing*2 then --增加间隙
+                w = w - spacing * w / math.abs(w)
+            elseif math.abs(w) <= spacing*2 and math.abs(w) > spacing  then
+                w = spacing * w / math.abs(w)
             end
             x = x - w /2
             y = beat:toY(noteBeat)
@@ -194,17 +194,17 @@ function demoPlay:draw()
                 if y ~= y2 and y > judgePos then y = judgePos end --hold头保持在线上
 
                 if isnote.type ~= "hold" then
-                    love.graphics.draw(demoPlay.ui[isnote.type],x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
+                    love.graphics.draw(self.ui[isnote.type],x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2) --后面两个值用于旋转
                 else --hold
                     _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
-                    love.graphics.draw(demoPlay.ui.hold,x,y-note_h,0,_scale_w,_scale_h)
-                    love.graphics.draw(demoPlay.ui.holdBody,x,y2+note_h,0,_scale_w,_scale_h2) --身
-                    love.graphics.draw(demoPlay.ui.holdTail,x,y2,0,_scale_w,_scale_h)
+                    love.graphics.draw(self.ui.hold,x,y-note_h,0,_scale_w,_scale_h)
+                    love.graphics.draw(self.ui.holdBody,x,y2+note_h,0,_scale_w,_scale_h2) --身
+                    love.graphics.draw(self.ui.holdTail,x,y2,0,_scale_w,_scale_h)
                     if isnote.note_head == 1 then
-                        love.graphics.draw(demoPlay.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
+                        love.graphics.draw(self.ui.note,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     end
                     if isnote.wipe_head == 1 then
-                        love.graphics.draw(demoPlay.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
+                        love.graphics.draw(self.ui.wipe,x+w/2,y-note_h+note_h/2,effect.note_rotate,_scale_w,_scale_h,_width/2,_height/2)
                     end
                 end
             end
@@ -234,12 +234,12 @@ function demoPlay:draw()
 
     love.graphics.rectangle("line",start_x,judgePos-8,end_x - start_x,16) --8是为了对其中心
     love.graphics.pop()
---    if demo.open then love.graphics.setShader() end
+    if demo.open then love.graphics.setShader() end
 end
 
 function demoPlay:settings()
-    to3d_shader:send("tanAngle",math.tan((-90+settings.angle) / 180 * math.pi)) --预计算的 1.0/tan(angle)
-    to3d_shader:send("judge", (settings.judge_line_y - layout.y) / self.sh / layout.h )
+    to3d_shader:send("tanAngle", math.tan(settings.angle / 180 * math.pi)) --透视强度
+        to3d_shader:send("judge", (settings.judge_line_y - layout.y) / layout.h / self.sh)
 end
 
 return demoPlay

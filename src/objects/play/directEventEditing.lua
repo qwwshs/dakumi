@@ -44,7 +44,7 @@ function directEventEditing:draw()
             nowy = c_y + (c_y2 - c_y) * nowy
             table.insert(control_point, nowx)
             table.insert(control_point, nowy)
-            love.graphics.circle('line', nowx, nowy, radius)
+            love.graphics.circle('line', nowx, nowy, radius,4)
         end
         table.insert(control_point, c_x2)
         table.insert(control_point, c_y2)
@@ -111,7 +111,8 @@ function directEventEditing:update(dt)
         end
         sidebar:to('event', sidebar.incoming[1]) --更新信息
     end
-    Slab.BeginWindow('Left_Mouse_Context_Menu', { Title = "", X = mouse.x, Y = mouse.y, W = 0, H = 0 ,BgColor = {0,0,0,0}})
+    local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
+    Slab.BeginWindow('Left_Mouse_Context_Menu', { Title = "", X = original_x, Y = original_y, W = 0, H = 0 ,BgColor = {0,0,0,0}})
     if Slab.BeginContextMenuWindow() then
         if Slab.MenuItem(i18n:get('switch trans type')) then
             if isevent.trans.type == 'bezier' then isevent.trans.type = 'easings' else isevent.trans.type = 'bezier' end
@@ -121,7 +122,7 @@ function directEventEditing:update(dt)
             if isevent.trans.type == 'bezier' then
                 if fEvent.bezier[transIndex.bezier + 1] then
                     transIndex.bezier = transIndex.bezier + 1
-                    isevent.trans.trans = fEvent.bezier[transIndex.bezier]
+                    isevent.trans.trans = table.copy(fEvent.bezier[transIndex.bezier])
                 end
             else
                 if easings[transIndex.easings + 1] then
@@ -135,7 +136,7 @@ function directEventEditing:update(dt)
             if isevent.trans.type == 'bezier' then
                 if fEvent.bezier[transIndex.bezier - 1] then
                     transIndex.bezier = transIndex.bezier - 1
-                    isevent.trans.trans = fEvent.bezier[transIndex.bezier]
+                    isevent.trans.trans = table.copy(fEvent.bezier[transIndex.bezier])
                 end
             else
                 if easings[transIndex.easings - 1] then

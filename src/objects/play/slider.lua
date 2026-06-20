@@ -36,6 +36,9 @@ function slider:update(dt)
         end
         Nui:windowEnd()
     end
+    if not mouse.down then
+        self.down = false
+    end
 end
 
 function slider:mousepressed(x1, y1)
@@ -44,10 +47,6 @@ function slider:mousepressed(x1, y1)
     end
     slider.down = true
     music_play = false
-end
-
-function slider:mousereleased(x1, y1)
-    self.down = false
 end
 
 return slider

@@ -8,6 +8,7 @@ serpent = require("src.utils.serpent") --lua序列化
 yaml = require("src.utils.yaml")     --YAML解析
 timer = require("src.utils.timer")     --计时器
 moonshine = require("src.utils.moonshine")   --后处理特效
+cursor = require 'src.utils.cursor' --鼠标样式
 
 require('src.utils.file')
 require('src.utils.pass')
