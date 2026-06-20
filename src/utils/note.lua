@@ -6,6 +6,7 @@ note.hold_type = 0 --长条状态 0没放 1头 2尾
 note.local_tab =  {} --局部note表
 function note:holdCleanUp() --长条清除
     note.local_hold = {}
+    note.local_tab = {}
     note.hold_type = 0
 end
 -- note函数
@@ -111,6 +112,8 @@ function note:sort()
             table.sort(v.note,function(a,b) return beat:get(a.beat) < beat:get(b.beat) end)
         end
         note.local_tab = {}
+        note.local_hold = {}
+        note.hold_type = 0
 end
 function note:getHoldTable()
     return note.local_hold

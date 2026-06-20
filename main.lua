@@ -9,7 +9,7 @@ bg               = nil
 music            = nil
 music_data       = nil
 music_play       = false
-mouse            = { x = 0, y = 0, down = false } --鼠标按下状态
+mouse            = { x = 0, y = 0, down = false ,cursor = ''} --鼠标按下状态
 elapsed_time     = 0                              -- 已运行时间
 FONT             = {
     normal = love.graphics.newFont("assets/fonts/LXGWNeoXiHei.ttf", 13),
@@ -160,6 +160,8 @@ function love.load()
 end
 
 function love.update(dt)
+    mouse.cursor = ''
+    cursor:pop()
     timer.update(dt)
     Slab.Update(dt)
     elapsed_time = elapsed_time + dt
@@ -187,6 +189,10 @@ function love.update(dt)
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
     
     room("update", dt)
+
+    if mouse.cursor ~= '' then
+        cursor:set(mouse.cursor)
+    end
 end
 
 function love.draw()
@@ -329,20 +335,20 @@ function love.run()
     -- Main loop time.
     return function()
         -- Process events.
-            love.event.pump()
-            for name, a, b, c, d, e, f in love.event.poll() do
-                if name == "quit" then
-                    if not love.quit or not love.quit() then
-                        return a or 0
-                    end
+        love.event.pump()
+        for name, a, b, c, d, e, f in love.event.poll() do
+            if name == "quit" then
+                if not love.quit or not love.quit() then
+                    return a or 0
                 end
-                love.handlers[name](a, b, c, d, e, f)
             end
+            love.handlers[name](a, b, c, d, e, f)
+        end
 
         -- Update dt, as we'll be passing it to update
         dt = love.timer.step()
 
---        Slab.Update(dt)
+        --        Slab.Update(dt)
         -- Call update and draw
         Nui:frameBegin()
         love.update(dt) -- will pass 0 if love.timer is disabled

@@ -176,6 +176,7 @@ function event:delete(istype, pos)
 end
 
 function event:place(istype, pos)
+    if (not table.find(trackSequence,istype)) or istype == 'note' then log('event type is note') return end
     --根据距离反推出beat
     local event_beat = beat:toNearby(beat:yToBeat(pos))
 
@@ -227,7 +228,6 @@ function event:place(istype, pos)
                 break
             end
         end
-        sidebar.displayed_content = "event" .. int_theevent
         sidebar:to("event", int_theevent)
         event:cleanUp()
     end

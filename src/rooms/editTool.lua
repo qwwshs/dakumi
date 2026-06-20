@@ -119,8 +119,13 @@ function editTool:wheelmoved(x, y)
     if demo.open then
         return
     end
-    if mouse.x >= self.layout.x + self.layout.w then return end
-    self("wheelmoved",x, y)
+    if math.intersect(mouse.x,mouse.x,self.layout.x,self.layout.x + self.layout.w) and math.intersect(mouse.y,mouse.y,self.layout.y,self.layout.y + self.layout.h) then
+        self("wheelmovedInEditTool",x, y)
+    end
+    if math.intersect(mouse.x,mouse.x,play.layout.x,play.layout.x + play.layout.w) and math.intersect(mouse.y,mouse.y,play.layout.y,play.layout.y + play.layout.h) then 
+        self("wheelmovedInPlay",x, y) --有些控件需要更新play的属性
+     end
+
 end
 
 function editTool:quit()
