@@ -35,8 +35,7 @@ function sidebar:update(dt)
     local g = self:getGroup(self.displayed_content)
     if Nui:windowBegin(i18n:get(sidebar.displayed_content), layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background','title') then
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
-        Nui:label(i18n:get("version") .. DAKUMI._VERSION)
-
+        Nui:label(i18n:get("version") .. DAKUMI._VERSION..'  '.."FPS:" .. love.timer.getFPS())
         if self.displayed_content ~= 'nil' then
             if Nui:button(i18n:get("break")) or (Nui:windowIsHovered() and iskeyboard['escape'] ) then
                 messageBox:add("break")
@@ -50,12 +49,10 @@ function sidebar:update(dt)
             end
         end
 
-
         if g and g.Nui then
             g:Nui()
         end
 
-        Nui:label("FPS:" .. love.timer.getFPS())
         Nui:windowEnd()
     end
 
