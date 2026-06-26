@@ -25,7 +25,8 @@ function fTrack:to_play_track_w(w)
     return w*settings.track_w_scale / chart.preference.event_scale * 100
 end
 function fTrack:to_chart_track(x) --play区域的x转谱面轨道x
-    return (chart.preference.event_scale / play.layout.demo.w * x) - chart.preference.x_offset
+            local track_start_x = fTrack:to_play_track(-chart.preference.x_offset, 0)  
+        return (x - track_start_x) / settings.track_w_scale / 100 * chart.preference.event_scale  
 end
 function fTrack:track_get_max_track() --得到最大的轨道
     local max_track = 0
@@ -54,8 +55,7 @@ end
 function fTrack:track_get_near_fence_x() --得到附近的栅栏所对应的chart区域的x  
     local pos = 0  
     if track.fence == 0 then  
-        local track_start_x = fTrack:to_play_track(-chart.preference.x_offset, 0)  
-        pos = (mouse.x - track_start_x) / settings.track_w_scale / 100 * chart.preference.event_scale  
+        return self:to_chart_track(mouse.x)
     else  
         pos = (chart.preference.event_scale / track.fence * fTrack:track_get_near_fence()) - chart.preference.x_offset  
     end  

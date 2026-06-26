@@ -45,9 +45,9 @@ function demoPlay:Setup(x,y,w,h)
     self.ey = y
     self.sw = sw
     self.sh = sh
-    to3d_shader:send("rectangle",layout.x, layout.y, w, h)
-        to3d_shader:send("tanAngle", math.tan(settings.angle / 180 * math.pi)) --透视强度
-        to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h)
+    to3d_shader:send("rectangle",(WINDOW.nowW - WINDOW.scale * WINDOW.w)/2, (WINDOW.nowH - WINDOW.scale * WINDOW.h)/2,self.sw * layout.w * WINDOW.scale,self.sh * layout.h * WINDOW.scale)
+    to3d_shader:send("tanAngle", math.tan(settings.angle / 180 * math.pi)) --透视强度
+    to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h)
 end
 
 local previous_frame_beat = 0 -- 上一帧的节拍
@@ -58,22 +58,21 @@ function demoPlay:draw()
     local sh = self.sh
     local ex = self.ex
     local ey = self.ey
-    if demo.open then love.graphics.setShader(to3d_shader) end
-    love.graphics.push()
-    love.graphics.translate(ex,ey)
+
     local judgePos = settings.judge_line_y *sh
     local effect = play:get_init_effect()
-    love.graphics.setColor(play.colors.demoInJudgheLineDownBg) --游玩区域显示的背景板
-    love.graphics.rectangle("fill",0,0,play.layout.demo.w*sw,WINDOW.h*sh)
-
     local all_track_pos = play:get_all_track_pos()
 
     local all_track = fTrack:track_get_all_track()
     
     if next(all_track_pos) == nil then --没有轨道
-        love.graphics.pop()
         return
     end
+
+    if demo.open then love.graphics.setShader(to3d_shader) end
+    love.graphics.push()
+    love.graphics.translate(ex,ey)
+
 
     love.graphics.setColor(0,0,0,0.5 * effect.track_alpha / 100 )  --底板
 
@@ -242,4 +241,9 @@ function demoPlay:settings()
         to3d_shader:send("judge", (settings.judge_line_y - layout.y) / layout.h / self.sh)
 end
 
+function demoPlay:resize(w, h)
+    --shader需要原始坐标
+    print(w, h)
+    to3d_shader:send("rectangle",(WINDOW.nowW - WINDOW.scale * WINDOW.w)/2, (WINDOW.nowH - WINDOW.scale * WINDOW.h)/2,self.sw * layout.w * WINDOW.scale,self.sh * layout.h * WINDOW.scale)
+end
 return demoPlay

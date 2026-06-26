@@ -15,16 +15,18 @@ vec4 position(mat4 transform_projection, vec4 vertex_position)
     float relY = (vertex_position.y - y_start) / height;
     
     // 透视强度
-    float perspStrength = max(tanAngle, 0.001);
+    float perspStrength = max(tanAngle, 0.0000000001);
     
     // 透视因子：判定线(relY=judge)处为1，越往下(relY>judge)收缩，越往上(relY<judge)放大
+    // 上下斜率一致，限制范围关于1.0对称
     float perspFactor = 1.0 + (judge - relY) * perspStrength;
     
-    // 限制透视范围
-    perspFactor = max(0.3, min(perspFactor, 10.0));
+    // 对称限制，上限和下限互为倒数
+    float maxFactor = 1.0 + perspStrength * 0.5;
+    float minFactor = 1.0 / maxFactor;
+    perspFactor = clamp(perspFactor, minFactor, maxFactor);
     
     // 应用透视：x 以矩形中心为基准缩放
-    // 同时 y 也根据透视因子调整，保持像素点之间的相对位置正确
     float x3d = (relX - 0.5) / perspFactor + 0.5;
     
     // 转换回屏幕坐标

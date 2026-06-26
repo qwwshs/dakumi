@@ -48,6 +48,11 @@ function demo:opened()
     
 end
 
+
+function demo:resize(w, h)
+    self('resize', w, h)
+end
+
 demo:addObject(require 'src.objects.demo.demoPlay')
 demo:addObject(require 'src.objects.demo.hit')
 demo:addObject(require 'src.objects.demo.comboAndScore')

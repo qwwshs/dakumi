@@ -50,6 +50,10 @@ function edit:settings()
     self('settings')
 end
 
+function edit:resize(w, h)
+    self('resize',w,h)
+end
+
 function edit:quit()
     self('quit')
 end
