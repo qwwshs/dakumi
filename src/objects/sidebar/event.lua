@@ -176,6 +176,7 @@ function Gevent:NuiNext() --更新信息
             [[
             local now = {x = 0,w = 0}
             now.x,now.w = fEvent:get(track.track,beat.nowbeat,true)
+            now.lpos,now.rpos = now.x - now.w / 2,now.x + now.w / 2
             local r = math.random
             return 
             ]]..self.fromv.value)()
