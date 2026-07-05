@@ -246,11 +246,17 @@ ravageChartFileName: ravage
             love.filesystem.remove(ispath .. v) --删除文件
         end
 
+        nativefs.newFile(ispath .. '.t3proj') --复制到当前文件夹下
+        nativefs.write(ispath .. '.t3proj',t3proj)
 
-        save(t3proj, ispath .. '.t3proj')
-        save(yaml.to_yaml(songinfo), ispath .. 'songinfo.yaml')
-        save(yaml.to_yaml(preference), ispath .. 'preference.yaml')
-        save(dkjson.encode(takana, { indent = true }), ispath .. name .. '.json')
+        nativefs.newFile(ispath .. 'songinfo.yaml') --复制到当前文件夹下
+        nativefs.write(ispath .. 'songinfo.yaml',yaml.to_yaml(songinfo))
+
+        nativefs.newFile(ispath .. 'preference.yaml') --复制到当前文件夹下
+        nativefs.write(ispath .. 'preference.yaml',yaml.to_yaml(preference))
+
+        nativefs.newFile(ispath .. name .. '.json') --复制到当前文件夹下
+        nativefs.write(ispath .. name .. '.json',dkjson.encode(takana, { indent = true }))
         if music then
             nativefs.newFile(ispath .. 'music.' .. getFileExtension(menu.musicPath)) --复制到当前文件夹下
             nativefs.write(ispath .. 'music.' .. getFileExtension(menu.musicPath),
