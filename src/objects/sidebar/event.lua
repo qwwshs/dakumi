@@ -50,7 +50,6 @@ function Gevent:transTypeIsBezier()
     Nui:edit('field',self.transv)
     local changed = Nui:slider(1,self.bezier_index,#self.bezier,1)
     if changed then
-        self.transv.value = table.concat(self.bezier[self.bezier_index.value],',')
         transIndex.bezier = self.bezier_index.value
     end
 
@@ -62,12 +61,10 @@ function Gevent:transTypeIsBezier()
 
     if Nui:button("",isImage.add) then
         self.bezier_index.value = math.min(self.bezier_index.value + 1,#self.bezier)
-        self.transv.value = table.concat(self.bezier[self.bezier_index.value],',')
         transIndex.bezier = self.bezier_index.value
     end
     if Nui:button("",isImage.sub) then
         self.bezier_index.value = math.max(self.bezier_index.value - 1,1)
-        self.transv.value = table.concat(self.bezier[self.bezier_index.value],',')
         transIndex.bezier = self.bezier_index.value
     end
 
@@ -82,10 +79,18 @@ function Gevent:transTypeIsBezier()
         local value = tonumber(i) or 0
         table.insert(istrans,value)
     end
-    love.graphics.setColor(1,1,1)
+    --event的bezier
+    love.graphics.setColor(1,1,1,1)
     for i = 1,100 do --曲线绘制
         bezier_y = bezier(1,100,y + h,y,istrans,i) or 0
         bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1) or 0
+        Nui:line(w/100 * i +x,bezier_y,w/100 * (i+1) +x,bezier_y_end)
+    end
+    --当前的bezier
+    love.graphics.setColor(1,1,1,0.5)
+    for i = 1,100 do --曲线绘制
+        bezier_y = bezier(1,100,y + h,y,self.bezier[self.bezier_index.value],i) or 0
+        bezier_y_end = bezier(1,100,y + h,y,self.bezier[self.bezier_index.value],i + 1) or 0
         Nui:line(w/100 * i +x,bezier_y,w/100 * (i+1) +x,bezier_y_end)
     end
     --底线
