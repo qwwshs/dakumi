@@ -7,6 +7,7 @@ GtrackEdit.track = 0
 GtrackEdit.trackName = {value = ''}
 GtrackEdit.w0thenShow = {value = false}
 GtrackEdit.parentTrack = {value = 0} --为0时无父轨道
+GtrackEdit.scale_with_parent = {value = false}
 function GtrackEdit:to(istrack)
     self.track = istrack
     if not chart.track[tostring(istrack)] then
@@ -17,9 +18,15 @@ function GtrackEdit:to(istrack)
     self.parentTrack.value = track_obj.parent
 
     if track_obj.w0thenShow == 0 then
-        self.w0thenShow.value = true
-    else
         self.w0thenShow.value = false
+    else
+        self.w0thenShow.value = true
+    end
+
+    if track_obj.scale_with_parent == 0 then
+        self.scale_with_parent.value = false
+    else
+        self.scale_with_parent.value = true
     end
 end
 function GtrackEdit:Nui()
@@ -38,6 +45,9 @@ function GtrackEdit:Nui()
     Nui:label(i18n:get('parent'))
     Nui:edit('field', self.parentTrack)
     
+    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    Nui:checkbox(i18n:get('Scale with parent'), self.scale_with_parent)
+
 end
 function GtrackEdit:NuiNext()
     local istrack = self.track
@@ -47,6 +57,12 @@ function GtrackEdit:NuiNext()
         chart.track[tostring(istrack)].w0thenShow = 1
     else
         chart.track[tostring(istrack)].w0thenShow = 0
+    end
+
+    if self.scale_with_parent.value then
+        chart.track[tostring(istrack)].scale_with_parent = 1
+    else
+        chart.track[tostring(istrack)].scale_with_parent = 0
     end
 
     chart.track[tostring(istrack)].parent = tonumber(self.parentTrack.value) or 0

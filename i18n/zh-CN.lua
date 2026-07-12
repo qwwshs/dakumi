@@ -98,6 +98,7 @@ return {
     ['track_type'] = '轨道类型',
     ['track_name'] = '轨道名称',
     ['parent'] = '父轨道',
+    ['Scale with parent'] = '跟随父轨道缩放',
     ['hide'] = '隐藏',
     ['do_not_hide'] = '不隐藏',
     ['Filter'] = '筛选',
