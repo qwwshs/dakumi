@@ -98,6 +98,7 @@ return {
     ['track_type'] = 'track type',  
     ['track_name'] = 'track name',  
     ['parent'] = 'parent',  
+    ['Scale with parent'] = 'Scale with parent',
     ['hide'] = 'hide',  
     ['do_not_hide'] = 'do not hide',  
     ['Filter'] = 'filter',  

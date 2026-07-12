@@ -95,6 +95,8 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
     --将now里的元素按照beat大小排序
     --转换now表为数组以排序
     now = {now.x, now.w, now.lpos, now.rpos}
+    --找x，w，lpos，rpos的beat中最小的两项
+
     table.sort(now, function(a, b) return a.beat > b.beat end)
     local temp_tab = {}
     temp_tab[now[1].type] = now[1]
@@ -118,19 +120,25 @@ function event:get(istrack, isbeat, original, parent_tab) --得到event此时的
         return_x = temp_tab.lpos[1] + temp_tab.w[1] / 2
         return_w = temp_tab.w[1]
     end
+    if not original then
+        if track_info.parent ~= 0 then            --有父轨道
+           parent_tab[istrack] = true              --记录父轨道 避免重复计算
+            if parent_tab[track_info.parent] then --父轨道在递归中已经计算过了 避免死循环
+                return return_x,return_w
+            end
+            local parent_x, parent_w = self:get(track_info.parent, isbeat, original, parent_tab)
 
-    if track_info.parent ~= 0 then            --有父轨道
-        parent_tab[istrack] = true              --记录父轨道 避免重复计算
-        if parent_tab[track_info.parent] then --父轨道在递归中已经计算过了 避免死循环
-            return return_x,return_w
+            if track_info.scale_with_parent == 1 then
+                local parent_l = parent_x - parent_w / 2
+                local parent_r = parent_x + parent_w / 2
+                return_w = return_w / chart.preference.event_scale * parent_w
+                return_x = parent_l + (return_x + chart.preference.x_offset) / chart.preference.event_scale * parent_w
+            else
+                return_x = return_x + parent_x
+            end
         end
-        local parent_x, parent_w = self:get(track_info.parent, isbeat, original, parent_tab)
-
-        return_x = return_x + parent_x
     end
     
-    --找x，w，lpos，rpos的beat中最小的两项
-
     return return_x, return_w
 end
 

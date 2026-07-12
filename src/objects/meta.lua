@@ -91,7 +91,8 @@ meta_track = { --谱面轨道格式 元表
         name = '',
         w0thenShow = 0,
         type = 'xw',
-        parent = 0
+        parent = 0,
+        scale_with_parent = 0, --跟随父坐标系缩放
     }
 }
 meta_extra_chart_track = { --谱面额外轨道格式 元表
@@ -183,10 +184,10 @@ function meta_chart.__index:update()
     
     --track 父坐标填充
     for i,v in pairs(chart.track) do
-        if v.parent == nil then
-            v.parent = 0
-        end
+        table.fill(v,meta_track.__index)
     end
+
+
 end
 
 function meta_chart.__index:load()
