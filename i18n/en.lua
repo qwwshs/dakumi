@@ -44,6 +44,7 @@ return {
     ['beat'] = 'beat',  
     ['add'] = 'add',  
     ['sub'] = 'sub',  
+    ['linear_ramp_to_the_next'] = 'linear ramp',
       
     -- Preference Panel (Gpreference) - Editor-specific visual preferences  
     ['x_offset'] = 'x offset',  
