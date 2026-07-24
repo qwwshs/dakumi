@@ -38,7 +38,6 @@ meta_key = {
     }
 }
 
-
 meta_chart = { --谱面基本格式 元表
     __index = {
         bpm_list = {
@@ -83,6 +82,14 @@ meta_note = { --谱面音符格式 元表
         track = 1,
         type = 'note',
         fake = 0,
+    }
+}
+
+meta_bpm = { --谱面音符格式bpm
+    __index = {
+        beat = { 0, 0, 1 },
+        bpm = 120,
+        linear_ramp = 0 --线性变化 为0为突变
     }
 }
 
@@ -187,7 +194,10 @@ function meta_chart.__index:update()
         table.fill(v,meta_track.__index)
     end
 
-
+    --bpn 填充
+    for i,v in pairs(chart.bpm_list) do
+        table.fill(v,meta_bpm.__index)
+    end
 end
 
 function meta_chart.__index:load()

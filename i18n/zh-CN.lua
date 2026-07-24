@@ -45,6 +45,7 @@ return {
     ['beat'] = '节拍',
     ['add'] = '添加',
     ['sub'] = '删减',
+    ['linear_ramp_to_the_next'] = '线性渐变至下一个',
 
     -- Preference Panel (Gpreference) - Editor-specific visual preferences
     ['x_offset'] = 'x偏移',

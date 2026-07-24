@@ -24,7 +24,8 @@ function GchartInfo:load()
                 {value = tostring(v.beat[1])},
                 {value = tostring(v.beat[2])},
                 {value = tostring(v.beat[3])}
-            }
+            },
+            linear_ramp = v.linear_ramp or 0
         }
     end
 end
@@ -55,7 +56,8 @@ function GchartInfo:Nui()
                 {value = tostring(nearBeat[1])},
                 {value = tostring(nearBeat[2])},
                 {value = tostring(nearBeat[3])}
-            }
+            },
+            linear_ramp = 0
         }
         table.sort(self.bpmList,function(a,b)
             return tonumber(a.beat[1].value) + (tonumber(a.beat[2].value) / tonumber(a.beat[3].value)) < tonumber(b.beat[1].value) + (tonumber(b.beat[2].value) / tonumber(b.beat[3].value))
@@ -73,6 +75,11 @@ function GchartInfo:Nui()
         if Nui:button(i18n:get('sub')) then
             table.remove(self.bpmList,i)
         end
+        Nui:layoutRow('dynamic', self.layout.bpmList.uiH, 2)
+        Nui:label(i18n:get 'linear_ramp_to_the_next')
+        v.linear_ramp = Nui:combobox(v.linear_ramp + 1, { 'OFF', 'ON' }) - 1
+
+
     end
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
@@ -95,6 +102,7 @@ function GchartInfo:Nui()
             if chart.bpm_list[i].bpm <= 0 then
                 chart.bpm_list[i].bpm = 120
             end
+            chart.bpm_list[i].linear_ramp = v.linear_ramp
         end
 
         beat:bpmListSort()
