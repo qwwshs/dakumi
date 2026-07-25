@@ -71,6 +71,7 @@ copy /b love.exe+dakumi.love dakumi.exe
 
 - [lovefft](https://github.com/Gennadiyev/lovefft)
 
+- [Slab](https://github.com/flamendless/Slab)
 ## 开源许可
 
 dakumi遵循宽松的MIT协议
