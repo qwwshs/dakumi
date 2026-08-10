@@ -1,6 +1,6 @@
 -- Copyright (C) 2010-2024 qwwshs
 
-DAKUMI           = { _VERSION = "0.5.1" }
+DAKUMI           = { _VERSION = "0.5.0c" }
 beat             = beat
 time             = { nowtime = 0, alltime = 1 }
 chart            = {}
@@ -309,11 +309,6 @@ function love.resize(w, h)
     WINDOW.nowH = h
     WINDOW.scale = math.min(w / WINDOW.w, h / WINDOW.h)
     room("resize", w, h)
-    love.graphics.origin()
-    love.graphics.setScissor((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2,
-        WINDOW.w * WINDOW.scale, WINDOW.h * WINDOW.scale)
-    love.graphics.translate((WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2, (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2)
-    love.graphics.scale(WINDOW.scale, WINDOW.scale)
 end
 
 function love.directorydropped(path) --文件夹拖入
@@ -354,8 +349,22 @@ function love.run()
         love.update(dt) -- will pass 0 if love.timer is disabled
         Nui:frameEnd()
         if love.graphics.isActive() then
+            -- A scissor and transform persist across frames in this custom
+            -- run loop. Reset them before clearing, otherwise the letterbox
+            -- area retains old frames and visibly flickers while resizing.
+            love.graphics.origin()
+            love.graphics.setScissor()
             love.graphics.clear(love.graphics.getBackgroundColor())
+
+            local viewportX = (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
+            local viewportY = (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
+            love.graphics.setScissor(viewportX, viewportY, WINDOW.w * WINDOW.scale, WINDOW.h * WINDOW.scale)
+            love.graphics.translate(viewportX, viewportY)
+            love.graphics.scale(WINDOW.scale, WINDOW.scale)
             love.draw()
+
+            love.graphics.origin()
+            love.graphics.setScissor()
             love.graphics.present()
         end
         --love.timer.sleep(0.001) --避免100%占用CPU
