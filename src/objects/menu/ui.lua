@@ -89,33 +89,34 @@ menuUI.fileTool[#menuUI.fileTool].func = function()
     love.system.openURL(PATH.web.github)
 end
 
-menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'export'}
 
-menuUI.fileTool[#menuUI.fileTool].func = function()
-    if not menu.chartTab[menu.selectMusicPos] then
-        return
-    end
-    nativefs.mount(PATH.base)
-    nativefs.createDirectory(PATH.usersPath.export) --防止有人运行一半删文件夹
+--menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'export'}
 
-    local file_tab = nativefs.getDirectoryItems(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos]) --导出
-    for i,v in ipairs(file_tab) do
-        local info = nativefs.read(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..v)
-        local file = io.open(PATH.usersPath.export.."/"..v, "wb")
-        file:write(info)
-        file:close()
-    end
-    local err = os.execute("cd "..PATH.usersPath.export.." && 7z a "..menu.chartTab[menu.selectMusicPos]..".zip"..[[ *]])  --导出 调用7zip
-    messageBox:add("export")
-    if err ~= 0 then
-        log("export error:"..err,menu.chartTab[menu.selectMusicPos]..".zip", [[ *]])
-    end
+--menuUI.fileTool[#menuUI.fileTool].func = function()
+--    if not menu.chartTab[menu.selectMusicPos] then
+--        return
+ --    end
+--    nativefs.mount(PATH.base)
+--    nativefs.createDirectory(PATH.usersPath.export) --防止有人运行一半删文件夹
+
+--    local file_tab = nativefs.getDirectoryItems(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos]) --导出
+--    for i,v in ipairs(file_tab) do
+--        local info = nativefs.read(PATH.usersPath.chart..menu.chartTab[menu.selectMusicPos].."/"..v)
+--        local file = io.open(PATH.usersPath.export.."/"..v, "wb")
+--        file:write(info)
+--        file:close()
+--    end
+--    local err = os.execute("cd "..PATH.usersPath.export.." && 7z a "..menu.chartTab[menu.selectMusicPos]..".zip"..[[ *]])  --导出 调用7zip
+--    messageBox:add("export")
+--    if err ~= 0 then
+--        log("export error:"..err,menu.chartTab[menu.selectMusicPos]..".zip", [[ *]])
+--    end
     
-    for i,v in ipairs(file_tab) do
-        nativefs.remove(PATH.usersPath.export.."/"..v)  --删除
-    end
-    nativefs.unmount()
-end
+--    for i,v in ipairs(file_tab) do
+--        nativefs.remove(PATH.usersPath.export.."/"..v)  --删除
+--    end
+--    nativefs.unmount()
+--end
 
 menuUI.fileTool[#menuUI.fileTool + 1] = {type = 'button',text = 'delete music'}
 

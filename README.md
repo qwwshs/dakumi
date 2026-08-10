@@ -3,7 +3,10 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qwwshs/dakumi)
 ![Love2D](https://img.shields.io/badge/Love2D-11.4-E06C75.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
+![Windows Badge](https://img.shields.io/badge/Platform-Windows-blue.svg)
+![Linux Badge](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=000&style=flat)
+![macOS Badge](https://img.shields.io/badge/macOS-000?logo=macos&logoColor=fff&style=flat)
+
 ## 概述
 
 dakumi是由qwwshs用`love2d`所制造的TAKUMI³谱面饭制器
@@ -14,7 +17,7 @@ dakumi文档请于[dakumi](http://dakumi.qwwshs.top)中访问
 
 ## 构建
 
-* 平台要求：Windows (Windows10可用 其他Windows版本或平台不清楚)
+* 平台要求：Windows Mac Linux
 
 首先 请前往[love2d](https://love2d.org)中下载love2d的源文件
 
@@ -39,13 +42,23 @@ dakumi.zip/
 
 之后将其改名为`dakumi.love`
 
-然后将`dakumi.love`与`love.exe`放入同一文件夹 在命令行中输入以下命令：
+1.Windows
+
+将`dakumi.love`与`love.exe`放入同一文件夹 在命令行中输入以下命令：
 
 ```bat
 copy /b love.exe+dakumi.love dakumi.exe
 ```
 
 构建完毕
+
+dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
+
+2. Mac Linux
+
+Mac 与 Linux构建较为麻烦，请直接将dakumi.love使用love2d打开即可
+
+dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
 
 ## 依赖
 
@@ -60,8 +73,6 @@ copy /b love.exe+dakumi.love dakumi.exe
 - [serpent](https://github.com/pkulchenko/serpent)
 
 - [LÖVE-Nuklear](https://github.com/keharriso/love-nuklear)
-
-- [7zip](https://github.com/ip7z/7zip)
 
 - [yaml](https://github.com/exosite/lua-yaml)
 
