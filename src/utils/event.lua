@@ -194,7 +194,7 @@ function event:place(istype, pos)
         event.local_event.track = track.track
         event.local_event.beat = { event_beat[1], event_beat[2], event_beat[3] }
         event.local_event.trans.easings = transIndex.easings
-        event.local_event.trans.trans = table.copy(extra_chart.bezier[transIndex.bezier]) or { 0, 0, 1, 1 }
+        event.local_event.trans.trans = table.copy(event.bezier[transIndex.bezier]) or { 0, 0, 1, 1 }
         if settings.default_trans_type == 'easings' then
             event.local_event.trans.type = 'easings'
         else
