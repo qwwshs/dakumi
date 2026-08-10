@@ -56,10 +56,12 @@ dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
 
 2. Mac Linux
 
-Mac 与 Linux构建较为麻烦，请直接将dakumi.love使用love2d打开即可
+Mac与Linux构建较为麻烦，请直接将dakumi.love使用love2d打开即可
 
 dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
 
+- 对于Mac，需要给予love2d权限
+- 
 ## 依赖
 
 - [LxgwNeoXiHei](https://github.com/lxgw/LxgwNeoXiHei)
