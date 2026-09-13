@@ -138,7 +138,12 @@ meta_track = {
         type = 'xw',              -- 轨道类型
         parent = 0,               -- 父轨道 ID (0=无父轨道)
         scale_with_parent = 0,    -- 是否跟随父轨道缩放 (0=否, 1=是)
-        zindex = 0                --层级
+        zindex = 0,                --层级
+        left_boundary = 0,            -- 左边界（track 模式填轨道号，0 即轨道 0；pos 模式填坐标，0 是合法坐标）
+        right_boundary = 0,           -- 右边界（同上；是否启用只看 boundary_type，'nil' 才不启用）
+        boundary_type = 'nil',        -- 边界类型: "nil", “track”,'pos'
+        left_reference = 'x',        -- 左边界参考类型: "x", "w", "lpos","rpos"
+        right_reference = 'x',       -- 右边界参考类型: "x", "w", "lpos","rpos"
     }
 }
 

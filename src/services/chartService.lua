@@ -42,7 +42,7 @@ local chart_push = {
 -- @tparam string typeName 类型名
 -- @treturn boolean
 local function isEventType(typeName)
-    return table.find(event_type, typeName) == true
+    return table.find(event_type, typeName) ~= false
 end
 
 --- 判断是否为音符类型
@@ -473,6 +473,14 @@ function ChartService:hasTrack(trackId)
     return extra_chart.track[trackId] ~= nil
 end
 
+--- 检查谱面里是否已存在该轨道定义
+-- 与 hasTrack 的区别：hasTrack 查 extra_chart 索引（有事件才有条目），本函数查 chart.track 本体
+-- @tparam number trackId 轨道ID
+-- @treturn boolean 是否存在
+function ChartService:hasTrackData(trackId)
+    return chart.track ~= nil and chart.track[tostring(trackId)] ~= nil
+end
+
 --- 获取指定轨道指定类型的事件数量
 -- @tparam number trackId 轨道ID
 -- @tparam string eventType 事件类型 ("x", "w", "lpos", "rpos")
@@ -567,7 +575,7 @@ function ChartService:getTrackField(trackId, field)
     return chart.track[tostring(trackId)][field]
 end
 
---- 设置轨道定义字段（name / w0thenShow / type / parent / scale_with_parent / zindex）
+--- 设置轨道定义字段（name / w0thenShow / type / parent / scale_with_parent / zindex / left_boundary / right_boundary / boundary_type）
 -- @tparam number trackId 轨道ID
 -- @tparam string field 字段名
 -- @tparam any v 字段值

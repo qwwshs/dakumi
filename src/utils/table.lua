@@ -70,14 +70,14 @@ function table.copy(original)
     return copy  
 end  
 
---- 在表中查找元素是否存在
+--- 在表中查找元素
 -- @tparam table array 要搜索的表
 -- @tparam any element 要查找的元素
--- @treturn boolean 是否找到
+-- @treturn number|false 找到时的下标（不是 boolean true，别写 `== true`），未找到返回 false
 function table.find(array, element)
     for _, value in pairs(array) do  
         if value == element then  
-            return true  
+            return _  
         end  
     end  
     return false  

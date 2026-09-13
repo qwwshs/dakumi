@@ -196,16 +196,18 @@ end
 
 --- 获取指定轨道在指定 beat 处的事件值
 -- 优先从 extra_chart 索引查询（快速路径），缺失时从 chart 遍历（慢速路径）
--- 支持父轨道递归计算
+-- 支持父轨道与边界轨道递归计算
 -- @tparam number istrack 轨道 ID
 -- @tparam number isbeat beat 值
 -- @tparam bool original 是否获取原值（不进行父轨道 lrpos 转换）
 -- @tparam table parent_tab 父轨道递归记录表（内部使用，防止死循环）
+-- @tparam table boundary_tab 边界轨道递归记录表（内部使用，防止死循环）
 -- @treturn number x 轨道 x 坐标
 -- @treturn number w 轨道宽度
-function event:get(istrack, isbeat, original, parent_tab)
+function event:get(istrack, isbeat, original, parent_tab, boundary_tab)
     original = original or false
     parent_tab = parent_tab or {}
+    boundary_tab = boundary_tab or {}
 
     local now = {
         x = {0, beat = 0, type = "x"},
@@ -242,7 +244,7 @@ function event:get(istrack, isbeat, original, parent_tab)
             if parent_tab[parent_track] then
                 return return_x, return_w
             end
-            local parent_x, parent_w = self:get(parent_track, isbeat, original, parent_tab)
+            local parent_x, parent_w = self:get(parent_track, isbeat, original, parent_tab, boundary_tab)
 
             if scale_with_parent == 1 then
                 -- 跟随父轨道缩放
@@ -256,6 +258,74 @@ function event:get(istrack, isbeat, original, parent_tab)
                 return_x = return_x + parent_x
             end
         end
+
+        -- 处理边界
+        local left_boundary = ChartService:getTrackField(istrack, 'left_boundary')
+        local right_boundary = ChartService:getTrackField(istrack, 'right_boundary')
+        local boundary_type = ChartService:getTrackField(istrack, 'boundary_type')
+        local left_reference = ChartService:getTrackField(istrack, 'left_reference')
+        local right_reference = ChartService:getTrackField(istrack, 'right_reference')
+        local lpos, rpos = return_x - return_w / 2, return_x + return_w / 2
+        local natural_l, natural_r = lpos, rpos -- 自然区间（空交集时判断往哪边收）
+        local l_limit, r_limit                  -- 本次生效的左/右边界线（nil = 该侧无边界）
+        if boundary_type == 'track' then
+            -- 是否启用只看 boundary_type（'nil' 才不启用）；轨道号在谱面里不存在时该侧无从解析，跳过
+            if (not boundary_tab[left_boundary]) and ChartService:hasTrackData(left_boundary) then
+                boundary_tab[left_boundary] = true
+                -- 边界轨道按自己的父链单独解析：parent_tab 不能沿用（共享祖先时会被判成环而少算父偏移）
+                local left_x, left_w = self:get(left_boundary, isbeat, original, {}, boundary_tab)
+                boundary_tab[left_boundary] = nil
+                if left_reference == 'x' then
+                    l_limit = left_x
+                elseif left_reference == 'w' then
+                    l_limit = left_w
+                elseif left_reference == 'lpos' then
+                    l_limit = left_x - left_w / 2
+                elseif left_reference == 'rpos' then
+                    l_limit = left_x + left_w / 2
+                end
+                if l_limit then
+                    lpos = math.max(lpos, l_limit)
+                end
+            end
+            if (not boundary_tab[right_boundary]) and ChartService:hasTrackData(right_boundary) then
+                boundary_tab[right_boundary] = true
+                local right_x, right_w = self:get(right_boundary, isbeat, original, {}, boundary_tab)
+                boundary_tab[right_boundary] = nil
+                if right_reference == 'x' then
+                    r_limit = right_x
+                elseif right_reference == 'w' then
+                    r_limit = right_w
+                elseif right_reference == 'lpos' then
+                    r_limit = right_x - right_w / 2
+                elseif right_reference == 'rpos' then
+                    r_limit = right_x + right_w / 2
+                end
+                if r_limit then
+                    rpos = math.min(rpos, r_limit)
+                end
+            end
+        elseif boundary_type == 'pos' then
+            -- pos 模式两侧无条件按坐标生效，0 是合法坐标（两侧都填 0 就是零宽贴在坐标 0 上）
+            l_limit = left_boundary
+            lpos = math.max(lpos, l_limit)
+            r_limit = right_boundary
+            rpos = math.min(rpos, r_limit)
+        end
+        -- 边界夹出反向区间时压到最近的边界线（零宽），别被 abs 镜像到边界另一侧；
+        -- 没配边界时不干预，保留原来的 abs 兜底（事件本身给的反向区间照旧画）
+        if lpos > rpos and (l_limit or r_limit) then
+            if l_limit and natural_r <= l_limit then
+                lpos, rpos = l_limit, l_limit
+            elseif r_limit and natural_l >= r_limit then
+                lpos, rpos = r_limit, r_limit
+            else
+                local mid = (lpos + rpos) / 2
+                lpos, rpos = mid, mid
+            end
+        end
+        return_x = (lpos + rpos) / 2
+        return_w = math.abs(rpos - lpos)
     end
 
     return return_x, return_w
