@@ -93,18 +93,12 @@ function FFT:draw()
     end
 end
 
--- 注册为插件
-if PluginManager then
-    PluginManager:register({
-        name = "fft",
-        version = "1.0.0",
-        description = "FFT 频谱分析器",
-        hooks = {
-            onMusicSelect = function(ctx, path, source)
-                FFT:select_music()
-            end,
-        },
-    })
-end
+-- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
+FFT.plugin = {
+    name = 'fft',
+    version = '1.0.0',
+    target = 'menu',
+    layer = 30,
+}
 
 return FFT

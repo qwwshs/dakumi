@@ -145,13 +145,12 @@ function alt:keypressed(key)
     end
 end
 
--- 注册为插件
-if PluginManager then
-    PluginManager:register({
-        name = "alt",
-        version = "1.0.0",
-        description = "Alt 快捷操作（拖头/拖尾/裁切/翻转）",
-    })
-end
+-- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
+alt.plugin = {
+    name = 'alt',
+    version = '1.0.0',
+    target = 'edit/play',
+    layer = 100,
+}
 
 return alt

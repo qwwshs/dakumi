@@ -91,4 +91,4 @@ require("src.rooms.start")  -- 启动场景
 -- 第9层: 插件系统（在 main.lua 中初始化）
 -- ============================================================
 -- PluginManager 和服务层在 main.lua 中加载和初始化
--- 插件注册在各场景的 load 阶段完成
+-- 插件统一在 love.load 中由 plugins/init.lua 自动发现、注册并按层挂载

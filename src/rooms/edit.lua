@@ -59,10 +59,10 @@ function edit:quit()
 end
 
 
-edit:addGroup(play)
-edit:addGroup(demo)
-edit:addGroup(editTool)
-edit:addGroup(tabs)
-edit:addGroup(sidebar)
+edit:addGroup(play, 10)
+edit:addGroup(demo, 20)
+edit:addGroup(editTool, 30)
+edit:addGroup(tabs, 40)
+edit:addGroup(sidebar, 50)
 
-room:addRoom(edit)
+room:addRoom(edit, 0)

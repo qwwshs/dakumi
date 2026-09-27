@@ -1,178 +1,171 @@
 --[[
     模块名: PluginManager
-    描述: 插件管理器，负责插件的注册、生命周期管理和事件钩子分发
+    描述: 插件注册、目标容器挂载、钩子与卸载；入口发现由 plugins/init.lua 负责
     作者: qwwshs
-    架构: 混合模式 - 数据事件用钩子驱动，UI功能用接口实现
-
-    使用方式:
-        local PluginManager = require("src.utils.plugin")
-        PluginManager:register(myPlugin)
-        PluginManager:emit("onNoteAdd", note)
+    描述表回调使用 function(ctx, ...)，object 模式使用对象的冒号方法。
 ]]
-
-local PluginManager = {}
-PluginManager.__index = PluginManager
-
---- 已注册的插件表 { [name] = plugin }
-PluginManager.plugins = {}
-
---- 事件钩子表 { [eventName] = { {pluginName, callback}, ... } }
-PluginManager.hooks = {}
-
---- 插件上下文，提供给插件的服务访问接口
-PluginManager.ctx = nil
-
---- 初始化插件管理器
--- @tparam table ctx 插件上下文（包含 chartService, coordinateService, audioService 等服务）
-function PluginManager:init(ctx)
-    self.ctx = ctx or {}
-    self.plugins = {}
-    self.hooks = {}
+local PluginManager = {plugins = {}, hooks = {}, records = {}, sequence = 0}
+local function report(message)
+    if type(log) == 'function' then pcall(log, '[PluginManager] ' .. message) end
+end
+local function pack(...) return {n = select('#', ...), ...} end
+local function validLayer(layer)
+    return layer == nil or (type(layer) == 'number' and layer == layer and layer ~= -math.huge)
 end
 
---- 注册一个插件
--- @tparam table plugin 插件描述表，包含以下字段:
---   - name (string): 插件名称（唯一标识）
---   - version (string): 插件版本号
---   - description (string): 插件描述
---   - init (function, 可选): 初始化回调，参数为 ctx
---   - update (function, 可选): 每帧更新，参数为 ctx, dt
---   - draw (function, 可选): 绘制回调，参数为 ctx
---   - keypressed (function, 可选): 键盘按下，参数为 ctx, key, scancode, isrepeat
---   - keyreleased (function, 可选): 键盘释放，参数为 ctx, key, scancode
---   - mousepressed (function, 可选): 鼠标按下，参数为 ctx, x, y, button, istouch, presses
---   - mousereleased (function, 可选): 鼠标释放，参数为 ctx, x, y, button, istouch, presses
---   - wheelmoved (function, 可选): 鼠标滚轮，参数为 ctx, x, y
---   - settings (function, 可选): 设置面板，参数为 ctx
---   - destroy (function, 可选): 卸载回调，参数为 ctx
---   - hooks (table, 可选): 事件钩子表 { [eventName] = callback }
--- @treturn boolean 是否注册成功
+function PluginManager:init(ctx)
+    local names = self:getPluginNames()
+    for _, name in ipairs(names) do self:unregister(name) end
+    self.ctx = ctx or {}
+    self.plugins, self.hooks, self.records, self.sequence = {}, {}, {}, 0
+end
+
+function PluginManager:resolveTarget(target)
+    if type(target) == 'table' and target._entries and type(target.addObject) == 'function' then
+        return target
+    end
+    local root = self.ctx and self.ctx.root
+    if root and type(target or 'main') == 'string' then
+        return root:findContainer(target or 'main')
+    end
+end
+
+-- 每个插件只有一个代理挂载到目标；生命周期只走场景分发，不再全局重复调用。
 function PluginManager:register(plugin)
-    if not plugin or type(plugin) ~= "table" then
-        log("[PluginManager] register: plugin must be a table")
-        return false
+    if type(plugin) ~= 'table' then return false, 'plugin must be a table' end
+    -- 兼容内置 object 模块：对象上只携带注册信息，加载器统一注册。
+    if plugin.plugin then
+        local descriptor = {}
+        for key, value in pairs(plugin.plugin) do descriptor[key] = value end
+        descriptor.object = plugin
+        plugin = descriptor
     end
-    if not plugin.name or type(plugin.name) ~= "string" then
-        log("[PluginManager] register: plugin must have a name")
-        return false
+    local function fail(message)
+        report(message)
+        return false, message
     end
-    if self.plugins[plugin.name] then
-        log("[PluginManager] register: plugin '" .. plugin.name .. "' already registered")
-        return false
-    end
+    if type(plugin.name) ~= 'string' or plugin.name == '' then return fail('missing plugin name') end
+    if self.plugins[plugin.name] then return fail('duplicate plugin: ' .. plugin.name) end
+    if not validLayer(plugin.layer) then return fail('invalid layer: ' .. plugin.name) end
+    if plugin.object ~= nil and type(plugin.object) ~= 'table' then return fail('invalid object: ' .. plugin.name) end
+    if plugin.hooks ~= nil and type(plugin.hooks) ~= 'table' then return fail('invalid hooks: ' .. plugin.name) end
+    if plugin.export ~= nil and type(plugin.export) ~= 'string' then return fail('invalid export: ' .. plugin.name) end
+    local target = self:resolveTarget(plugin.target)
+    if not target then return fail('target not found for ' .. plugin.name .. ': ' .. tostring(plugin.target)) end
 
-    -- 注册插件
-    self.plugins[plugin.name] = plugin
-
-    -- 注册钩子
-    if plugin.hooks then
-        for eventName, callback in pairs(plugin.hooks) do
-            self:on(eventName, callback, plugin.name)
+    self.sequence = self.sequence + 1
+    local record = {plugin = plugin, target = target, order = self.sequence, active = true}
+    local proxy = {__name = plugin.name, __type = plugin.object and plugin.object.__type or ''}
+    setmetatable(proxy, {__index = function(_, method)
+        local owner = plugin.object or plugin
+        if type(owner[method]) ~= 'function' then return nil end
+        return function(_, ...)
+            if not record.active then return end
+            local result = pack(pcall(owner[method], plugin.object or self.ctx, ...))
+            if not result[1] then
+                report(plugin.name .. '.' .. tostring(method) .. ': ' .. tostring(result[2]))
+                return
+            end
+            return unpack(result, 2, result.n)
         end
+    end})
+    record.proxy = proxy
+    target:addObject(proxy, plugin.layer)
+    self.plugins[plugin.name], self.records[plugin.name] = plugin, record
+    if plugin.export then
+        record.previousExport = _G[plugin.export]
+        _G[plugin.export] = plugin.object or plugin
     end
-
-    -- 调用 init
-    if type(plugin.init) == "function" then
+    for eventName, callback in pairs(plugin.hooks or {}) do self:on(eventName, callback, plugin.name) end
+    if type(plugin.init) == 'function' then
         local success, err = pcall(plugin.init, self.ctx)
         if not success then
-            log("[PluginManager] init error in '" .. plugin.name .. "': " .. tostring(err))
+            self:unregister(plugin.name)
+            return fail('init failed for ' .. plugin.name .. ': ' .. tostring(err))
         end
     end
-
-    log("[PluginManager] plugin '" .. plugin.name .. "' v" .. (plugin.version or "0") .. " registered")
+    report('registered ' .. plugin.name)
     return true
 end
 
---- 注销一个插件
--- @tparam string pluginName 插件名称
--- @treturn boolean 是否注销成功
-function PluginManager:unregister(pluginName)
-    local plugin = self.plugins[pluginName]
-    if not plugin then
-        log("[PluginManager] unregister: plugin '" .. pluginName .. "' not found")
-        return false
-    end
-
-    -- 调用 destroy
-    if type(plugin.destroy) == "function" then
-        local success, err = pcall(plugin.destroy, self.ctx)
-        if not success then
-            log("[PluginManager] destroy error in '" .. pluginName .. "': " .. tostring(err))
-        end
-    end
-
-    -- 移除钩子
-    for eventName, listeners in pairs(self.hooks) do
+function PluginManager:unregister(name)
+    local record = self.records[name]
+    if not record then return false end
+    local plugin = record.plugin
+    record.active = false
+    record.target:deleteObject(record.proxy)
+    self.plugins[name], self.records[name] = nil, nil
+    for _, listeners in pairs(self.hooks) do
         for i = #listeners, 1, -1 do
-            if listeners[i].pluginName == pluginName then
+            if listeners[i].pluginName == name then
+                listeners[i].active = false
                 table.remove(listeners, i)
             end
         end
     end
-
-    self.plugins[pluginName] = nil
-    log("[PluginManager] plugin '" .. pluginName .. "' unregistered")
+    if type(plugin.destroy) == 'function' then
+        local ok, err = pcall(plugin.destroy, self.ctx)
+        if not ok then report('destroy failed for ' .. name .. ': ' .. tostring(err)) end
+    end
+    if plugin.export and rawequal(_G[plugin.export], plugin.object or plugin) then
+        _G[plugin.export] = record.previousExport
+    end
     return true
 end
 
---- 注册事件钩子
--- @tparam string eventName 事件名称
--- @tparam function callback 回调函数
--- @tparam string pluginName 所属插件名称
+function PluginManager:setLayer(name, layer)
+    local record = self.records[name]
+    if not record or not validLayer(layer) then return false end
+    record.plugin.layer = layer
+    return record.target:setLayer(record.proxy, layer)
+end
+
 function PluginManager:on(eventName, callback, pluginName)
-    if type(callback) ~= "function" then return end
-    if not self.hooks[eventName] then
-        self.hooks[eventName] = {}
-    end
-    table.insert(self.hooks[eventName], {
-        pluginName = pluginName or "anonymous",
-        callback = callback,
-    })
+    if type(eventName) ~= 'string' or type(callback) ~= 'function' then return false end
+    self.sequence = self.sequence + 1
+    local list = self.hooks[eventName] or {}
+    self.hooks[eventName] = list
+    list[#list + 1] = {pluginName = pluginName, callback = callback, order = self.sequence, active = true}
+    return true
 end
 
---- 触发事件钩子，所有注册了该事件的回调会被依次调用
--- @tparam string eventName 事件名称
--- @param ... 传递给回调的参数
 function PluginManager:emit(eventName, ...)
-    local listeners = self.hooks[eventName]
-    if not listeners then return end
-    for _, listener in ipairs(listeners) do
-        local success, err = pcall(listener.callback, self.ctx, ...)
-        if not success then
-            log("[PluginManager] hook '" .. eventName .. "' error in '" .. listener.pluginName .. "': " .. tostring(err))
+    local snapshot = {}
+    for i, listener in ipairs(self.hooks[eventName] or {}) do snapshot[i] = listener end
+    local function layer(listener)
+        local plugin = self.plugins[listener.pluginName]
+        return plugin and plugin.layer or math.huge
+    end
+    table.sort(snapshot, function(a, b)
+        if layer(a) == layer(b) then return a.order < b.order end
+        return layer(a) < layer(b)
+    end)
+    for _, listener in ipairs(snapshot) do
+        if listener.active then
+            local ok, err = pcall(listener.callback, self.ctx, ...)
+            if not ok then report('hook ' .. eventName .. ': ' .. tostring(err)) end
         end
     end
 end
 
---- 对所有已注册插件调用指定方法
--- @tparam string methodName 方法名（如 "update", "draw", "keypressed" 等）
--- @param ... 传递给方法的参数
-function PluginManager:callAll(methodName, ...)
-    for name, plugin in pairs(self.plugins) do
-        if type(plugin[methodName]) == "function" then
-            local success, err = pcall(plugin[methodName], self.ctx, ...)
-            if not success then
-                log("[PluginManager] " .. methodName .. " error in '" .. name .. "': " .. tostring(err))
-            end
-        end
+-- 手动广播接口；普通生命周期已由 room/group 调用，不要再广播 update/draw 等。
+function PluginManager:callAll(method, ...)
+    local records = {}
+    for _, record in pairs(self.records) do records[#records + 1] = record end
+    table.sort(records, function(a, b)
+        local al, bl = a.plugin.layer or math.huge, b.plugin.layer or math.huge
+        if al == bl then return a.order < b.order end
+        return al < bl
+    end)
+    for _, record in ipairs(records) do
+        if record.active and type(record.proxy[method]) == 'function' then record.proxy[method](record.proxy, ...) end
     end
 end
-
---- 获取已注册插件列表
--- @treturn table 插件名称列表
 function PluginManager:getPluginNames()
     local names = {}
-    for name, _ in pairs(self.plugins) do
-        names[#names + 1] = name
-    end
+    for name in pairs(self.plugins) do names[#names + 1] = name end
+    table.sort(names)
     return names
 end
-
---- 获取插件信息
--- @tparam string pluginName 插件名称
--- @treturn table|nil 插件描述表
-function PluginManager:getPlugin(pluginName)
-    return self.plugins[pluginName]
-end
-
+function PluginManager:getPlugin(name) return self.plugins[name] end
 return PluginManager

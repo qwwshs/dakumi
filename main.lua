@@ -89,12 +89,14 @@ local AudioService = require("src.services.audioService")
 
 --- 插件上下文：提供给插件的服务访问接口
 PluginManager:init({
+    root = room,              -- 根场景，可按路径定位任意 room/group
+    input = input,            -- 快捷键查询
     chart = ChartService,      -- 谱面数据服务
     coord = CoordinateService, -- 坐标转换服务
     audio = AudioService,      -- 音频服务
     beat = beat,               -- 节拍计算模块
-    settings = nil,            -- 设置（运行时由 settings.lua 加载后赋值）
-    i18n = nil,                -- 国际化（运行时由 i18n.lua 加载后赋值）
+    settings = settings,       -- 用户设置（场景模块已完成加载）
+    i18n = i18n,               -- 国际化
     WINDOW = WINDOW,           -- 窗口信息
     PATH = PATH,               -- 路径配置
 })
@@ -200,6 +202,9 @@ function love.load(arg)
 
     nativefs.unmount(PATH.base)
 
+    -- 插件目录统一负责发现和注册；此时日志目录、场景和 Nui 均已就绪。
+    PluginManager.ctx.ui = Nui
+    PluginManager.loadResult = require('plugins.init')(PluginManager)
     room("load")
 end
 

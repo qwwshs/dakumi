@@ -330,13 +330,13 @@ function directEventEditing:mousepressed(x, y, button, istouch, presses)
     end
 end
 
--- 注册为插件
-if PluginManager then
-    PluginManager:register({
-        name = "directEventEditing",
-        version = "1.0.0",
-        description = "Event 直观编辑",
-    })
-end
+-- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
+directEventEditing.plugin = {
+    name = 'directEventEditing',
+    version = '1.0.0',
+    target = 'edit/play',
+    layer = 130,
+    export = 'directEventEditing', -- 保留编辑器现有对象引用
+}
 
 return directEventEditing

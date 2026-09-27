@@ -182,6 +182,8 @@ group = container:new('')
 room = object:new('')
 ```
 
+room/group 的 `addObject(obj, layer)`、`addGroup(group, layer)`、`addRoom(room, layer)` 支持指定层。子内容统一按层执行；省略层时默认最高层，同层保持导入顺序。通过 `getLayer`/`setLayer` 查询和修改挂载层。
+
 #### 生命周期方法
 - `load()`：加载场景
 - `update(dt)`：每帧更新
@@ -229,58 +231,13 @@ AudioService:getWaveform()           -- 获取波形数据
 AudioService:getFFT()                -- 获取FFT数据
 ```
 
-### 3. 插件系统 (plugin.lua)
+### 3. 插件系统
 
-#### 插件管理器
-```lua
--- 初始化插件管理器
-PluginManager:init(ctx)
+插件入口由 `plugins/init.lua` 在 `love.load` 中自动发现；`src/utils/plugin.lua` 负责注册、目标容器挂载、数据钩子和卸载。此时场景、服务、设置、Nui 和日志目录均已就绪。
 
--- 注册插件
-PluginManager:register(plugin)
+每个插件在自己的入口中声明 `name`、`target` 和可选的 `layer`，返回描述表即可。描述表回调接收 `ctx`；复用 `object` 时对象方法接收 `self`。生命周期跟随目标 room/group 的分层分发。
 
--- 注销插件
-PluginManager:unregister(pluginName)
-
--- 触发事件
-PluginManager:event(eventName, ...)
-
--- 更新所有插件
-PluginManager:update(dt)
-
--- 绘制所有插件
-PluginManager:draw()
-```
-
-#### 插件接口
-```lua
-{
-    name = "插件名称",
-    version = "1.0.0",
-    description = "插件描述",
-    
-    -- 生命周期方法
-    init = function(ctx) end,
-    update = function(ctx, dt) end,
-    draw = function(ctx) end,
-    destroy = function(ctx) end,
-    
-    -- 事件处理
-    keypressed = function(ctx, key, scancode, isrepeat) end,
-    keyreleased = function(ctx, key, scancode) end,
-    mousepressed = function(ctx, x, y, button, istouch, presses) end,
-    mousereleased = function(ctx, x, y, button, istouch, presses) end,
-    wheelmoved = function(ctx, x, y) end,
-    
-    -- 钩子事件
-    hooks = {
-        onNoteAdd = function(ctx, note) end,
-        onNoteDelete = function(ctx, note) end,
-        onEventAdd = function(ctx, event) end,
-        onEventDelete = function(ctx, event) end,
-    }
-}
-```
+完整接口、示例和限制见 [插件开发文档](plugins/README.md)。
 
 ---
 
@@ -377,111 +334,24 @@ log("Debug info:", variable)
 
 ## 插件开发
 
-### 1. 创建插件目录
-
-```
-plugins/
-├── my-plugin.lua          # 插件主文件
-├── my-plugin/             # 插件资源目录
-│   ├── config.lua         # 插件配置
-│   └── resources/         # 插件资源
-```
-
-### 2. 编写插件代码
+将插件保存为 `plugins/name.lua` 或 `plugins/name/init.lua`，无需编辑游戏源码或手动修改加载清单。启动时自动加载；改动后重启生效。
 
 ```lua
--- plugins/my-plugin.lua
-local MyPlugin = {}
-
-MyPlugin.name = "my-plugin"
-MyPlugin.version = "1.0.0"
-MyPlugin.description = "我的自定义插件"
-
--- 初始化
-function MyPlugin:init(ctx)
-    self.ctx = ctx
-    self.config = {
-        -- 插件配置
-    }
-    log("[MyPlugin] 初始化完成")
-end
-
--- 更新
-function MyPlugin:update(ctx, dt)
-    -- 每帧更新逻辑
-end
-
--- 绘制
-function MyPlugin:draw(ctx)
-    -- 绘制逻辑
-end
-
--- 键盘按下
-function MyPlugin:keypressed(ctx, key, scancode, isrepeat)
-    if key == "f1" then
-        -- 处理 F1 键
-    end
-end
-
--- 鼠标按下
-function MyPlugin:mousepressed(ctx, x, y, button, istouch, presses)
-    -- 处理鼠标事件
-end
-
--- 销毁
-function MyPlugin:destroy(ctx)
-    log("[MyPlugin] 插件已卸载")
-end
-
--- 钩子事件
-MyPlugin.hooks = {
-    onNoteAdd = function(ctx, note)
-        log("[MyPlugin] 音符添加:", note)
-    end,
-    
-    onEventAdd = function(ctx, event)
-        log("[MyPlugin] 事件添加:", event)
-    end,
-}
-
-return MyPlugin
-```
-
-### 3. 注册插件
-
-在 `plugins/init.lua` 中注册插件：
-
-```lua
--- plugins/init.lua
-local PluginManager = require("src.utils.plugin")
-
--- 加载插件
-local MyPlugin = require("plugins.my-plugin")
-
--- 注册插件
-PluginManager:register(MyPlugin)
-```
-
-### 4. 插件配置
-
-```lua
--- plugins/my-plugin/config.lua
 return {
-    enabled = true,
-    settings = {
-        -- 插件设置
-    }
+    name = 'example',
+    target = 'edit/play',
+    layer = 85,
+    keypressed = function(ctx, key)
+        if key == 'f6' then
+            messageBox:add('example')
+        end
+    end,
 }
 ```
 
-### 5. 插件最佳实践
+`layer` 从小到大执行，同层按导入顺序执行，省略时位于最高层。`target` 支持任意嵌套 room/group 的路径或对象引用。描述表函数使用 `function(ctx, ...)`，不要额外写隐式 `self`。
 
-1. **命名规范**：使用小写字母和连字符
-2. **版本管理**：遵循语义化版本
-3. **错误处理**：使用 pcall 包装可能出错的操作
-4. **日志记录**：使用 log 函数记录重要信息
-5. **资源管理**：及时释放不需要的资源
-6. **性能考虑**：避免在 update 中进行 heavy 计算
+详见 [插件开发文档](plugins/README.md)，其中包含完整示例、容器路径表、核心层号、对象模式、数据钩子覆盖范围、禁用/卸载与资源访问。
 
 ---
 

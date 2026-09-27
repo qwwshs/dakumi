@@ -3,8 +3,9 @@ local ui_dakumi_pixel = isImage.dakumi_pixel
 local display_duration = 1 -- 显示长
 local icon = 'dakumi'
 start = room:new("start")
-room:addRoom(start)
+room:addRoom(start, 0)
 function start:load()
+    self('load')
     -- 设置窗口为无边框模式，并调整大小为 300x300
     love.window.setMode(300, 300, {
                 fullscreen = false,
@@ -31,10 +32,11 @@ function start:draw()
         local _scale = 1 / _height * 300
         love.graphics.draw(ui_dakumi, 0, 0, 0, _scale, _scale)
     end
-    
+    self('draw')
 end
 
 function start:update(dt)
+    self('update', dt)
     if elapsed_time > display_duration then 
         love.resize( settings.window_width, settings.window_height )  --缩放窗口
         love.window.setMode(settings.window_width, settings.window_height, {resizable = true})

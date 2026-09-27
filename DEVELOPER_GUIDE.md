@@ -83,7 +83,8 @@ quit              -- 退出
 第6层: 数据处理库             (nativefs, dkjson, easings, bezier, math, track, input)
 第7层: UI 和对象模块          (messageBox, i18n, allImage, ui)
 第8层: 场景模块               (edit, menu, start)
-第9层: 插件系统               (在 main.lua 中初始化)
+第9层: 插件管理器             (在 main.lua 中初始化)
+运行期: 插件自动发现/注册      (love.load → plugins/init.lua，按 target/layer 挂载)
 ```
 
 **关键约束**：
@@ -295,108 +296,40 @@ AudioService:stop()               -- 停止
 
 ## 插件开发指南
 
-### 插件结构
+完整文档位于 [plugins/README.md](plugins/README.md)。
 
-插件是一个 Lua 表，包含以下字段：
+插件入口支持 `plugins/name.lua` 和 `plugins/name/init.lua`。每个入口返回描述表，自动加载器在场景、服务和 Nui 初始化后统一注册，无需修改游戏内文件。以下划线开头的文件/目录不加载。
 
 ```lua
-local myPlugin = {
-    -- 必填
-    name = "my_plugin",            -- 插件唯一标识
-    version = "1.0.0",             -- 版本号
-    description = "插件描述",       -- 插件描述
-
-    -- 生命周期方法（可选）
-    init = function(ctx) end,          -- 初始化
-    update = function(ctx, dt) end,    -- 每帧更新
-    draw = function(ctx) end,          -- 绘制
-    destroy = function(ctx) end,       -- 卸载
-
-    -- 输入事件（可选）
-    keypressed = function(ctx, key, scancode, isrepeat) end,
-    keyreleased = function(ctx, key, scancode) end,
-    mousepressed = function(ctx, x, y, button, istouch, presses) end,
-    mousereleased = function(ctx, x, y, button, istouch, presses) end,
-    wheelmoved = function(ctx, x, y) end,
-
-    -- 事件钩子（可选）
-    hooks = {
-        onNoteAdd = function(ctx, note) end,
-        onNoteDelete = function(ctx, note) end,
-        onEventAdd = function(ctx, event) end,
-        onEventDelete = function(ctx, event) end,
-        onMusicSelect = function(ctx) end,
-    },
+return {
+    name = 'example',
+    target = 'edit/play',
+    layer = 85,
+    update = function(ctx, dt)
+        -- ctx.chart / ctx.coord / ctx.audio / ctx.settings / ctx.ui
+    end,
 }
-
-return myPlugin
 ```
 
-### 上下文对象 (ctx)
+目标可以是任意嵌套 room/group 路径或对象引用；省略目标时挂载根容器。层从小到大执行，默认最高层，同层按导入顺序执行。描述表回调的第一个参数为 `ctx`；`object` 模式保留对象的 `self`。
 
-所有插件方法的第一个参数是 `ctx`，包含以下服务：
+管理器提供 `register`、`unregister`、`getPluginNames`、`getPlugin`、`setLayer`、`on`、`emit`。正常的更新、绘制和输入已经由目标容器调用，不能再使用 `callAll` 重复广播这些生命周期。
 
-```lua
-ctx.chart     -- ChartService 实例
-ctx.coord     -- CoordinateService 实例
-ctx.audio     -- AudioService 实例
-ctx.beat      -- beat 模块引用
-ctx.WINDOW    -- 窗口配置
-ctx.PATH      -- 路径配置
-```
+内置插件：fft（menu/30）、redo（edit/play/90）、alt（100）、ctrl（110）、directEventEditing（130）。它们的注册信息均在各自插件文件中。
 
-### 注册插件
-
-```lua
-local PluginManager = require("src.utils.plugin")
-PluginManager:register(myPlugin)
-```
-
-### 触发事件钩子
-
-```lua
-PluginManager:emit("onNoteAdd", note)
-PluginManager:emit("onEventAdd", event)
-```
-
-### 调用所有插件方法
-
-```lua
-PluginManager:callAll("update", dt)
-PluginManager:callAll("draw")
-PluginManager:callAll("keypressed", key)
-```
-
-### 内置插件
-
-| 插件 | 文件 | 类型 | 说明 |
-|------|------|------|------|
-| equalizer | `src/plugins/equalizer.lua` | sidebar group | 10 段参量均衡器 |
-| to_takana | `src/plugins/to_takana.lua` | sidebar group | Takana 转谱器 |
-| fft | `src/plugins/fft.lua` | menu object | FFT 频谱分析器 |
-| hit | `src/plugins/hit.lua` | play object | 打击效果 |
-| directEventEditing | `src/plugins/directEventEditing.lua` | play object | 直观事件编辑 |
-
-插件加载器：`src/plugins/init.lua`
-
-### 添加新插件
-
-1. 在 `src/plugins/` 下创建新文件
-2. 按上述结构编写插件表
-3. 在 `src/plugins/init.lua` 中添加加载代码：
-
-```lua
-success, result = pcall(require, "src.plugins.my_plugin")
-if success then
-    plugins.my_plugin = result
-else
-    log("[Plugins] Failed to load my_plugin: " .. tostring(result))
-end
-```
+普通谱面增删钩子仍仅覆盖 `ChartService:add/delete`；批量操作、撤销重做和直接字段修改不触发，详细限制见完整文档。
 
 ---
 
 ## 场景系统
+
+### 容器分层
+
+`addObject(obj, layer)`、`addGroup(group, layer)`、`addRoom(room, layer)` 把子内容加入指定层。所有类型统一排序，非活动 room 不执行。省略层号时使用 `container.TOP_LAYER`（`math.huge`），同层按导入顺序执行。
+
+每个容器拥有独立的 `layers` 表；用 `getLayer(child)` / `setLayer(child, layer)` 查询和修改，不直接改内部表。嵌套容器各自排序。`self('update', dt)` 等调用在自定义方法中显式转发；未定义该方法的容器自动向子内容转发。
+
+通过 `room:findContainer('edit/sidebar/event')` 可定位任意嵌套容器。增删操作必须使用容器接口，以保持对象列表和层索引一致。
 
 ### 场景列表
 

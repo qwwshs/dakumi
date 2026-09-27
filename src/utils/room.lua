@@ -1,291 +1,221 @@
 --[[
     模块名: room
-    描述: 房间/场景管理系统，实现 object/container/group/room 四层架构
+    描述: object/container/group/room 对象系统，子对象、子组和活动房间统一按层分发
     作者: qwwshs
-    依赖: 无
-
-    架构说明:
-    - object: 基础对象，所有实体的基类
-    - container: 容器，可包含子对象（objects）和子组（groups）
-    - group: 容器变体，用于组合多个对象，不支持嵌套房间
-    - room: 场景管理器，支持多场景切换
-
-    生命周期方法（由 room 调度）:
-    - load: 加载
-    - update(dt): 每帧更新
-    - draw: 绘制
-    - keypressed(key): 键盘按下
-    - keyreleased(key): 键盘释放
-    - mousepressed(x, y, button): 鼠标按下
-    - mousereleased(x, y, button): 鼠标释放
-    - wheelmoved(x, y): 鼠标滚轮
-    - textinput(input): 文本输入
-    - resize(w, h): 窗口大小变化
-    - quit: 退出
+    层号从小到大执行；同层按导入顺序执行。省略层号表示最高层（math.huge）。
+    层属于父容器中的挂载关系，同一个对象在不同容器中可以拥有不同层。
 ]]
-
--- ============================================================
--- object: 基础对象
--- ============================================================
 object = {}
-
---- 创建新的基础对象
--- @tparam string __name 对象名称
--- @treturn table 新对象
-function object:new(__name)
-    local obj = {__name = "",__type = ""}
-    if type(__name) == 'string' then obj.__name = __name end
-    setmetatable(obj, object)
-    return obj
+function object:new(name)
+    return setmetatable({__name = type(name) == 'string' and name or '', __type = ''}, object)
 end
 
--- ============================================================
--- container: 容器，可包含子对象和子组
--- ============================================================
 container = object:new('')
-
-container.objects = {}  -- 子对象列表
-container.groups = {}   -- 子组列表
 container.__index = container
-
---- 创建新的容器
--- @tparam string __name 容器名称
--- @treturn table 新容器
-function container:new(__name)
-    if type(__name) ~= "string" then return end
-    local c = object:new(__name)
-    c.objects = {}
-    c.groups = {}
-    setmetatable(c,container)
-    return c
+container.TOP_LAYER = math.huge
+local function initContainer(value)
+    value.objects, value.groups, value.layers = {}, {}, {}
+    value._entries, value._sequence = {}, 0
+    value._ordered = false
+    return value
+end
+initContainer(container)
+function container:new(name)
+    if type(name) ~= 'string' then return end
+    return setmetatable(initContainer(object:new(name)), container)
 end
 
---- 添加子对象
--- @tparam table obj 子对象
-function container:addObject(obj)
-    if type(obj) ~= "table" then return end
-    table.insert(self.objects,obj)
+local function checkLayer(layer)
+    layer = layer == nil and container.TOP_LAYER or layer
+    assert(type(layer) == 'number' and layer == layer and layer ~= -math.huge,
+        'layer must be a number (nil means the highest layer)')
+    return layer
 end
+local function attach(self, child, kind, layer)
+    if type(child) ~= 'table' then return false end
+    layer = checkLayer(layer)
+    -- 同一容器不重复挂载同一个对象，避免生命周期执行两次。
+    for _, entry in ipairs(self._entries) do
+        if rawequal(entry.child, child) then return false end
+    end
+    self._sequence = self._sequence + 1
+    local entry = {child = child, kind = kind, layer = layer, order = self._sequence, alive = true}
+    self._entries[#self._entries + 1] = entry
+    self.layers[layer] = self.layers[layer] or {}
+    table.insert(self.layers[layer], entry)
+    self._ordered = false
+    return true
+end
+local function removeLayerEntry(self, entry)
+    local entries = self.layers[entry.layer]
+    for i, value in ipairs(entries) do
+        if value == entry then table.remove(entries, i); break end
+    end
+    if #entries == 0 then self.layers[entry.layer] = nil end
+end
+local function detach(self, child)
+    for i, entry in ipairs(self._entries) do
+        if rawequal(entry.child, child) then
+            entry.alive = false
+            removeLayerEntry(self, entry)
+            table.remove(self._entries, i)
+            self._ordered = false
+            return true
+        end
+    end
+    return false
+end
+function container:addObject(child, layer)
+    if not attach(self, child, 'object', layer) then return false end
+    table.insert(self.objects, child)
+    return true
+end
+function container:addGroup(child, layer)
+    if not attach(self, child, 'group', layer) then return false end
+    table.insert(self.groups, child)
+    return true
+end
+local function deleteFrom(self, list, childOrName)
+    for i, child in ipairs(list) do
+        if rawequal(child, childOrName) or child.__name == childOrName then
+            detach(self, child)
+            table.remove(list, i)
+            return true
+        end
+    end
+    return false
+end
+function container:deleteObject(childOrName) return deleteFrom(self, self.objects, childOrName) end
+function container:deleteGroup(childOrName) return deleteFrom(self, self.groups, childOrName) end
+local function findByName(list, name)
+    for _, child in ipairs(list) do
+        if child.__name == name then return child end
+    end
+end
+function container:getObject(name) return findByName(self.objects, name) end
+function container:getGroup(name) return findByName(self.groups, name) end
+function container:getAllObject() return self.objects end
+function container:getAllGroup() return self.groups end
+local function findByType(list, kind)
+    local result = {}
+    for _, child in ipairs(list) do
+        if child.__type == kind then result[#result + 1] = child end
+    end
+    return result
+end
+function container:getAllTypeObject(kind) return findByType(self.objects, kind) end
+function container:getAllTypeGroup(kind) return findByType(self.groups, kind) end
 
---- 按名称删除子对象
--- @tparam string __name 子对象名称
-function container:deleteObject(__name)
-    if type(__name) ~= "string" then return end
-    for i,v in ipairs(self.objects) do
-        if v.__name == __name then
-            table.remove(self.objects,i)
-            break
+-- 修改已经挂载的子对象、子组或子房间的层；省略 layer 则移到最高层。
+function container:setLayer(child, layer)
+    layer = checkLayer(layer)
+    for _, entry in ipairs(self._entries) do
+        if rawequal(entry.child, child) then
+            removeLayerEntry(self, entry)
+            entry.layer = layer
+            self.layers[layer] = self.layers[layer] or {}
+            table.insert(self.layers[layer], entry)
+            self._ordered = false
+            return true
+        end
+    end
+    return false
+end
+function container:getLayer(child)
+    for _, entry in ipairs(self._entries) do
+        if rawequal(entry.child, child) then return entry.layer end
+    end
+end
+local function orderedEntries(self)
+    if not self._ordered then
+        local entries = {}
+        for i, entry in ipairs(self._entries) do entries[i] = entry end
+        table.sort(entries, function(a, b)
+            if a.layer == b.layer then return a.order < b.order end
+            return a.layer < b.layer
+        end)
+        self._ordered = entries
+    end
+    return self._ordered
+end
+-- 自定义方法决定转发时机，保留场景的范围/显示状态判断；没有方法的容器自动向内转发。
+local function invoke(child, method, ...)
+    if type(child[method]) == 'function' then
+        if method == 'load' and room and child.load == room.load then
+            child('load', ...)
+        else
+            child[method](child, ...)
+        end
+    elseif child._entries then
+        child(method, ...)
+    end
+end
+function container:callChildren(method, kind, ...)
+    local entries = orderedEntries(self)
+    local active = self.__type
+    for _, entry in ipairs(entries) do
+        -- 顺序快照：新增项下次执行，已删除项当次立即跳过。
+        if entry.alive and (not kind or entry.kind == kind) and
+            (entry.kind ~= 'room' or entry.child.__name == active) then
+            invoke(entry.child, method, ...)
         end
     end
 end
+function container:callAllObject(method, ...) self:callChildren(method, 'object', ...) end
+function container:callAllGroup(method, ...) self:callChildren(method, 'group', ...) end
+function container:__call(method, ...) self:callChildren(method, nil, ...) end
 
---- 按名称获取子对象
--- @tparam string __name 子对象名称
--- @treturn table|nil 子对象
-function container:getObject(__name)
-    if type(__name) ~= "string" then return end
-    for _,v in ipairs(self.objects) do
-        if v.__name == __name then
-            return v
-        end
-    end
-    return nil
-end
-
---- 获取指定类型的所有子对象
--- @tparam string isType 类型名
--- @treturn table 子对象列表
-function container:getAllTypeObject(isType)
-    if type(isType) ~= "string" then return end
-    local tab = {}
-    for _,v in ipairs(self.objects) do
-        if v.__type == isType then
-            table.insert(tab,v)
-        end
-    end
-    return tab
-end
-
---- 获取所有子对象
--- @treturn table 子对象列表
-function container:getAllObject()
-    return self.objects
-end
-
---- 对所有子对象调用指定方法
--- @tparam string methodName 方法名
--- @param ... 传递给方法的参数
-function container:callAllObject(methodName,...)
-    for _, obj in ipairs(self.objects) do
-        if obj[methodName] then
-            obj[methodName](obj,...)
-        end
-    end
-end
-
-
---- 添加子组
--- @tparam table group 子组
-function container:addGroup(group)
-    if not group then return end
-    if type(group) ~= "table" then return end
-    table.insert(self.groups,group)
-end
-
---- 按名称删除子组
--- @tparam string __name 子组名称
-function container:deleteGroup(__name)
-    if type(__name) ~= "string" then return end
-    for i,v in ipairs(self.groups) do
-        if v.__name == __name then
-            table.remove(self.groups,i)
-            break
-        end
-    end
-end
-
---- 按名称获取子组
--- @tparam string __name 子组名称
--- @treturn table|nil 子组
-function container:getGroup(__name)
-    if type(__name) ~= "string" then return end
-    for _,v in ipairs(self.groups) do
-        if v.__name == __name then
-            return v
-        end
-    end
-    return nil
-end
-
---- 获取所有子组
--- @treturn table 子组列表
-function container:getAllGroup()
-    return self.groups
-end
-
---- 对所有子组调用指定方法
--- @tparam string methodName 方法名
--- @param ... 传递给方法的参数
-function container:callAllGroup(methodName,...)
-    for _, group in ipairs(self.groups) do
-        if group[methodName] then
-            group[methodName](group,...)
-        end
-    end
-end
-
---- 获取指定类型的所有子组
--- @tparam string isType 类型名
--- @treturn table 子组列表
-function container:getAllTypeGroup(isType)
-    if type(isType) ~= "string" then return end
-    local tab = {}
-    for _,v in ipairs(self.groups) do
-        if v.__type == isType then
-            table.insert(tab,v)
-        end
-    end
-    return tab
-end
-
---- 调用容器的方法：对所有子对象和子组调用指定方法，然后调用当前房间的方法
--- @tparam string methodName 方法名
--- @param ... 传递给方法的参数
-function container:__call(methodName,...)
-    self:callAllObject(methodName,...)
-    self:callAllGroup(methodName,...)
-
-    if not self.rooms then return end
-    if not self.rooms[self.__type] then return end
-    if type(self.rooms[self.__type][methodName]) ~= 'function' then return end
-    self.rooms[self.__type][methodName](self.rooms[self.__type],...)
-end
-
-
--- ============================================================
--- group: 容器变体，用于组合多个对象
--- ============================================================
 group = container:new('')
 group.__index = group
-
---- group 的方法调用：仅对子对象和子组调用（不支持房间切换）
-function group:__call(methodName,...)
-    self:callAllObject(methodName,...)
-    self:callAllGroup(methodName,...)
+group.__call = container.__call
+function group:new(name)
+    return setmetatable(initContainer(object:new(name)), group)
 end
-
---- 创建新的 group
--- @tparam string __name group 名称
--- @treturn table 新 group
-function group:new(__name)
-    local g = {__name = '',objects = {},groups = {}}
-
-    if type(__name) == 'string' then g.__name = __name end
-
-    setmetatable(g,group)
-    return g
-end
-
--- ============================================================
--- room: 场景管理器，支持多场景切换
--- ============================================================
 room = container:new('main')
-room.rooms = {}  -- 已注册的房间表 { [name] = roomObj }
+room.rooms = {}
 room.__index = room
-
---- room 的方法调用：对子对象和子组调用，然后对当前活跃房间调用
-function room:__call(methodName,...)
-    self:callAllObject(methodName,...)
-    self:callAllGroup(methodName,...)
-
-    if not self.rooms or not self.rooms[self.__type] or not self.rooms[self.__type][methodName] then return end
-
-    self.rooms[self.__type][methodName](self.rooms[self.__type],...)
+room.__call = container.__call
+function room:new(name)
+    if type(name) ~= 'string' then return end
+    local value = container:new(name)
+    value.rooms = {}
+    return setmetatable(value, room)
 end
-
---- 创建新的 room
--- @tparam string __name room 名称
--- @treturn table 新 room
-function room:new(__name)
-    if not __name then return end
-    local r = container:new(__name)
-    r.rooms = {}
-    setmetatable(r, room)
-    return r
+function room:load(name)
+    if name then self.__type = name end
 end
-
---- 设置当前活跃房间
--- @tparam string __name 房间名称
-function room:load(__name)
-    if not __name then return end
-    self.__type = __name
+function room:addRoom(child, layer)
+    if type(child) ~= 'table' or type(child.__name) ~= 'string' then return false end
+    if self.rooms[child.__name] then return false end
+    if not attach(self, child, 'room', layer) then return false end
+    self.rooms[child.__name] = child
+    return true
 end
-
---- 注册一个房间
--- @tparam table room 房间对象
-function room:addRoom(room)
-    self.rooms[room.__name] = room
+function room:deleteRoom(childOrName)
+    local name = type(childOrName) == 'table' and childOrName.__name or childOrName
+    local child = self.rooms[name]
+    if not child then return false end
+    detach(self, child)
+    self.rooms[name] = nil
+    return true
 end
-
---- 注销一个房间
--- @tparam table room 房间对象
-function room:deleteRoom(room)
-    self.rooms[room.__name] = nil
+function room:getRoom(name) return self.rooms[name] end
+function room:to(name, ...)
+    local child = self.rooms[name]
+    if not child then return end
+    invoke(child, 'load', ...)
+    self.__type = name
 end
-
---- 按名称获取房间
--- @tparam string __name 房间名称
--- @treturn table|nil 房间对象
-function room:getRoom(__name)
-    return self.rooms[__name]
-end
-
---- 切换到指定房间
--- @tparam string __name 房间名称
--- @param ... 传递给房间 load 方法的参数
-function room:to(__name,...)
-    if self.rooms[__name] then
-        self.rooms[__name]:load(...)
-        self.__type = __name
+-- 用 main/edit/play 或 edit/play 定位任意嵌套 room/group。
+function container:findContainer(path)
+    if type(path) ~= 'string' or path == '' then return nil end
+    local current, first = self, true
+    for name in path:gmatch('[^/]+') do
+        if not (first and name == self.__name) then
+            current = (current.rooms and current.rooms[name]) or current:getGroup(name)
+            if not current then return nil end
+        end
+        first = false
     end
+    return current
 end

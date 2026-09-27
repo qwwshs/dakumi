@@ -895,13 +895,13 @@ function ctrl:keypressed(key)
     end
 end
 
--- 注册为插件
-if PluginManager then
-    PluginManager:register({
-        name = "ctrl",
-        version = "1.0.0",
-        description = "复制/粘贴/框选管理",
-    })
-end
+-- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
+ctrl.plugin = {
+    name = 'ctrl',
+    version = '1.0.0',
+    target = 'edit/play',
+    layer = 110,
+    export = 'ctrl', -- 保留编辑器现有对象引用
+}
 
 return ctrl

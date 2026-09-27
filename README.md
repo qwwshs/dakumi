@@ -63,6 +63,10 @@ dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
 
 - 对于Mac，需要给予love2d权限
 
+## 插件开发
+
+插件可以放入 `plugins/` 自动加载，并指定目标 room/group 和执行层。示例和 API 见 [插件开发文档](plugins/README.md)。
+
 ## 依赖
 
 - [LxgwNeoXiHei](https://github.com/lxgw/LxgwNeoXiHei)

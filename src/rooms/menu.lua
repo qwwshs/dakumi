@@ -9,7 +9,7 @@ local file_extension = {
 }
 menu                 = room:new('menu')
 menu.color           = colors
-room:addRoom(menu)
+room:addRoom(menu, 0)
 
 
 --选择的歌曲的房间
@@ -354,6 +354,5 @@ function menu:filedropped(file) -- 文件拖入
     menu:flushed() --重新加载
 end
 
-menu:addObject(require 'src.objects.menu.select_music')
-menu:addObject(require 'src.objects.menu.select_chart')
-menu:addObject(require 'plugins.fft')    -- 插件化：FFT 频谱分析器
+menu:addObject(require 'src.objects.menu.select_music', 10)
+menu:addObject(require 'src.objects.menu.select_chart', 20)

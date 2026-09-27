@@ -173,13 +173,13 @@ function redo:keypressed(key)
     end
 end
 
--- 注册为插件
-if PluginManager then
-    PluginManager:register({
-        name = "redo",
-        version = "1.0.0",
-        description = "撤销/重做管理",
-    })
-end
+-- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
+redo.plugin = {
+    name = 'redo',
+    version = '1.0.0',
+    target = 'edit/play',
+    layer = 90,
+    export = 'redo', -- 保留编辑器现有对象引用
+}
 
 return redo

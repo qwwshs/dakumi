@@ -83,6 +83,7 @@ function tabs:load()
     self._scrollGrab = 0
     self._lastClick = { index = 0, time = 0 }
     self._renameRect = nil
+    self('load')
 end
 
 -- ============================================================
@@ -297,6 +298,7 @@ end
 
 function tabs:update(dt)
     if demo.open then return end
+    self('update', dt)
     local ly = self.layout
 
     -- 拖动条拖拽
@@ -521,10 +523,12 @@ function tabs:draw()
             v.editView:draw()
         end
     end
+    self('draw')
 end
 
 function tabs:mousepressed(x, y, button, istouch, presses)
     if demo.open then return end
+    self('mousepressed', x, y, button, istouch, presses)
     if button ~= 1 then return end
     local ly = self.layout
 
@@ -603,6 +607,7 @@ end
 
 function tabs:wheelmoved(x, y)
     if demo.open then return end
+    self('wheelmoved', x, y)
     if self.maxOffset <= 0 then return end
     local ly = self.layout
     if mouse.y < ly.tabBar.y or mouse.y > ly.scroll.y + ly.scroll.h then return end
@@ -611,6 +616,7 @@ end
 
 function tabs:keypressed(key)
     if demo.open then return end
+    self('keypressed', key)
     if not self:isRenaming() then return end
     if key == 'return' or key == 'kpenter' then
         self:commitRename()

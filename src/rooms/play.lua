@@ -194,7 +194,7 @@ function play:mousepressed(x, y, button, istouch, presses)
     self('mousepressed', x, y, button, istouch, presses)
 
     
-    if self:mouseInDemo() and love.mouse.isDown(1) and not directEventEditing.open and tabs:isSingle() then -- 选择轨道 在demo区域
+    if self:mouseInDemo() and love.mouse.isDown(1) and (not directEventEditing or not directEventEditing.open) and tabs:isSingle() then -- 选择轨道 在demo区域
         messageBox:add("track click")
         local local_track = {}
         for i = 1, ChartService:getEventCount() do                                   --点击轨道进入轨道的编辑事件
@@ -238,20 +238,14 @@ function play:settings()
     self('settings')
 end
 
-play:addObject(require 'src.objects.play.note')
-play:addObject(require 'src.objects.play.event')
-play:addObject(require 'src.objects.play.demoPlay')
-play:addObject(require 'src.objects.play.demoInEdit')
-play:addObject(require 'src.objects.play.denomPlay')
-play:addObject(require 'src.objects.play.demoNowX')
-play:addObject(require 'src.objects.play.slider')
-redo = require('plugins.redo')
-play:addObject(redo)
-play:addObject(require 'plugins.alt')
-ctrl = require('plugins.ctrl')
-play:addObject(ctrl)
+-- 核心对象留出层间隔，插件可在任意两层之间插入。
+play:addObject(require 'src.objects.play.note', 10)
+play:addObject(require 'src.objects.play.event', 20)
+play:addObject(require 'src.objects.play.demoPlay', 30)
+play:addObject(require 'src.objects.play.demoInEdit', 40)
+play:addObject(require 'src.objects.play.denomPlay', 50)
+play:addObject(require 'src.objects.play.demoNowX', 60)
+play:addObject(require 'src.objects.play.slider', 80)
 hit = require 'src.objects.play.hit'
-play:addObject(hit)
-directEventEditing = require 'plugins.directEventEditing'
-play:addObject(directEventEditing)
+play:addObject(hit, 120)
 return play
