@@ -65,9 +65,9 @@ function denom:Nui() --渲染
     self.usemouse_denom = false
     self.usemouse_scale = false
     if Nui:groupBegin(self.text, 'border') then
-        Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
+        Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text))
-        if Nui:button("", isImage.up) then
+        if ui:imageButton(isImage.up) then
             self.denom = self.denom + 1
             self.useToDenom.value = tostring(self.denom)
         end
@@ -78,7 +78,7 @@ function denom:Nui() --渲染
                 self.usemouse_denom = true
             end
         end
-        if Nui:button("", isImage.down) then
+        if ui:imageButton(isImage.down) then
             self.denom = math.max(self.denom - 1, 1)
             self.useToDenom.value = tostring(self.denom)
         end
@@ -86,9 +86,9 @@ function denom:Nui() --渲染
         Nui:groupEnd()
     end
     if Nui:groupBegin(self.text2, 'border') then
-        Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
+        Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text2))
-        if Nui:button("", isImage.up) then
+        if ui:imageButton(isImage.up) then
             self.scale = self.scale + 0.1
             self.useToScale.value = tostring(self.scale)
         end
@@ -99,7 +99,7 @@ function denom:Nui() --渲染
                 self.usemouse_scale = true
             end
         end
-        if Nui:button("", isImage.down) then
+        if ui:imageButton(isImage.down) then
             self.scale = math.max(self.scale - 0.1, 0.1)
             self.useToScale.value = tostring(self.scale)
         end

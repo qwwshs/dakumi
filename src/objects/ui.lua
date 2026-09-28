@@ -1,6 +1,25 @@
 --Nui的封装
 local ui = object:new('ui')
 
+-- 图片按钮保留完整点击区域，图标按原始比例居中绘制。
+function ui:imageButton(img, padding)
+    local x, y, w, h = Nui:widgetBounds()
+    local pressed = Nui:button('')
+    local imageW, imageH = img:getDimensions()
+    local inset = padding or 6
+    local fitW = math.max(0, w - inset * 2)
+    local fitH = math.max(0, h - inset * 2)
+    local scale = math.min(fitW / imageW, fitH / imageH)
+    if scale > 0 then
+        local drawW, drawH = imageW * scale, imageH * scale
+        local r, g, b, a = love.graphics.getColor()
+        love.graphics.setColor(1, 1, 1, 1)
+        Nui:image(img, x + (w - drawW) / 2, y + (h - drawH) / 2, drawW, drawH)
+        love.graphics.setColor(r, g, b, a)
+    end
+    return pressed
+end
+
 function ui:tip(...)
     local buttonColor
     if settings.theme == 'light' then

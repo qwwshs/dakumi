@@ -269,7 +269,13 @@ function menu:update(dt)
         Nui:layoutRow('dynamic', layout.chartTool.h, layout.chartTool.cols)
         for i, obj in ipairs(menuUI.chartTool) do
             if obj.type == 'button' then
-                if Nui:button(i18n:get(obj.text), obj.img) then
+                local pressed
+                if obj.img and obj.text == '' then
+                    pressed = ui:imageButton(obj.img)
+                else
+                    pressed = Nui:button(i18n:get(obj.text), obj.img)
+                end
+                if pressed then
                     obj.func()
                 end
             end
@@ -281,7 +287,13 @@ function menu:update(dt)
         Nui:layoutRow('dynamic', layout.fileTool.h, layout.fileTool.cols)
         for i, obj in ipairs(menuUI.fileTool) do
             if obj.type == 'button' then
-                if Nui:button(i18n:get(obj.text), obj.img) then
+                local pressed
+                if obj.img and obj.text == '' then
+                    pressed = ui:imageButton(obj.img)
+                else
+                    pressed = Nui:button(i18n:get(obj.text), obj.img)
+                end
+                if pressed then
                     obj.func()
                 end
             end

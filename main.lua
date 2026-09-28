@@ -172,8 +172,8 @@ Nui:stylePush {
     ['button'] = {
         ['rounding'] = 0,
         ['text alignment'] = 'centered',     -- 文字居中
-        -- 图片对齐需要通过 image padding 来调整
-        ['image padding'] = { x = 0, y = 0 } -- 移除图片内边距
+        -- 纯图片按钮由 ui:imageButton 按原始比例绘制；此项仅作用于 Nuklear 内置图片按钮。
+        ['image padding'] = { x = 0, y = 0 }
     },
     ['contextual button'] = { ['rounding'] = 0 },
     ['menu button'] = { ['rounding'] = 0 },

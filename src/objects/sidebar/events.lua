@@ -180,11 +180,11 @@ function Gevents:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
 
     if (self.trans_expression.value:find("easing") or self.trans_expression.value:find("bezier") ) then
-        if Nui:button('',isImage.up) then
+        if ui:imageButton(isImage.up) then
             Gevents:up()
         end
 
-        if Nui:button('',isImage.down) then
+        if ui:imageButton(isImage.down) then
             Gevents:down()
         end
     else

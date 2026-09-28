@@ -41,6 +41,7 @@ function editTool:update(dt)
     
     if demo.open then return end
     if Nui:windowBegin('editTool', self.layout.x, self.layout.y, self.layout.w, self.layout.h,'border') then
+        Nui:stylePush({ ['window'] = { ['group padding'] = { x = 4, y = 10 } } })
         Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
         for _,obj in ipairs(editTool.objects) do
             if obj.type == 'button' then
@@ -54,8 +55,14 @@ function editTool:update(dt)
             end
 
             ::button::
-            if Nui:button(i18n:get(obj.text),obj.img) then
-                obj:click()
+            do
+                local pressed
+                if obj.img and obj.text == '' then
+                    pressed = ui:imageButton(obj.img)
+                else
+                    pressed = Nui:button(i18n:get(obj.text), obj.img)
+                end
+                if pressed then obj:click() end
             end
             goto ed
 
@@ -68,6 +75,7 @@ function editTool:update(dt)
             ::ed::
         end
 
+        Nui:stylePop()
         Nui:windowEnd()
     end
 
@@ -155,10 +163,8 @@ editTool:addObject(track)
 musicSpeed = require 'src.objects.editTool.musicSpeed'
 editTool:addObject(musicSpeed)
 noteFake = require 'src.objects.editTool.noteFake'
-editTool:addObject(noteFake)
 holdNoteHead = require 'src.objects.editTool.holdNoteHead'
-editTool:addObject(holdNoteHead)
 holdWipeHead = require 'src.objects.editTool.holdWipeHead'
-editTool:addObject(holdWipeHead)
+editTool:addObject(require 'src.objects.editTool.noteOptions')
 
 return editTool

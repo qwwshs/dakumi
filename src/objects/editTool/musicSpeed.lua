@@ -18,9 +18,9 @@ end
 function speed:Nui() --渲染
     self.usemouse = false
     if Nui:groupBegin(self.text,'border') then
-        Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
+        Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text))
-        if Nui:button("",isImage.up) then
+        if ui:imageButton(isImage.up) then
             self.speed = self.speed + 0.1
             self.useToSpeed.value = tostring(self.speed)
         end
@@ -31,7 +31,7 @@ function speed:Nui() --渲染
                 self.usemouse = true
             end
         end
-        if Nui:button("",isImage.down) then
+        if ui:imageButton(isImage.down) then
             self.speed = math.max(self.speed-0.1,0.1)
             self.useToSpeed.value = tostring(self.speed)
         end

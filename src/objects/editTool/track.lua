@@ -38,9 +38,9 @@ function track:Nui() --渲染
     track.usemouse_track = false
     track.usemouse_fence = false
     if Nui:groupBegin(self.text, 'border') then
-        Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
+        Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text))
-        if Nui:button("", isImage.up) then
+        if ui:imageButton(isImage.up) then
             track.track = track.track + 1
             self.useToTrack.value = tostring(track.track)
         end
@@ -51,7 +51,7 @@ function track:Nui() --渲染
                 self.usemouse_track = true
             end
         end
-        if Nui:button("", isImage.down) then
+        if ui:imageButton(isImage.down) then
             track.track = math.max(track.track - 1, 1)
             self.useToTrack.value = tostring(track.track)
         end
@@ -59,9 +59,9 @@ function track:Nui() --渲染
         Nui:groupEnd()
     end
     if Nui:groupBegin(self.text2, 'border') then
-        Nui:layoutRow('dynamic', self.layout.uiH / 2, 2)
+        Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text2))
-        if Nui:button("", isImage.up) then
+        if ui:imageButton(isImage.up) then
             track.fence = track.fence + 1
             self.useToFence.value = tostring(track.fence)
         end
@@ -72,7 +72,7 @@ function track:Nui() --渲染
                 self.usemouse_fence = true
             end
         end
-        if Nui:button("", isImage.down) then
+        if ui:imageButton(isImage.down) then
             track.fence = math.max(track.fence - 1, 0)
             self.useToFence.value = tostring(track.fence)
         end
