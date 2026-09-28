@@ -85,7 +85,7 @@ end
 function ctrl:copy_sub(new_table, istype)
     if istype ~= "note" and istype ~= "event" then return end
     for i, v in ipairs(self.copy_tab[istype]) do
-        if self.copy_tab[istype][i] == new_table then
+        if rawequal(self.copy_tab[istype][i], new_table) then
             table.remove(self.copy_tab[istype], i)
             table.remove(self.copy_tab[istype .. '_tracks'], i)
             table.remove(self.copy_tab[istype .. '_tabidx'], i)
@@ -102,7 +102,7 @@ end
 function ctrl:copy_add(new_table, istype, track, tabidx)
     if istype ~= "note" and istype ~= "event" then return end
     for i = 1, #self.copy_tab[istype] do
-        if self.copy_tab[istype][i] == new_table then
+        if rawequal(self.copy_tab[istype][i], new_table) then
             return -- 已存在，不重复添加
         end
     end
@@ -119,7 +119,7 @@ end
 function ctrl:copy_exist(new_table, istype)
     if istype ~= "note" and istype ~= "event" then return end
     for i = 1, #self.copy_tab[istype] do
-        if self.copy_tab[istype][i] == new_table then
+        if rawequal(self.copy_tab[istype][i], new_table) then
             return true
         end
     end
@@ -130,6 +130,16 @@ end
 -- @treturn table 剪贴板数据
 function ctrl:get_copy()
     return self.copy_tab
+end
+
+--- 多标签页收起为单标签页后，改用 demo 区域的跨轨道复制规则。
+function ctrl:convertTabsClipboardToPlay()
+    if self.copy_tab.pos ~= 'tabs' then return end
+    self.copy_tab.pos = 'play'
+    self.copy_tab.note_tracks = {}
+    self.copy_tab.event_tracks = {}
+    self.copy_tab.note_tabidx = {}
+    self.copy_tab.event_tabidx = {}
 end
 
 -- ============================================================
@@ -271,7 +281,10 @@ function ctrl:update(dt)
 end
 
 --- 绘制框选区域和剪贴板标记
-function ctrl:draw()
+function ctrl:draw(drawInTabs)
+    -- 多标签页的 edit 内容在 play 之后绘制，选区交由 tabs 在内容之后绘制。
+    if tabs and not tabs:isSingle() and not drawInTabs then return end
+
     local note_h = settings.note_height
     local note_w = play.layout.edit.noteW
 
@@ -579,17 +592,22 @@ end
 local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
     ctrl.copy_tab.pos = 'play'
 
-    -- 记录此刻在框选范围内的轨道
+    -- 按当前轨道位置找水平选区；无事件或首个事件较晚的轨道也要参与。
     local local_track = {}
-    for i = 1, ChartService:getEventCount() do
-        local e = ChartService:getEvent(i)
-        local track_x, track_w = fTrack:to_play_track(fEvent:get(e:getTrack(), beat.nowbeat))
+    local checked_track = {}
+    local function checkTrack(track_id)
+        if checked_track[track_id] then return end
+        checked_track[track_id] = true
+        local track_x, track_w = fTrack:to_play_track(fEvent:get(track_id, beat.nowbeat))
         if math.intersect(min_x, max_x, track_x, track_x + track_w) then
-            local_track[e:getTrack()] = true
+            local_track[track_id] = true
         end
-        if e:getBeatValue() > max_y_beat then
-            break
-        end
+    end
+    for i = 1, ChartService:getNoteCount() do
+        checkTrack(ChartService:getNote(i):getTrack())
+    end
+    for i = 1, ChartService:getEventCount() do
+        checkTrack(ChartService:getEvent(i):getTrack())
     end
 
     -- 框选 note
@@ -601,7 +619,7 @@ local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
             isbeat2 = n:getBeat2Value()
         end
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and local_track[n:getTrack()] then
-            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n:copy()
+            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n
         end
         if isbeat > max_y_beat then break end
     end
@@ -612,7 +630,7 @@ local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
         local isbeat = e:getBeatValue()
         local isbeat2 = e:getBeat2Value()
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and local_track[e:getTrack()] then
-            ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e:copy()
+            ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e
         end
         if e:getBeatValue() > max_y_beat then break end
     end
@@ -630,7 +648,7 @@ local function selectInNoteTrack(min_y_beat, max_y_beat)
             isbeat2 = n:getBeat2Value()
         end
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and track.track == n:getTrack() then
-            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n:copy()
+            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n
         end
         if isbeat > max_y_beat then break end
     end
@@ -649,7 +667,7 @@ local function selectInEventTrack(x, start_x, min_y_beat, max_y_beat)
             local isbeat = e:getBeatValue()
             local isbeat2 = e:getBeat2Value()
             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and track.track == e:getTrack() then
-                ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e:copy()
+                ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e
             end
         end
         if e:getBeatValue() > max_y_beat then break end
@@ -681,7 +699,7 @@ local function selectInTabs(selx1, selx2, min_y_beat, max_y_beat)
                             local isbeat2 = isbeat
                             if n:isHold() then isbeat2 = n:getBeat2Value() end
                             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and istrack == n:getTrack() then
-                                ctrl:copy_add(n:copy(), 'note', istrack, ti)
+                                ctrl:copy_add(n, 'note', istrack, ti)
                             end
                             if isbeat > max_y_beat then break end
                         end
@@ -694,7 +712,7 @@ local function selectInTabs(selx1, selx2, min_y_beat, max_y_beat)
                             local isbeat2 = e:getBeat2Value()
                             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and istrack == e:getTrack() and
                                 e:getType() == lane then
-                                ctrl:copy_add(e:copy(), 'event', istrack, ti)
+                                ctrl:copy_add(e, 'event', istrack, ti)
                             end
                             if e:getBeatValue() > max_y_beat then break end
                         end
@@ -798,25 +816,15 @@ local function handleDelete()
     local all = input('deleteAllSelect')
     ChartService:push()
 
-    -- 删除选中的 note
-    for _, v in ipairs(ctrl.copy_tab.note) do
-        for i = 1, ChartService:getNoteCount() do
-            if ctrl.copy_tab.note[1] == ChartService:getNote(i) then
-                table.remove(ctrl.copy_tab.note, 1)
-                ChartService:delete(ChartService:getNote(i))
-            end
-        end
+    -- 选区保留谱面对象引用；批量删除在 pop 时统一提交。
+    for _, note in ipairs(ctrl.copy_tab.note) do
+        ChartService:delete(note)
     end
 
     -- 删除选中的 event（仅在非 play 模式或全部删除时）
     if ctrl.copy_tab.pos ~= 'play' or all then
-        for _, v in ipairs(ctrl.copy_tab.event) do
-            for i = 1, ChartService:getEventCount() do
-                if ctrl.copy_tab.event[1] == ChartService:getEvent(i) then
-                    table.remove(ctrl.copy_tab.event, 1)
-                    ChartService:delete(ChartService:getEvent(i))
-                end
-            end
+        for _, event in ipairs(ctrl.copy_tab.event) do
+            ChartService:delete(event)
         end
     end
 
@@ -849,22 +857,12 @@ local function handlePaste()
     end
 
     -- 剪切模式：删除原始数据
-    for _, v in ipairs(ctrl.copy_tab.note) do
-        for i = 1, ChartService:getNoteCount() do
-            if ctrl.copy_tab.note[1] == ChartService:getNote(i) then
-                table.remove(ctrl.copy_tab.note, 1)
-                ChartService:delete(ChartService:getNote(i))
-            end
-        end
+    for _, note in ipairs(ctrl.copy_tab.note) do
+        ChartService:delete(note)
     end
     if ctrl.copy_tab.pos ~= 'play' or all then
-        for _, v in ipairs(ctrl.copy_tab.event) do
-            for i = 1, ChartService:getEventCount() do
-                if ctrl.copy_tab.event[1] == ChartService:getEvent(i) then
-                    table.remove(ctrl.copy_tab.event, 1)
-                    ChartService:delete(ChartService:getEvent(i))
-                end
-            end
+        for _, event in ipairs(ctrl.copy_tab.event) do
+            ChartService:delete(event)
         end
     end
     ChartService:pop()

@@ -110,6 +110,7 @@ function tabs:load()
     self._scrollGrab = 0
     self._lastClick = { index = 0, time = 0 }
     self._renameRect = nil
+    if ctrl then ctrl:convertTabsClipboardToPlay() end
     self('load')
 end
 
@@ -224,6 +225,9 @@ function tabs:closeTab(i)
     if self.active < 1 then self.active = 1 end
     if self.active == 1 then
         self.list[1].track = 0
+    end
+    if #self.list == 1 and ctrl then
+        ctrl:convertTabsClipboardToPlay()
     end
     messageBox:add("tab close")
 end
@@ -477,7 +481,7 @@ function tabs:update(dt)
                 ['padding'] = { x = 2, y = 2 },
             },
         })
-        if Nui:windowBegin(name, tx + 1, ly.tabBar.y + 1, ly.tabW - 2, ly.tabBar.h - 2, 'border','background') then
+        if Nui:windowBegin(name, tx + 1, ly.tabBar.y + 1, ly.tabW - 2, ly.tabBar.h - 2, 'border') then
             if tab.renaming then
                 -- 轨道号输入框（内嵌标题行，标签页背景不透明，内容清晰可见）
                 Nui:layoutRow('dynamic', ly.titleH - 6, 1)
@@ -615,6 +619,10 @@ function tabs:draw()
         end
     end
     self('draw')
+    -- edit 窗口绘制完成后，再绘制框选与复制/粘贴预览。
+    if not self:isSingle() and ctrl then
+        ctrl:draw(true)
+    end
 end
 
 function tabs:mousepressed(x, y, button, istouch, presses)

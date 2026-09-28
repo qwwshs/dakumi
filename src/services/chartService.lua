@@ -52,6 +52,17 @@ local function isNoteType(typeName)
     return typeName == 'note' or typeName == 'hold' or typeName == 'wipe'
 end
 
+--- 优先按对象引用查找，兼容原有按内容相等的调用。
+local function findItemIndex(list, item)
+    for i = 1, #list do
+        if rawequal(list[i], item) then return i end
+    end
+    for i = 1, #list do
+        if list[i] == item then return i end
+    end
+    return nil
+end
+
 --- 确保 extra_chart 中指定轨道存在
 -- @tparam number trackId 轨道ID
 local function ensureTrackIndex(trackId)
@@ -87,12 +98,8 @@ local function removeEventFromIndex(event)
     if not extra_chart.track[trackId] then return end
     local list = extra_chart.track[trackId][eventType]
     if not list then return end
-    for i = 1, #list do
-        if list[i] == event then
-            table.remove(list, i)
-            return
-        end
-    end
+    local i = findItemIndex(list, event)
+    if i then table.remove(list, i) end
 end
 
 --- 从 extra_chart 删除音符（内部方法）
@@ -102,12 +109,8 @@ local function removeNoteFromIndex(note)
     if not extra_chart.track[trackId] then return end
     local list = extra_chart.track[trackId].note
     if not list then return end
-    for i = 1, #list do
-        if list[i] == note then
-            table.remove(list, i)
-            return
-        end
-    end
+    local i = findItemIndex(list, note)
+    if i then table.remove(list, i) end
 end
 
 -- ============================================================
@@ -286,14 +289,12 @@ end
 -- @tparam Note note 音符对象
 -- @treturn boolean 是否删除成功
 function ChartService:deleteNote(note)
-    for i = 1, #chart.note do
-        if chart.note[i] == note then
-            table.remove(chart.note, i)
-            removeNoteFromIndex(note)
-            return true
-        end
-    end
-    return false
+    local i = findItemIndex(chart.note, note)
+    if not i then return false end
+    local actual = chart.note[i]
+    table.remove(chart.note, i)
+    removeNoteFromIndex(actual)
+    return true
 end
 
 --- 添加事件到谱面（自动同步索引）
@@ -307,14 +308,12 @@ end
 -- @tparam Event event 事件对象
 -- @treturn boolean 是否删除成功
 function ChartService:deleteEvent(event)
-    for i = 1, #chart.event do
-        if chart.event[i] == event then
-            table.remove(chart.event, i)
-            removeEventFromIndex(event)
-            return true
-        end
-    end
-    return false
+    local i = findItemIndex(chart.event, event)
+    if not i then return false end
+    local actual = chart.event[i]
+    table.remove(chart.event, i)
+    removeEventFromIndex(actual)
+    return true
 end
 
 --- 添加 note 或 event 到谱面
@@ -370,28 +369,26 @@ function ChartService:delete(noteorevent)
     end
 
     if isEvent then
-        for i = 1, #chart.event do
-            if chart.event[i] == noteorevent then
-                if chart_push.now then
-                    table.insert(chart_push.del.event, noteorevent)
-                    return
-                end
-                self:deleteEvent(noteorevent)
-                if redo then redo:writeRevoke(noteorevent, 'del') end
-                break
+        local i = findItemIndex(chart.event, noteorevent)
+        if i then
+            local actual = chart.event[i]
+            if chart_push.now then
+                table.insert(chart_push.del.event, actual)
+                return
             end
+            self:deleteEvent(actual)
+            if redo then redo:writeRevoke(actual, 'del') end
         end
     elseif isNote then
-        for i = 1, #chart.note do
-            if chart.note[i] == noteorevent then
-                if chart_push.now then
-                    table.insert(chart_push.del.note, noteorevent)
-                    return
-                end
-                self:deleteNote(noteorevent)
-                if redo then redo:writeRevoke(noteorevent, 'del') end
-                break
+        local i = findItemIndex(chart.note, noteorevent)
+        if i then
+            local actual = chart.note[i]
+            if chart_push.now then
+                table.insert(chart_push.del.note, actual)
+                return
             end
+            self:deleteNote(actual)
+            if redo then redo:writeRevoke(actual, 'del') end
         end
     end
 
