@@ -102,7 +102,8 @@ PluginManager:init({
 })
 
 Nui = nuklear.newUI()
-Nui:styleLoadColors({
+local uiThemeColors = {
+  dark = {
     ['text'] = '#FFFFFF',                    -- 亮灰色文字
     ['window'] = '#000000',                  -- 更深的窗口背景
     ['header'] = '#202020',                  -- 头部背景
@@ -132,7 +133,39 @@ Nui:styleLoadColors({
     ['scrollbar cursor hover'] = '#505050',  -- 滚动条光标悬停
     ['scrollbar cursor active'] = '#1E6F9F', -- 滚动条光标激活（蓝色）
     ['tab header'] = '#202020'               -- 标签页头部
-})
+  },
+  light = {
+    ['text'] = '#25282C', ['window'] = '#F1F2F4', ['header'] = '#D9DDE2',
+    ['border'] = '#B8BEC6', ['button'] = '#E4E7EB', ['button hover'] = '#D1D7DE',
+    ['button active'] = '#B7C6D8', ['toggle'] = '#D9DDE2', ['toggle hover'] = '#CBD2DA',
+    ['toggle cursor'] = '#4387C5', ['select'] = '#E4E7EB', ['select hover'] = '#D1D7DE',
+    ['select active'] = '#C7D2DF', ['slider'] = '#D9DDE2', ['slider cursor'] = '#4387C5',
+    ['slider cursor hover'] = '#3478B6', ['slider cursor active'] = '#28649A',
+    ['property'] = '#E4E7EB', ['edit'] = '#FFFFFF', ['edit cursor'] = '#25282C',
+    ['combo'] = '#FFFFFF', ['chart'] = '#E4E7EB', ['chart color'] = '#4387C5',
+    ['chart color highlight'] = '#D94A4A', ['scrollbar'] = '#D9DDE2',
+    ['scrollbar cursor'] = '#AEB6C0', ['scrollbar cursor hover'] = '#929DAA',
+    ['scrollbar cursor active'] = '#4387C5', ['tab header'] = '#D9DDE2'
+  }
+}
+
+function setUiTheme(theme)
+    theme = theme == 'light' and 'light' or 'dark'
+    settings.theme = theme
+    Nui:styleLoadColors(uiThemeColors[theme])
+    if isImage and isImage.setTheme then isImage:setTheme(theme) end
+    for _, name in ipairs({'menu', 'editTool'}) do
+        local ok, colors = pcall(require, 'config.colors.' .. name)
+        if ok and colors.setTheme then colors.setTheme(theme) end
+    end
+    if theme == 'light' then
+        love.graphics.setBackgroundColor(0.93, 0.94, 0.96, 1)
+    else
+        love.graphics.setBackgroundColor(0, 0, 0, 1)
+    end
+end
+
+setUiTheme(settings.theme)
 
 Nui:stylePush {
     ['window'] = { ['rounding'] = 0 },
@@ -192,6 +225,7 @@ room:load("start")
 
 function love.load(arg)
     math.randomseed(os.time()) --随机数种子
+    setUiTheme(settings.theme)
 
     --文件夹创建与检查
     nativefs.mount(PATH.base)

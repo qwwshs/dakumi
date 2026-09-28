@@ -1,4 +1,4 @@
-local menuUI = {}
+menuUI = {}
 local ChartService = require("src.services.chartService")
 
 menuUI.chartTool = {}

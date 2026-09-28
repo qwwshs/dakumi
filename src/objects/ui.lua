@@ -2,12 +2,22 @@
 local ui = object:new('ui')
 
 function ui:tip(...)
+    local buttonColor
+    if settings.theme == 'light' then
+        buttonColor = {
+            ['normal'] = '#B8D9EE', -- 日间模式：浅蓝底配深色文字
+            ['hover'] = '#98C8E7',
+            ['active'] = '#78B3D8',
+        }
+    else
+        buttonColor = {
+            ['normal'] = '#17373F',
+            ['hover'] = '#3D3D3D',
+            ['active'] = '#1E6F9F',
+        }
+    end
     Nui:stylePush({
-    ['button'] = {
-        ['normal'] = '#17373F', -- 按钮默认
-        ['hover'] = '#3D3D3D', -- 按钮悬停
-        ['active'] = '#1E6F9F'
-    }
+        ['button'] = buttonColor,
     })
     local res = Nui:button((...))
     Nui:stylePop()

@@ -20,6 +20,10 @@ function demo:draw()
     if not self.open then
         return
     end
+    if settings.theme == 'light' then
+        love.graphics.setColor(0, 0, 0, 1)
+        love.graphics.rectangle('fill', self.layout.x, self.layout.y, self.layout.w, self.layout.h)
+    end
     love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示

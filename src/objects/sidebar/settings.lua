@@ -49,6 +49,7 @@ Gsettings.setting_type = { --类型
     { 'window_height',  "edit" },
     { '',               'separator' },
     { 'language',       "combobox",        i18n:get_languages_table(), i18n:get_now_language_in_table(settings.language) },
+    { 'theme',           "combobox",        { 'dark', 'light' }, settings.theme == 'light' and 2 or 1 },
 }
 for i, v in ipairs(Gsettings.setting_type) do
     if v[2] == "edit" then
@@ -80,7 +81,11 @@ function Gsettings:Nui()
                 v.value = 0
             end
         elseif v[2] == "combobox" then
-            Nui:combobox(v, v.items)
+            if v[1] == 'theme' then
+                Nui:combobox(v, { i18n:get('dark'), i18n:get('light') })
+            else
+                Nui:combobox(v, v.items)
+            end
 
         elseif v[2] == "PercentageSlider" then
             Nui:slider(0, v, 100, 1)
@@ -107,6 +112,7 @@ function Gsettings:Nui()
                 settings[v[1]] = tonumber(v.value) or 0
             end
         end
+        if setUiTheme then setUiTheme(settings.theme) end
         save(dkjson.encode(settings, { indent = true }), PATH.usersPath.settings .. 'settings.json')
         room('settings')
     end

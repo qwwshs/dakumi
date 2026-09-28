@@ -89,6 +89,12 @@ function play:draw()
     if demo.open then
         return
     end
+    -- 日间主题只调整编辑器界面；demo 预览仍保持原有黑底。
+    if settings.theme == 'light' then
+        love.graphics.setColor(0, 0, 0, 1)
+        love.graphics.rectangle('fill', self.layout.demo.x, self.layout.demo.y,
+            self.layout.demo.w, self.layout.demo.h)
+    end
     love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)
 
     if bg then -- 背景存在就显示

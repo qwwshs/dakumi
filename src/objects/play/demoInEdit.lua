@@ -234,7 +234,7 @@ local previous_frame_starting_point_event = 1 -- 上一帧的event遍历起点
 
 function demoInEdit:draw(pos, istrack)
     if self.tabbed then
-        -- 标签页窗口：裁剪/遮罩/标题与内容全部由实例自身绘制，tabs 只需定位 x 并调用 draw
+        -- 标签页窗口：内容、裁剪与不可编辑遮罩由实例绘制；顶部数值条由 tabs 用 Nuklear 绘制。
         local ly = tabs.layout
         local wx = self.x
         if wx >= play.layout.x + play.layout.w or wx + ly.tabW <= play.layout.x then
@@ -251,15 +251,6 @@ function demoInEdit:draw(pos, istrack)
                     play.layout.edit.interval, ly.region.h)
             end
         end
-        -- 窗口顶部轨道标签（显示该 edit 区域所属轨道）
-        love.graphics.setColor(0, 0, 0, 0.6)
-        love.graphics.rectangle('fill', wx, ly.region.y, w, 20)
-        love.graphics.setColor(1, 1, 1)
-        local str = ''
-        if self.tab.track == 0 then
-            str = '(' .. i18n:get('now_track') .. ')'
-        end
-        love.graphics.printf(tabs:tabTitle(self.tab) .. str, wx + 4, ly.region.y + 3, w - 8, 'left')
         love.graphics.setScissor()
         return
     end
@@ -270,8 +261,13 @@ function demoInEdit:draw(pos, istrack)
     self:drawEditContent(pos or play.layout.edit.x, istrack or track.track)
 end
 
--- 绘制单个 edit 窗口内容：波形/轨道/note/event/信息（不含裁剪与标签页遮罩/标题）
+-- 绘制单个 edit 窗口内容：波形/轨道/note/event（不含 Nuklear 信息板）
 function demoInEdit:drawEditContent(pos, istrack)
+    -- 日间主题的 edit 画布使用较深底色，白色轨道线和音符保持清晰。
+    if settings.theme == 'light' then
+        love.graphics.setColor(0.38, 0.40, 0.44, 1)
+        love.graphics.rectangle('fill', pos, self.layout.y, self.layout.w, self.layout.h)
+    end
     local one_track_w = self.layout.oneTrackW
     local interval = self.layout.interval
     local track_x, track_y, track_w, track_h = self.layout.x, self.layout.y, self.layout.w, self.layout.h
@@ -453,27 +449,6 @@ function demoInEdit:drawEditContent(pos, istrack)
         love.graphics.rectangle("fill", trackleft[se:getType()], y2, interval, y - y2)
     end
 
-    love.graphics.setColor(play.colors.black_half)
-    love.graphics.rectangle("fill", pos, settings.judge_line_y + 10, track_w + 3, WINDOW.h - settings.judge_line_y) --遮罩
-    love.graphics.setColor(1, 1, 1)                                                                                 --现在节拍
-    love.graphics.print(i18n:get('beat') .. ":" .. math.roundToPrecision(beat.nowbeat, 100), pos,
-        settings.judge_line_y + 20)
-    love.graphics.print(i18n:get('time') .. ":" .. math.roundToPrecision(time.nowtime, 100), pos,
-        settings.judge_line_y + 40)
-    local now_x, now_w = fEvent:get(istrack, beat.nowbeat, true)
-    local track_w0thenShow = ChartService:getTrackField(istrack, 'w0thenShow')
-    local track_name = ChartService:getTrackField(istrack, 'name')
-    love.graphics.print(i18n:get('x') .. ":" .. math.roundToPrecision(now_x, 100), pos + 100,
-            settings.judge_line_y + 20)
-    love.graphics.print(i18n:get('w') .. ":" .. math.roundToPrecision(now_w, 100), pos + 200,
-            settings.judge_line_y + 20)
-    if track_w0thenShow == 0 then
-        love.graphics.print(i18n:get('hide'), pos + 200, settings.judge_line_y + 40)
-    else
-        love.graphics.print(i18n:get('do_not_hide'), pos + 200, settings.judge_line_y + 40)
-    end
-    love.graphics.print(i18n:get('track') .. ":" .. istrack, pos, settings.judge_line_y + 60)
-    love.graphics.print(i18n:get('track_name') .. ":" .. track_name, pos, settings.judge_line_y + 80)
 end
 
 return demoInEdit

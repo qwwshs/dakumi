@@ -9,13 +9,12 @@
     - 一个标签页 = 一个 edit 区域（宽度与 edit 区域相同）
     - + 添加标签页、X 关闭标签页、拖动排序（浏览器式）、双击修改标签页代表的轨道
     - 标签页与其 edit 窗口（轨道）的横坐标时刻保持一致（含拖动、换位与标签条滚动）；
-      edit 窗口渲染（裁剪/遮罩/标题/内容）由 demoInEdit 实例 editView 自行完成，
-      tabs 只负责每帧同步窗口左缘并调用 editView:draw()
+      edit 内容和遮罩由 demoInEdit 实例绘制，顶部位置条与底部信息板由 tabs 用 Nuklear 绘制
     - 每个标签页显示其轨道 note/x/w/lpos/rpos 的合并开关（同时控制可编辑与可复制）
     - 标签页本体（背景/标题/关闭按钮/合并开关/轨道号输入框/+按钮）全部由 nuklear 绘制，
       轨道号输入框内嵌在标签页标题行，输入内容清晰可见
     - 轨道 0 代表 track.track（跟随 editTool 选择的轨道）
-    - 新建标签页自动分配谱面中未被占用的轨道；每个 edit 窗口顶部显示其所属轨道
+    - 新建标签页自动分配谱面中未被占用的轨道；每个 edit 窗口顶部显示 x/w/lpos/rpos
     - 标签页数量为 1 时: demo 区域保持原大小，edit 窗口锁定在 track.track
     - 标签页数量不为 1 时: demo 区域扩大到整个区域且不可交互（覆盖 0.5 透明黑遮罩），
       edit 窗口按标签顺序从左到右排列
@@ -25,6 +24,34 @@ local tabs = group:new('tabs')
 local ChartService = require("src.services.chartService")
 local demoInEdit = require 'src.objects.play.demoInEdit'
 tabs.layout = require 'config.layouts.tab'
+local infoFont = love.graphics.newFont('assets/fonts/LXGWNeoXiHei.ttf', 10)
+infoFont:setFilter('linear', 'nearest')
+
+-- 标签页窗口有独立的 Nuklear 样式，需在每帧按当前主题取色。
+local tabColors = {
+    dark = {
+        border = '#4A4A4A', tab = '#26262B', activeTab = '#45454D',
+        draggedTab = '#3D3D47', tabBorder = '#73737A',
+        close = {'#4A4A52', '#8C8C8C', '#A0A0A5'},
+        laneOn = {'#388CD9', '#2A6FB5', '#1E6F9F'},
+        laneOff = {'#525257', '#5E5E63', '#46464B'},
+        plus = {'#333338', '#3D3D47', '#45454D'},
+        bar = {0.09, 0.09, 0.10}, thumb = {0.35, 0.35, 0.38},
+    },
+    light = {
+        border = '#AAB4C0', tab = '#D9DEE5', activeTab = '#F2F4F7',
+        draggedTab = '#C9D4E0', tabBorder = '#9CA8B5',
+        close = {'#DDE3EA', '#C8D3DF', '#B6C5D3'},
+        laneOn = {'#A6CDEA', '#8FBCDF', '#75AAD2'},
+        laneOff = {'#CDD6DF', '#BFCBD6', '#ACBBC9'},
+        plus = {'#DDE3EA', '#C8D3DF', '#B6C5D3'},
+        bar = {0.82, 0.85, 0.89}, thumb = {0.58, 0.64, 0.71},
+    },
+}
+
+local function currentTabColors()
+    return tabColors[settings.theme == 'light' and 'light' or 'dark']
+end
 
 local function clamp(v, lo, hi)
     return math.max(lo, math.min(hi, v))
@@ -276,12 +303,12 @@ end
 -- ============================================================
 
 --- 透明窗口样式（仅边框，区域内容由 love.graphics 绘制）
-local function transparentWindow()
+local function transparentWindow(colors)
     return {
         ['window'] = {
             ['background'] = '#00000000',
             ['fixed background'] = '#00000000',
-            ['border color'] = '#4A4A4A',
+            ['border color'] = colors.border,
             ['padding'] = { x = 0, y = 0 },
             ['header'] = {
                 ['normal'] = '#00000000',
@@ -292,6 +319,64 @@ local function transparentWindow()
     }
 end
 
+local function editInfoStyle(light, padding)
+    return {
+        ['window'] = {
+            ['background'] = light and '#E0E5EB' or '#171A1E',
+            ['fixed background'] = light and '#E0E5EB' or '#171A1E',
+            ['border color'] = light and '#AAB4C0' or '#4A4A4A',
+            ['padding'] = padding,
+        },
+    }
+end
+
+-- 顶部显示轨道位置，底部显示其余信息；两块面板都由 Nuklear 绘制。
+local function drawEditInfo(tab, index, x, width)
+    local trackId = tabs:getTabTrack(tab)
+    local nowX, nowW = fEvent:get(trackId, beat.nowbeat, true)
+    local leftPos = nowX - nowW / 2
+    local rightPos = nowX + nowW / 2
+    local trackName = ChartService:getTrackField(trackId, 'name') or ''
+    local hidden = ChartService:getTrackField(trackId, 'w0thenShow') == 0
+    local light = settings.theme == 'light'
+
+    local topY = tabs.layout.region.y
+    local topHeight = 22
+    local topName = 'edit_position_' .. index
+    Nui:stylePush(editInfoStyle(light, { x = 3, y = 0 }))
+    Nui:styleSetFont(infoFont)
+    if Nui:windowBegin(topName, x, topY, width, topHeight, 'border', 'background') then
+        Nui:layoutRow('dynamic', 18, 4)
+        Nui:label('x:' .. math.roundToPrecision(nowX, 100))
+        Nui:label('w:' .. math.roundToPrecision(nowW, 100))
+        Nui:label('lpos:' .. math.roundToPrecision(leftPos, 100))
+        Nui:label('rpos:' .. math.roundToPrecision(rightPos, 100))
+    end
+    Nui:windowEnd()
+    Nui:windowSetBounds(topName, x, topY, width, topHeight)
+    Nui:styleSetFont(FONT.normal)
+    Nui:stylePop()
+
+    -- 面板始终从判定线下方开始，不再为了容纳内容向上盖住判定线。
+    local y = math.max(tabs.layout.region.y + topHeight, settings.judge_line_y + 20)
+    local height = math.max(0, WINDOW.h - y)
+    Nui:stylePush(editInfoStyle(light, { x = 6, y = 4 }))
+    local name = 'edit_info_' .. index
+    if Nui:windowBegin(name, x, y, width, height, 'border', 'background') then
+        Nui:layoutRow('dynamic', 24, 2)
+        Nui:label(i18n:get('beat') .. ': ' .. math.roundToPrecision(beat.nowbeat, 100))
+        Nui:label(i18n:get('time') .. ': ' .. math.roundToPrecision(time.nowtime, 100))
+        Nui:layoutRow('dynamic', 24, 2)
+        Nui:label(i18n:get('track') .. ': ' .. trackId)
+        Nui:label(i18n:get(hidden and 'hide' or 'do_not_hide'))
+        Nui:layoutRow('dynamic', 24, 1)
+        Nui:label(i18n:get('track_name') .. ': ' .. trackName)
+    end
+    Nui:windowEnd()
+    Nui:windowSetBounds(name, x, y, width, height)
+    Nui:stylePop()
+end
+
 -- ============================================================
 -- 生命周期
 -- ============================================================
@@ -300,6 +385,7 @@ function tabs:update(dt)
     if demo.open then return end
     self('update', dt)
     local ly = self.layout
+    local colors = currentTabColors()
 
     -- 拖动条拖拽
     if self.scrollDrag then
@@ -343,7 +429,7 @@ function tabs:update(dt)
     end
 
     -- 区域窗口（透明边框壳，内容由 love.graphics 绘制）
-    Nui:stylePush(transparentWindow())
+    Nui:stylePush(transparentWindow(colors))
     -- 标签条底板窗口
     if Nui:windowBegin('tabs', ly.tabBar.x, ly.tabBar.y, ly.tabBar.w, ly.tabBar.h, 'border', 'background') then
         Nui:windowEnd()
@@ -370,20 +456,24 @@ function tabs:update(dt)
     end
     Nui:stylePop()
 
+    for i, tab in ipairs(self.list) do
+        drawEditInfo(tab, i, self:windowX(i), ly.tabW)
+    end
+
     -- 标签页窗口（标签页本体全部由 nuklear 绘制）
     local closeIdx = nil -- 关闭按钮点击延迟到循环后处理，避免遍历中修改列表
     for i = 1, #self.list do
         local tab = self.list[i]
         local name = 'tab' .. i
         local tx = self:windowX(i)
-        local bg = '#26262B'
-        if i == self.active then bg = '#45454D' end
-        if self.drag and i == self.drag.index then bg = '#3D3D47' end
+        local bg = colors.tab
+        if i == self.active then bg = colors.activeTab end
+        if self.drag and i == self.drag.index then bg = colors.draggedTab end
         Nui:stylePush({
             ['window'] = {
                 ['background'] = bg,
                 ['fixed background'] = bg,
-                ['border color'] = '#73737A',
+                ['border color'] = colors.tabBorder,
                 ['padding'] = { x = 2, y = 2 },
             },
         })
@@ -402,9 +492,9 @@ function tabs:update(dt)
                 Nui:label(self:tabTitle(tab)..str)
                 Nui:stylePush({
                     ['button'] = {
-                        ['normal'] = '#4A4A52',
-                        ['hover'] = '#8C8C8C',
-                        ['active'] = '#A0A0A5',
+                        ['normal'] = colors.close[1],
+                        ['hover'] = colors.close[2],
+                        ['active'] = colors.close[3],
                     },
                 })
                 if Nui:button('x') then
@@ -422,9 +512,9 @@ function tabs:update(dt)
                 local on = tab.edit[lane]
                 Nui:stylePush({
                     ['button'] = {
-                        ['normal'] = on and '#388CD9' or '#525257',
-                        ['hover'] = on and '#2A6FB5' or '#5E5E63',
-                        ['active'] = on and '#1E6F9F' or '#46464B',
+                        ['normal'] = on and colors.laneOn[1] or colors.laneOff[1],
+                        ['hover'] = on and colors.laneOn[2] or colors.laneOff[2],
+                        ['active'] = on and colors.laneOn[3] or colors.laneOff[3],
                     },
                 })
                 if Nui:button(lane) then
@@ -448,14 +538,14 @@ function tabs:update(dt)
     local plusVisible = px < ly.tabBar.x + ly.tabBar.w
     local bx = plusVisible and (px + ly.hitPad) or -200
     local bp = ly.buttonPad
-    Nui:stylePush(transparentWindow())
+    Nui:stylePush(transparentWindow(colors))
     if Nui:windowBegin('tabs_plus', bx, ly.tabBar.y + bp, ly.plusW - bp * 2, ly.tabBar.h - bp * 2) then
         Nui:layoutRow('dynamic', ly.tabBar.h - bp * 2 - 2, 1)
         Nui:stylePush({
             ['button'] = {
-                ['normal'] = '#333338',
-                ['hover'] = '#3D3D47',
-                ['active'] = '#45454D',
+                ['normal'] = colors.plus[1],
+                ['hover'] = colors.plus[2],
+                ['active'] = colors.plus[3],
             },
         })
         if Nui:button('+') then
@@ -486,17 +576,18 @@ function tabs:draw()
     if demo.open then return end
     --限制绘制范围，避免超过范围到sidebar区域
     local ly = self.layout
+    local colors = currentTabColors()
 
     -- 标签条底板（覆盖其下的节拍线，标签页本体由 nuklear 绘制在其上）
-    love.graphics.setColor(0.09, 0.09, 0.10)
+    love.graphics.setColor(colors.bar)
     love.graphics.rectangle('fill', ly.tabBar.x, ly.tabBar.y, ly.tabBar.w, ly.tabBar.h)
     -- 拖动条底板与 thumb
-    love.graphics.setColor(0.09, 0.09, 0.10)
+    love.graphics.setColor(colors.bar)
     love.graphics.rectangle('fill', ly.scroll.x, ly.scroll.y, ly.scroll.w, ly.scroll.h)
     if self.maxOffset > 0 then
         local thumbW = math.max(30, ly.scroll.w * ly.scroll.w / self:layoutWidth())
         local thumbX = ly.scroll.x + (ly.scroll.w - thumbW) * (self.offset / self.maxOffset)
-        love.graphics.setColor(0.35, 0.35, 0.38)
+        love.graphics.setColor(colors.thumb)
         love.graphics.rectangle('fill', thumbX, ly.scroll.y + 3, thumbW, ly.scroll.h - 6)
     end
 
@@ -516,7 +607,7 @@ function tabs:draw()
         end
         if self.drag then order[#order + 1] = self.drag.index end
         for _, i in ipairs(order) do
-            -- 窗口渲染（裁剪/遮罩/标题/内容）由 editView 实例自行完成；
+            -- 窗口内容与遮罩由 editView 实例绘制；顶部位置条由 Nuklear 处理。
             -- 左缘再同步一次：+ 按钮新建标签页发生在 update 同步循环之后，当帧即需绘制
             local v = self.list[i]
             v.editView.x = self:windowX(i)
