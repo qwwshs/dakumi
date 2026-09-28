@@ -1,7 +1,7 @@
 --equalizer界面
 local Gequalizer = group:new('equalizer')
 Gequalizer.type = "equalizer"
-Gequalizer.layout = require('config.layouts.sidebar').equalizer
+Gequalizer.layout = {cols = 2, uiH = 20}
 Gequalizer.open = { value = 1 }
 Gequalizer.equalizer = {
     type = 'equalizer',
@@ -28,7 +28,6 @@ Gequalizer.equalizerv = {
     {name = 'highgain',value = 1.0,scope = {0.126, 7.943}, step = 0.001},
     {name = 'highcut',value = 6000,scope = {4000, 16000}, step = 1},
 }
-print("Equalizer: "..tostring(love.audio.isEffectsSupported()))
 function Gequalizer:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
 
@@ -50,4 +49,34 @@ function Gequalizer:Nui()
     end
 end
 
-return Gequalizer
+local sidebarRoom, homeGroup, navigation
+
+return {
+    name = 'equalizer',
+    version = '1.0.0',
+    description = '侧边栏均衡器',
+    target = 'edit/sidebar',
+
+    init = function(ctx)
+        sidebarRoom = ctx.root:findContainer('edit/sidebar')
+        homeGroup = sidebarRoom:getGroup('nil')
+        navigation = object:new('equalizer navigation')
+        function navigation:Nui()
+            if ctx.ui:button(ctx.i18n:get('equalizer')) then
+                messageBox:add('equalizer')
+                sidebarRoom:to('equalizer')
+            end
+        end
+        sidebarRoom:addGroup(Gequalizer)
+        homeGroup:addObject(navigation, 20)
+    end,
+
+    destroy = function(ctx)
+        if homeGroup and navigation then homeGroup:deleteObject(navigation) end
+        if sidebarRoom then
+            if sidebarRoom.displayed_content == 'equalizer' then sidebarRoom:to('nil') end
+            sidebarRoom:deleteGroup(Gequalizer)
+        end
+        sidebarRoom, homeGroup, navigation = nil, nil, nil
+    end,
+}

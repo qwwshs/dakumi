@@ -308,4 +308,34 @@ function Gtakana:Nui()
     end
 end
 
-return Gtakana
+local sidebarRoom, homeGroup, navigation
+
+return {
+    name = 'takana',
+    version = '1.0.0',
+    description = '侧边栏 Takana 导出',
+    target = 'edit/sidebar',
+
+    init = function(ctx)
+        sidebarRoom = ctx.root:findContainer('edit/sidebar')
+        homeGroup = sidebarRoom:getGroup('nil')
+        navigation = object:new('takana navigation')
+        function navigation:Nui()
+            if ctx.ui:button(ctx.i18n:get('takana')) then
+                messageBox:add('takana')
+                sidebarRoom:to('takana')
+            end
+        end
+        sidebarRoom:addGroup(Gtakana)
+        homeGroup:addObject(navigation, 30)
+    end,
+
+    destroy = function(ctx)
+        if homeGroup and navigation then homeGroup:deleteObject(navigation) end
+        if sidebarRoom then
+            if sidebarRoom.displayed_content == 'takana' then sidebarRoom:to('nil') end
+            sidebarRoom:deleteGroup(Gtakana)
+        end
+        sidebarRoom, homeGroup, navigation = nil, nil, nil
+    end,
+}

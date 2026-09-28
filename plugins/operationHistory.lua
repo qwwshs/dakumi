@@ -63,7 +63,7 @@ return {
         end
 
         sidebarRoom:addGroup(panel)
-        homeGroup:addObject(nav)
+        homeGroup:addObject(nav, 10)
     end,
 
     destroy = function(ctx)

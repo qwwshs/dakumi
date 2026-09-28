@@ -5,6 +5,7 @@ return {
     h = 900,
     cols = 1,
     uiH = 50,
+    links = {button = 48, gap = 8, padding = 6, margin = 12},
     track = {
         x = 1250,
         y = 0,
@@ -69,9 +70,5 @@ return {
             w = 400-20-30,
             h = 400-20,
         }
-    },
-    equalizer = {
-        cols = 2,
-        uiH = 20,
     },
 }

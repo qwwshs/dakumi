@@ -38,7 +38,8 @@ function sidebar:update(dt)
     if demo.open then return end
     local layout = self.layout
     local g = self:getGroup(self.displayed_content)
-    if Nui:windowBegin(i18n:get(sidebar.displayed_content), layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background','title') then
+    local opened = Nui:windowBegin(i18n:get(sidebar.displayed_content), layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background','title')
+    if opened then
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
         Nui:label(i18n:get("version") .. DAKUMI._VERSION..'  '.."FPS:" .. love.timer.getFPS())
         if self.displayed_content ~= 'nil' then
@@ -57,11 +58,10 @@ function sidebar:update(dt)
         if g and g.Nui then
             g:Nui()
         end
-
-        Nui:windowEnd()
     end
+    Nui:windowEnd()
 
-    if g and g.NuiNext then
+    if opened and g and g.NuiNext then
         g:NuiNext()
     end
 end
@@ -101,7 +101,4 @@ sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar:addGroup(require 'src.objects.sidebar.event')
 sidebar:addGroup(require 'src.objects.sidebar.note')
 sidebar:addGroup(require 'src.objects.sidebar.events')
-sidebar:addGroup(require 'src.objects.sidebar.to_takana')
-sidebar:addGroup(require 'src.objects.sidebar.equalizer')
-
 return sidebar

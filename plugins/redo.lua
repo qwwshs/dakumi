@@ -235,8 +235,12 @@ function redo:jumpTo(index)
     if type(index) ~= 'number' or index ~= math.floor(index) then return false end
     local total = #self.revoke + #self.redo
     if index < 0 or index > total then return false end
-    while #self.revoke > index do self:undo() end
-    while #self.revoke < index do self:redoOne() end
+    while #self.revoke > index do
+        if not self:undo() then return false end
+    end
+    while #self.revoke < index do
+        if not self:redoOne() then return false end
+    end
     return true
 end
 

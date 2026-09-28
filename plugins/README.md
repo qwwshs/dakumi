@@ -76,6 +76,8 @@ return {
 
 直接引用容器时可写 `target = play`，也可以使用 `ctx.root:findContainer('edit/play')` 查找。插件也可以在 `init(ctx)` 中创建自己的 group，再挂到已有容器；在 `destroy(ctx)` 中删除自己添加的 group。
 
+侧边栏现有的「操作历史」「均衡器」「takana」就是这种插件：分别位于 `plugins/operationHistory.lua`、`plugins/equalizer/init.lua`、`plugins/takana/init.lua`。它们在 `init(ctx)` 中把页面 group 加到 `edit/sidebar`，并把导航对象加到侧边栏首页的 `nil` group；在 `destroy(ctx)` 中移除。首页会在「设置」下方调用这些导航对象的 `Nui` 方法。导航对象可用层号调整顺序：目前操作历史为 10、均衡器为 20、takana 为 30。
+
 插件沿用目标容器的事件分发规则。例如 `edit/play` 的按键受鼠标区域检查影响，`edit/demo` 的更新和绘制仅在演示模式打开时执行。侧边栏的子 group 原本每帧都会收到 `update`，并非只分发给当前属性页；只想在某页运行时，要自行判断 `sidebar:room_type('event')`。
 
 注册到目标容器不会自动调用目标本身的 `load`，也不会自动切换场景。插件的 `init` 负责一次性初始化，`load` 跟随目标场景的加载转发。

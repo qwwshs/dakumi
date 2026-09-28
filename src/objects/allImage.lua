@@ -33,6 +33,7 @@ local uiIconPaths = {
     down = "assets/img/down.png", close = "assets/img/close.png",
     save = "assets/img/save.png", play = "assets/img/play.png",
     pause = "assets/img/pause.png", github = "assets/img/github-mark-white.png",
+    dakumi = "assets/img/icon.png",
 }
 local uiIconCache = { dark = {}, light = {} }
 local ThemeService = require('src.services.themeService')
