@@ -124,6 +124,10 @@ function ChartService:setChart(data)
     chart = table.copy(data or {})
     table.fill(chart, meta_chart.__index)
     extra_chart = { track = {} }
+    chart_push.now = false
+    chart_push.add = {event = {}, note = {}}
+    chart_push.del = {event = {}, note = {}}
+    if redo then redo:clear() end
 end
 
 --- 更新谱面数据（版本迁移和字段填充）
@@ -243,7 +247,8 @@ end
 --- 结束批量操作并提交所有缓冲的操作
 -- 将缓冲的 add/delete 操作应用到 chart（自动同步 extra_chart），
 -- 然后写入撤销记录并排序
-function ChartService:pop()
+-- @tparam string actionKey 本次操作的 i18n 说明键
+function ChartService:pop(actionKey)
     chart_push.now = false
 
     -- 1. 将缓冲的添加操作应用到 chart（自动同步 extra_chart）
@@ -263,7 +268,7 @@ function ChartService:pop()
     end
 
     -- 3. 写入撤销记录
-    if redo then redo:writeRevoke(chart_push) end
+    if redo then redo:writeRevoke(chart_push, nil, actionKey) end
 
     -- 4. 清空缓冲区
     chart_push.add = {event = {}, note = {}}
@@ -319,7 +324,7 @@ end
 --- 添加 note 或 event 到谱面
 -- 如果处于批量操作模式，则缓冲到 chart_push；否则直接添加
 -- @tparam table noteorevent 要添加的音符或事件数据
-function ChartService:add(noteorevent)
+function ChartService:add(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
     local isNote = isNoteType(typeName)
@@ -334,7 +339,7 @@ function ChartService:add(noteorevent)
             return
         end
         self:addEvent(noteorevent)
-        if redo then redo:writeRevoke(noteorevent, 'add') end
+        if redo then redo:writeRevoke(noteorevent, 'add', actionKey) end
         fEvent:sort()
     elseif isNote then
         if chart_push.now then
@@ -342,7 +347,7 @@ function ChartService:add(noteorevent)
             return
         end
         self:addNote(noteorevent)
-        if redo then redo:writeRevoke(noteorevent, 'add') end
+        if redo then redo:writeRevoke(noteorevent, 'add', actionKey) end
         fNote:sort()
     end
 
@@ -359,7 +364,7 @@ end
 --- 从谱面删除 note 或 event
 -- 如果处于批量操作模式，则缓冲到 chart_push；否则直接删除
 -- @tparam table noteorevent 要删除的音符或事件数据
-function ChartService:delete(noteorevent)
+function ChartService:delete(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
     local isNote = isNoteType(typeName)
@@ -377,7 +382,7 @@ function ChartService:delete(noteorevent)
                 return
             end
             self:deleteEvent(actual)
-            if redo then redo:writeRevoke(actual, 'del') end
+            if redo then redo:writeRevoke(actual, 'del', actionKey) end
         end
     elseif isNote then
         local i = findItemIndex(chart.note, noteorevent)
@@ -388,7 +393,7 @@ function ChartService:delete(noteorevent)
                 return
             end
             self:deleteNote(actual)
-            if redo then redo:writeRevoke(actual, 'del') end
+            if redo then redo:writeRevoke(actual, 'del', actionKey) end
         end
     end
 

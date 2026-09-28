@@ -825,7 +825,7 @@ local function handleDelete()
         end
     end
 
-    ChartService:pop()
+    ChartService:pop('history.batch_delete')
     ctrl.copy_tab = table.copy(ctrl.meta_copy_tab)
 end
 
@@ -834,6 +834,12 @@ local function handlePaste()
     local all = input('pasteAll') or input('flipPasteAll')
     local flip = input('flipPaste') or input('flipPasteAll')
     local copy_tab2 = ctrl:getPasteItems(flip, all) -- 变换后的粘贴内容（与粘贴预览共用）
+    local actionKey
+    if ctrl.copy_tab.type == 'copy' then
+        actionKey = flip and 'history.paste_flipped' or 'history.paste'
+    else
+        actionKey = flip and 'history.move_paste_flipped' or 'history.move_paste'
+    end
 
     sidebar:to("nil")
     ChartService:push()
@@ -849,7 +855,7 @@ local function handlePaste()
     end
 
     if ctrl.copy_tab.type == "copy" then
-        ChartService:pop()
+        ChartService:pop(actionKey)
         return
     end
 
@@ -862,7 +868,7 @@ local function handlePaste()
             ChartService:delete(event)
         end
     end
-    ChartService:pop()
+    ChartService:pop(actionKey)
 end
 
 --- 键盘事件主入口

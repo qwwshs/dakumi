@@ -229,6 +229,8 @@ end
 
 function Gevent:leave()
 --用于撤销
+local actionKey = self.historyAction or 'history.edit_event'
+self.historyAction = nil
 -- directEventEditing 拖拽期间每帧 sidebar:to 会刷新本页面：
 -- 拖拽中不记录撤销（避免每帧产生一条记录），由插件在拖动完成时统一写入一次
 if directEventEditing and directEventEditing.catch_point then return end
@@ -239,6 +241,6 @@ ChartService:addEvent(Incoming_event_before_arrival)
 ChartService:push()
 ChartService:delete(Incoming_event_before_arrival)
 ChartService:add(Incoming_event)
-ChartService:pop()
+ChartService:pop(actionKey)
 end
 return Gevent

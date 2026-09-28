@@ -60,7 +60,7 @@ function note:delete(pos, trackId)
         ((beatVal >= note_beat_down and beatVal <= note_beat_up)
         or (beat2 and -- 长条
         math.intersect(beatVal, isnote:getBeat2Value(), note_beat_up, note_beat_down))) then
-            ChartService:delete(isnote)
+            ChartService:delete(isnote, 'history.delete_' .. isnote:getType())
             sidebar.displayed_content = 'nil'
             return
         end
@@ -92,7 +92,7 @@ function note:place(note_type,pos,trackId)
             beat = {note_beat[1],note_beat[2],note_beat[3]},
             fake = noteFake.v,
         })
-        ChartService:add(isnote)
+        ChartService:add(isnote, 'history.add_' .. note_type)
 
         note.local_tab = {type = note_type,
         track = istrack,
@@ -124,7 +124,7 @@ function note:place(note_type,pos,trackId)
                 note:holdCleanUp()
                 return false
             else -- 合法操作
-                ChartService:add(note.local_hold)
+                ChartService:add(note.local_hold, 'history.add_hold')
                 note.hold_type = 2
 
             end

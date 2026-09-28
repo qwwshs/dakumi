@@ -144,7 +144,7 @@ function directEventEditing:update(dt)
                 redo:writeRevoke({
                     add = { event = { cur_event:copy() }, note = {} },
                     del = { event = { self.drag_before }, note = {} },
-                })
+                }, nil, 'history.drag_event')
             end
         end
         -- 仍处于 catch_point 状态时调用 sidebar:to：leave() 会忽略刷新（不产生记录），

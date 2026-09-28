@@ -40,6 +40,36 @@ redo.revoke = {}
 --- 重做操作栈
 redo.redo = {}
 
+--- 计算一次操作影响的完整节拍范围（包括修改前和修改后的对象）。
+local function getBeatRange(operation)
+    local first, last
+    local function include(item)
+        local data = item._data or item
+        for _, value in ipairs({data.beat, data.beat2}) do
+            if type(value) == 'table' then
+                local number = beat:get(value)
+                if type(number) == 'number' then
+                    first = first and math.min(first, number) or number
+                    last = last and math.max(last, number) or number
+                end
+            end
+        end
+    end
+    for _, change in ipairs({operation.add, operation.del}) do
+        for _, kind in ipairs({'note', 'event'}) do
+            for _, item in ipairs(change[kind] or {}) do include(item) end
+        end
+    end
+    return first, last
+end
+
+local function hasItems(operation)
+    for _, change in ipairs({operation.add, operation.del}) do
+        if #(change.note or {}) > 0 or #(change.event or {}) > 0 then return true end
+    end
+    return false
+end
+
 --- 从谱面删除元素列表（通过 ChartService 自动同步 extra_chart）
 -- @tparam table list 要删除的元素列表
 -- @tparam function deleteFunc 删除函数 (ChartService:deleteNote 或 ChartService:deleteEvent)
@@ -98,7 +128,14 @@ local function applyOperation(operation, isUndo)
 
     fNote:sort()
     fEvent:sort()
-    sidebar:to("nil")
+end
+
+--- 先提交侧边栏中尚未离开的编辑，避免撤销时额外写入一条记录。
+local function leaveEditableSidebar()
+    if sidebar and sidebar.displayed_content ~= 'nil' and
+        sidebar.displayed_content ~= 'operation history' then
+        sidebar:to('nil')
+    end
 end
 
 --- 写入撤销记录
@@ -106,7 +143,8 @@ end
 --   1. 单个 Note/Event 对象（需配合 istype 参数）
 --   2. 批量操作表 {add={note={}, event={}}, del={note={}, event={}}}
 -- @tparam string istype 操作类型 ("add" 或 "del")，仅对单个元素有效
-function redo:writeRevoke(tab, istype)
+-- @tparam string actionKey 操作说明的 i18n 键，由写入方提交
+function redo:writeRevoke(tab, istype, actionKey)
     local revoke_tab
 
     if tab._data and type(tab.copy) == "function" then
@@ -149,27 +187,66 @@ function redo:writeRevoke(tab, istype)
         revoke_tab = deepCopyWithNotes and deepCopyWithNotes(tab) or table.copy(tab)
     end
 
+    if not hasItems(revoke_tab) then return false end
+    revoke_tab.action_key = actionKey or 'history.other'
+    revoke_tab.beat_start, revoke_tab.beat_end = getBeatRange(revoke_tab)
+
     -- 新操作会清空重做栈
     self.redo = {}
     table.insert(self.revoke, revoke_tab)
+    return true
+end
+
+--- 清空当前谱面的历史。
+function redo:clear()
+    self.revoke = {}
+    self.redo = {}
+end
+
+--- 按发生顺序读取全部仍可到达的记录；cursor 是当前所处的位置。
+function redo:getHistory()
+    local history = {}
+    for _, operation in ipairs(self.revoke) do history[#history + 1] = operation end
+    for i = #self.redo, 1, -1 do history[#history + 1] = self.redo[i] end
+    return history, #self.revoke
+end
+
+function redo:undo()
+    leaveEditableSidebar()
+    local operation = table.remove(self.revoke)
+    if not operation then return false end
+    applyOperation(operation, true)
+    self.redo[#self.redo + 1] = operation
+    return true
+end
+
+function redo:redoOne()
+    if not self.redo[#self.redo] then return false end
+    leaveEditableSidebar()
+    local operation = table.remove(self.redo)
+    if not operation then return false end
+    applyOperation(operation, false)
+    self.revoke[#self.revoke + 1] = operation
+    return true
+end
+
+--- 跳到第 index 次操作之后；0 表示所有记录之前。
+function redo:jumpTo(index)
+    if type(index) ~= 'number' or index ~= math.floor(index) then return false end
+    local total = #self.revoke + #self.redo
+    if index < 0 or index > total then return false end
+    while #self.revoke > index do self:undo() end
+    while #self.revoke < index do self:redoOne() end
+    return true
 end
 
 --- 键盘事件处理：执行撤销或重做
 -- @tparam string key 按下的键名
 function redo:keypressed(key)
-    if input('undo') and self.revoke[#self.revoke] then
-        -- 撤销操作
-        local operation = self.revoke[#self.revoke]
-        self.redo[#self.redo + 1] = operation
-        applyOperation(operation, true)
-        table.remove(self.revoke)
-
-    elseif input('redoing') and self.redo[#self.redo] then
-        -- 重做操作
-        local operation = self.redo[#self.redo]
-        self.revoke[#self.revoke + 1] = operation
-        applyOperation(operation, false)
-        table.remove(self.redo)
+    if input('undo') then
+        self:undo()
+    elseif input('redoing') then
+        self:redoOne()
     end
 end
 

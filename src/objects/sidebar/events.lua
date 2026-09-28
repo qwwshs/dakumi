@@ -114,7 +114,8 @@ function Gevents:eventsDo() --执行
             end
         end
         if next(add) then
-            redo:writeRevoke({add = {event = add, note = {}}, del = {event = del, note = {}}})
+            redo:writeRevoke({add = {event = add, note = {}}, del = {event = del, note = {}}},
+                nil, 'history.batch_edit_events')
         end
     end
 end

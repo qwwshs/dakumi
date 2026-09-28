@@ -17,7 +17,7 @@ function alt:keypressed(key)
             ChartService:push()
             ChartService:add(isnote)
             ChartService:delete(ChartService:getNote(note_or_event_index))
-            ChartService:pop()
+            ChartService:pop('history.move_note_start')
             sidebar:to("nil")
         end
         if is_event then
@@ -26,7 +26,7 @@ function alt:keypressed(key)
             ChartService:push()
             ChartService:add(isevent)
             ChartService:delete(ChartService:getEvent(note_or_event_index))
-            ChartService:pop()
+            ChartService:pop('history.move_event_start')
             sidebar:to("nil")
         end
         sidebar:to("nil")
@@ -41,7 +41,7 @@ function alt:keypressed(key)
             ChartService:push()
             ChartService:add(isnote)
             ChartService:delete(ChartService:getNote(note_or_event_index))
-            ChartService:pop()
+            ChartService:pop('history.move_hold_end')
 
             sidebar:to("nil")
         end
@@ -54,7 +54,7 @@ function alt:keypressed(key)
             ChartService:push()
             ChartService:add(isevent)
             ChartService:delete(ChartService:getEvent(note_or_event_index))
-            ChartService:pop()
+            ChartService:pop('history.move_event_end')
 
             sidebar:to("nil")
         end
@@ -105,7 +105,7 @@ function alt:keypressed(key)
                 if ctrl then ctrl:copy_add(local_event,'event') end
             end
             ChartService:delete(isevent)
-            ChartService:pop() --结束记录
+            ChartService:pop('history.cut_event') --结束记录
 
             fEvent:sort()
             sidebar:to('events')
@@ -118,6 +118,7 @@ function alt:keypressed(key)
             e:setFrom(center - e:getFrom())
             e:setTo(center - e:getTo())
             log('flip')
+            sidebar:getGroup('event').historyAction = 'history.flip_event'
             sidebar:to('event',note_or_event_index)
         end
     end
@@ -130,6 +131,7 @@ function alt:keypressed(key)
             else
                 e:setTo(fence_x)
             end
+            sidebar:getGroup('event').historyAction = 'history.adjust_event_value'
             sidebar:to('event',note_or_event_index)
         end
     end
@@ -140,6 +142,7 @@ function alt:keypressed(key)
             e:setFrom(from)
             e:setTo(to)
             log('flip')
+            sidebar:getGroup('event').historyAction = 'history.flip_event_vertical'
             sidebar:to('event',note_or_event_index)
         end
     end

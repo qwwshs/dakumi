@@ -355,7 +355,7 @@ function event:delete(eventType, pos, trackId)
     sidebar:to("nil")
     local _, foundEvent = findEventInRange(eventType, pos, trackId)
     if foundEvent then
-        ChartService:delete(foundEvent)
+        ChartService:delete(foundEvent, 'history.delete_' .. eventType .. '_event')
     end
 end
 
@@ -415,7 +415,7 @@ function event:place(eventType, pos, trackId)
             return false
         else
             -- 合法操作，添加到谱面
-            ChartService:add(event.local_event)
+            ChartService:add(event.local_event, 'history.add_' .. eventType .. '_event')
             event.hold_type = 2
         end
     end

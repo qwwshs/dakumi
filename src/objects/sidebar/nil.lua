@@ -2,6 +2,8 @@
 local Gnil = group:new('nil')
 Gnil.type = "nil"
 function Gnil:Nui()
+    -- 外部插件可向首页加入自己的入口，无需改动侧边栏按钮列表。
+    self('Nui')
     if Nui:button(i18n:get("chart info")) then
         messageBox:add("chart info")
         sidebar:to("chart info")
