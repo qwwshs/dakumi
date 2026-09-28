@@ -2,38 +2,68 @@ local editTool =  group:new('editTool')
 editTool.layout = require 'config.layouts.editTool'
 editTool.colors = require 'config.colors.editTool'
 
+-- 每张谱面的编辑选项单独保存在同目录；专用扩展名避免被当成谱面导入。
+local defaults = {
+    denom = 4, scale = 1, track = 4, fence = 10, musicSpeed = 1,
+    noteFake = false, holdNoteHead = false, holdWipeHead = false,
+}
+
+local function dataPath()
+    local charts = menu and menu.chartInfo and menu.chartInfo.chart_name
+    local chart = charts and charts[menu.selectChartPos]
+    return chart and chart.path and (chart.path .. '.editToolData') or nil
+end
+
+local function currentData()
+    return {
+        denom = denom.denom, scale = denom.scale,
+        track = track.track, fence = track.fence,
+        musicSpeed = musicSpeed.speed,
+        noteFake = noteFake.value,
+        holdNoteHead = holdNoteHead.value,
+        holdWipeHead = holdWipeHead.value,
+    }
+end
+
+function editTool:saveData()
+    if not self.dataPath then return end
+    local ok, err = nativefs.write(self.dataPath, dkjson.encode(currentData(), {indent = true}))
+    if not ok then log('editToolData save error: ' .. tostring(err)) end
+end
 
 
 function editTool:load()
+    local nextPath = dataPath()
+    if self.dataPath and self.dataPath ~= nextPath then self:saveData() end
     self('load')
-    local editToolDataFile = io.open('editToolData.json')
-    if editToolDataFile then
-        local editToolData = dkjson.decode(editToolDataFile:read('*a')) or {}
-        editToolDataFile:close()
-        editToolData.denom = editToolData.denom or denom.denom
-        editToolData.scale = editToolData.scale or denom.scale
-        editToolData.track = editToolData.track or track.track
-        editToolData.fence = editToolData.fence or track.fence
-        editToolData.musicSpeed = editToolData.musicSpeed or musicSpeed.speed
-        if editToolData.noteFake == nil then
-            editToolData.noteFake = noteFake.value
-        end
-        if editToolData.holdNoteHead == nil then
-            editToolData.holdNoteHead = holdNoteHead.value
-        end
-        if editToolData.holdWipeHead == nil then
-            editToolData.holdWipeHead = holdWipeHead.value
-        end
+    self.dataPath = nextPath
+    if not self.dataPath then return end
 
-        denom:to('denom',editToolData.denom)
-        denom:to('scale',editToolData.scale)
-        track:to('track',editToolData.track)
-        track:to('fence',editToolData.fence)
-        musicSpeed:to(editToolData.musicSpeed)
-        noteFake:to(editToolData.noteFake)
-        holdNoteHead:to(editToolData.holdNoteHead)
-        holdWipeHead:to(editToolData.holdWipeHead)
+    local content = nativefs.read(self.dataPath)
+    local saved = content and dkjson.decode(content) or nil
+    if content and type(saved) ~= 'table' then
+        log('editToolData read error: ' .. self.dataPath)
     end
+    saved = type(saved) == 'table' and saved or {}
+    local data = {}
+    for key, default in pairs(defaults) do
+        if saved[key] == nil then
+            data[key] = default
+        else
+            data[key] = saved[key]
+        end
+    end
+
+    denom:to('denom', data.denom)
+    denom:to('scale', data.scale)
+    track:to('track', data.track)
+    track:to('fence', data.fence)
+    musicSpeed:to(data.musicSpeed)
+    noteFake:to(data.noteFake)
+    holdNoteHead:to(data.holdNoteHead)
+    holdWipeHead:to(data.holdWipeHead)
+
+    if not content then self:saveData() end
 end
 
 function editTool:update(dt)
@@ -139,17 +169,7 @@ function editTool:wheelmoved(x, y)
 end
 
 function editTool:quit()
-    local editToolData = {
-        denom = denom.denom,
-        scale = denom.scale,
-        track = track.track,
-        fence = track.fence,
-        musicSpeed = musicSpeed.speed,
-        noteFake = noteFake.value,
-        holdNoteHead = holdNoteHead.value,
-        holdWipeHead = holdWipeHead.value,
-    }
-    save(dkjson.encode(editToolData),'editToolData.json')
+    self:saveData()
     self('quit')
 end
 

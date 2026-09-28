@@ -61,7 +61,6 @@ PATH             = {
         key = 'users/',                                -- 快捷键配置
     },
     plugins = 'plugins/',                              -- 插件目录（外部可访问）
-    editToolData = '',                                 -- 编辑工具数据文件路径（运行时设置）
     defaultBezier = '',                                -- 默认贝塞尔曲线文件路径（运行时设置）
     base = love.filesystem.getSourceBaseDirectory(),   -- 应用基础目录
     web = {

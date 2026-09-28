@@ -10,16 +10,16 @@ function Gnil:Nui()
         messageBox:add("preference")
         sidebar:to("preference")
     end
+    if Nui:button(i18n:get("track")) then
+        messageBox:add("track")
+        sidebar:to("track")
+    end
     if Nui:button(i18n:get("settings")) then
         messageBox:add("settings")
         sidebar:to("settings")
     end
     -- 操作历史、均衡器、Takana 等入口由插件在此处按层号绘制。
     self('Nui')
-    if Nui:button(i18n:get("track")) then
-        messageBox:add("track")
-        sidebar:to("track")
-    end
 end
 
 -- 独立小窗口固定在侧边栏右下角，不受上方列表滚动位置影响。

@@ -95,7 +95,7 @@ function track:to(ty, v)
         self.track = v
         self.useToTrack.value = tostring(v)
     elseif ty == 'fence' then
-        self.track = v
+        self.fence = v
         self.useToFence.value = tostring(v)
     end
 end
