@@ -28,6 +28,9 @@ function Event.new(data)
         type  = data.type or 'x',
         from  = data.from or 0,
         to    = data.to or 0,
+        event_group = data.event_group or '',
+        flip_horizontally = data.flip_horizontally == 1 and 1 or 0,
+        flip_vertically = data.flip_vertically == 1 and 1 or 0,
         trans = data.trans or {
             trans = {0, 0, 1, 1},
             type = 'bezier',
@@ -46,6 +49,9 @@ function Event:getType()   return self._data.type end
 function Event:getFrom()   return self._data.from end
 function Event:getTo()     return self._data.to end
 function Event:getTrans()  return self._data.trans end
+function Event:getEventGroup() return self._data.event_group end
+function Event:getFlipHorizontally() return self._data.flip_horizontally end
+function Event:getFlipVertically() return self._data.flip_vertically end
 
 -- trans 子字段便捷访问
 function Event:getTransType()   return self._data.trans.type end
@@ -61,6 +67,9 @@ function Event:setType(v)   self._data.type = v end
 function Event:setFrom(v)   self._data.from = v end
 function Event:setTo(v)     self._data.to = v end
 function Event:setTrans(v)  self._data.trans = v end
+function Event:setEventGroup(v) self._data.event_group = v end
+function Event:setFlipHorizontally(v) self._data.flip_horizontally = v == 1 and 1 or 0 end
+function Event:setFlipVertically(v) self._data.flip_vertically = v == 1 and 1 or 0 end
 
 -- trans 子字段便捷设置
 function Event:setTransType(v)   self._data.trans.type = v end
@@ -99,6 +108,9 @@ function Event:copy()
         from  = d.from,
         to    = d.to,
         trans = table.copy(d.trans),
+        event_group = d.event_group,
+        flip_horizontally = d.flip_horizontally,
+        flip_vertically = d.flip_vertically,
     })
 end
 
@@ -113,6 +125,9 @@ function Event:eq(other)
     if not table.eq(a.beat, b.beat) then return false end
     if not table.eq(a.beat2, b.beat2) then return false end
     if not table.eq(a.trans, b.trans) then return false end
+    if a.event_group ~= b.event_group or
+        a.flip_horizontally ~= b.flip_horizontally or
+        a.flip_vertically ~= b.flip_vertically then return false end
     return true
 end
 
@@ -131,6 +146,9 @@ function Event:toTable()
         from  = d.from,
         to    = d.to,
         trans = d.trans,
+        event_group = d.event_group,
+        flip_horizontally = d.flip_horizontally,
+        flip_vertically = d.flip_vertically,
     }
 end
 

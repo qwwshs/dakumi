@@ -121,7 +121,7 @@ end
 -- ============================================================
 
 function tabs:isSingle()
-    return #self.list <= 1
+    return ChartService:isEditingEventGroup() ~= nil or #self.list <= 1
 end
 
 --- 解析标签页的实际轨道（0 = 跟随 track.track）
@@ -390,6 +390,21 @@ end
 
 function tabs:update(dt)
     if demo.open then return end
+    local editing = ChartService:isEditingEventGroup()
+    if editing then
+        local ly = self.layout
+        play.layout.demo.w = ly.demoW
+        self.drag, self.scrollDrag = nil, false
+        local name = 'event_group_edit_mode'
+        if Nui:windowBegin(name, ly.tabBar.x, ly.tabBar.y, ly.tabBar.w,
+            ly.tabBar.h, 'border', 'background') then
+            Nui:layoutRow('dynamic', ly.tabBar.h - 12, 1)
+            Nui:label(i18n:get('event_group.editing') .. ': ' .. editing)
+        end
+        Nui:windowEnd()
+        drawEditInfo({track = 0}, 'event_group', play.layout.edit.x, ly.tabW)
+        return
+    end
     self('update', dt)
     local ly = self.layout
     local colors = currentTabColors()
@@ -581,6 +596,7 @@ end
     
 function tabs:draw()
     if demo.open then return end
+    if ChartService:isEditingEventGroup() then return end
     --限制绘制范围，避免超过范围到sidebar区域
     local ly = self.layout
     local colors = currentTabColors()
@@ -629,7 +645,7 @@ function tabs:draw()
 end
 
 function tabs:mousepressed(x, y, button, istouch, presses)
-    if demo.open then return end
+    if demo.open or ChartService:isEditingEventGroup() then return end
     self('mousepressed', x, y, button, istouch, presses)
     if button ~= 1 then return end
     local ly = self.layout
@@ -708,7 +724,7 @@ function tabs:mousepressed(x, y, button, istouch, presses)
 end
 
 function tabs:wheelmoved(x, y)
-    if demo.open then return end
+    if demo.open or ChartService:isEditingEventGroup() then return end
     self('wheelmoved', x, y)
     if self.maxOffset <= 0 then return end
     local ly = self.layout
@@ -717,7 +733,7 @@ function tabs:wheelmoved(x, y)
 end
 
 function tabs:keypressed(key)
-    if demo.open then return end
+    if demo.open or ChartService:isEditingEventGroup() then return end
     self('keypressed', key)
     if not self:isRenaming() then return end
     if key == 'return' or key == 'kpenter' then

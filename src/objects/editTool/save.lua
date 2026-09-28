@@ -8,11 +8,17 @@ buttonSave.text = ''
 buttonSave.img = isImage.save
 function buttonSave:click(isAutoSave)
     if isAutoSave then
+        if not ChartService:save("chart.json.auto") then
+            messageBox:add('event_group.invalid')
+            return false
+        end
         messageBox:add("auto save")
-        ChartService:save("chart.json.auto")
 
     else
-        ChartService:save("chart.json")
+        if not ChartService:save("chart.json") then
+            messageBox:add('event_group.invalid')
+            return false
+        end
         messageBox:add("save")
     end
     self.sound:setVolume(settings.beep_volume / 100)
@@ -29,8 +35,7 @@ end
 function buttonSave:update(dt)
     if elapsed_time - self.time >= 60 and (not demo.open) and settings.auto_save == 1 and not table.find(arg,'--test') then --保存
         self.time = elapsed_time
-        self:click(true)
-        messageBox:add("auto_save")
+        if self:click(true) ~= false then messageBox:add("auto_save") end
     end
     if elapsed_time - self.time >= 60 and (not demo.open) and settings.auto_save == 1 and table.find(arg,'--test') then
         print('in test')

@@ -12,7 +12,7 @@ local Note = require('src.objects.Note')
 local Event = require('src.objects.Event')
 fNote = { sort = function() ChartService:sortNotes() end }
 fEvent = { sort = function() ChartService:sortEvents() end }
-redo = { writeRevoke = function() end }
+redo = { writeRevoke = function() end, clear = function() end }
 PluginManager = { emit = function() end }
 sidebar = { to = function() end }
 messageBox = { add = function() end }

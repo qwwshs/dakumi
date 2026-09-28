@@ -264,6 +264,8 @@ function ctrl:getPasteItems(flip, all)
             local center = 2 * (ChartService:getPreferenceField('x_offset') + ChartService:getPreferenceField('event_scale') / 2)
             isevent:setFrom(center - isevent:getFrom())
             isevent:setTo(center - isevent:getTo())
+        elseif flip and isevent:getType() == 'event_group' then
+            isevent:setFlipHorizontally(1 - isevent:getFlipHorizontally())
         end
     end
 
@@ -378,12 +380,14 @@ function ctrl:draw(drawInTabs)
                         break
                     end
                 end
-                if lane_k then
+                if lane_k or e:getType() == 'event_group' then
                     local y = CoordinateService:toY(e:getBeat())
                     local y2 = CoordinateService:toY(e:getBeat2())
-                    local x_pos = tabs:windowX(ti) + play.layout.edit.interval * (lane_k - 1)
+                    local x_pos = tabs:windowX(ti) + play.layout.edit.interval *
+                        (e:getType() == 'event_group' and 1 or lane_k - 1)
+                    local width = e:getType() == 'event_group' and play.layout.edit.interval * 4 or note_w
                     if math.intersect(y, y2, 0 - note_h, WINDOW.h + note_h) then
-                        love.graphics.rectangle("fill", x_pos, y2, note_w, y - y2)
+                        love.graphics.rectangle('fill', x_pos, y2, width, y - y2)
                     end
                 end
             end
@@ -396,7 +400,8 @@ function ctrl:draw(drawInTabs)
             local x_pos = trackSequence:getRange(e:getType())
             if e:getTrack() == track.track then
                 if math.intersect(y, y2, 0 - note_h, WINDOW.h + note_h) then
-                    love.graphics.rectangle("fill", x_pos, y2, note_w, y - y2)
+                    local width = e:getType() == 'event_group' and play.layout.edit.interval * 4 or note_w
+                    love.graphics.rectangle('fill', x_pos, y2, width, y - y2)
                 end
             end
         end
@@ -496,7 +501,11 @@ function ctrl:drawPastePreview()
                         local r = tabs.layout.region
                         love.graphics.setScissor(tabs:windowX(items.tabidx_event[i]), r.y, tabs.layout.tabW, r.h)
                     end
-                    local lx = x + interval * ((trackSequence[e:getType()] or trackSequence.note) - 1)
+                    local lx = x + interval * ((trackSequence[e:getType()] or trackSequence.x) - 1)
+                    if e:getType() == 'event_group' then
+                        love.graphics.rectangle('fill', lx, y2, interval * 4, y - y2)
+                        love.graphics.printf(e:getEventGroup(), lx, y2, interval * 4, 'center')
+                    else
                     NoteSkin.draw('hold_head', img_hold, lx, y - note_h, note_w, note_h)
                     love.graphics.printf(e:getFrom(), lx, y - note_h, interval, 'center')
                     local body_h = y - y2 - note_h * 2
@@ -505,6 +514,7 @@ function ctrl:drawPastePreview()
                     end
                     NoteSkin.draw('hold_tail', img_tail, lx, y2, note_w, note_h)
                     love.graphics.printf(e:getTo(), lx, y2, interval, 'center')
+                    end
                 end
             end
         end
@@ -708,7 +718,7 @@ local function selectInTabs(selx1, selx2, min_y_beat, max_y_beat)
                             local isbeat = e:getBeatValue()
                             local isbeat2 = e:getBeat2Value()
                             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and istrack == e:getTrack() and
-                                e:getType() == lane then
+                                (e:getType() == lane or e:getType() == 'event_group') then
                                 ctrl:copy_add(e, 'event', istrack, ti)
                             end
                             if e:getBeatValue() > max_y_beat then break end
@@ -842,13 +852,41 @@ local function handlePaste()
     end
 
     sidebar:to("nil")
+    local includeEvents = ctrl.copy_tab.pos ~= 'play' or all
+    if includeEvents then
+        local ignored = {}
+        if ctrl.copy_tab.type ~= 'copy' then
+            for _, original in ipairs(ctrl.copy_tab.event) do ignored[original] = true end
+        end
+        for i, candidate in ipairs(copy_tab2.event) do
+            if not ChartService:canPlaceEvent(candidate, ignored) then
+                messageBox:add('illegal operation')
+                return
+            end
+            for j = 1, i - 1 do
+                local other = copy_tab2.event[j]
+                if candidate:getTrack() == other:getTrack() and
+                    (candidate:getType() == 'event_group' or other:getType() == 'event_group') and
+                    candidate:getBeatValue() < other:getBeat2Value() and
+                    candidate:getBeat2Value() > other:getBeatValue() then
+                    messageBox:add('illegal operation')
+                    return
+                end
+            end
+        end
+    end
     ChartService:push()
+
+    -- 移动时先把旧事件加入待删除表，后续冲突检查才不会与它自身相撞。
+    if ctrl.copy_tab.type ~= 'copy' and includeEvents then
+        for _, original in ipairs(ctrl.copy_tab.event) do ChartService:delete(original) end
+    end
 
     -- 写入谱面
     for i = 1, #copy_tab2.note do
         ChartService:add(copy_tab2.note[i]:copy())
     end
-    if ctrl.copy_tab.pos ~= 'play' or all then
+    if includeEvents then
         for i = 1, #copy_tab2.event do
             ChartService:add(copy_tab2.event[i]:copy())
         end
@@ -863,11 +901,7 @@ local function handlePaste()
     for _, note in ipairs(ctrl.copy_tab.note) do
         ChartService:delete(note)
     end
-    if ctrl.copy_tab.pos ~= 'play' or all then
-        for _, event in ipairs(ctrl.copy_tab.event) do
-            ChartService:delete(event)
-        end
-    end
+    -- event 原件已在添加前加入待删除表。
     ChartService:pop(actionKey)
 end
 

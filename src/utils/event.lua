@@ -56,10 +56,100 @@ function event:getTrans(isevent, t)
     if isevent:getTransType() == 'bezier' then
         return bezier(0, 1, 0, 1, isevent:getTransData(), t)
     elseif isevent:getTransType() == 'easings' then
-        return easings[isevent:getEasings()](t)
+        local ease = easings[isevent:getEasings()]
+        return ease and ease(t) or t
     else
-        return 1
+        return t
     end
+end
+
+local function innerTransition(inner, progress)
+    progress = math.min(math.max(progress, 0), 1)
+    local trans = inner.trans or {}
+    if trans.type == 'bezier' and type(trans.trans) == 'table' then
+        return bezier(0, 1, 0, 1, trans.trans, progress) or progress
+    end
+    local ease = trans.type == 'easings' and easings[trans.easings]
+    return ease and ease(progress) or progress
+end
+
+local cachedGroups, cachedRevision = {}, -1
+local function getCachedGroup(name)
+    local revision = ChartService:getEventGroupsRevision()
+    if revision ~= cachedRevision then
+        cachedGroups, cachedRevision = {}, revision
+    end
+    if cachedGroups[name] == nil then
+        cachedGroups[name] = ChartService:getEventGroup(name) or false
+    end
+    return cachedGroups[name] or nil
+end
+
+local function usableInner(inner)
+    if type(inner) ~= 'table' or not table.find(event_property_type, inner.type) or
+        type(inner.beat) ~= 'table' or type(inner.beat2) ~= 'table' or
+        type(inner.from) ~= 'number' or type(inner.to) ~= 'number' then return false end
+    if inner.from ~= inner.from or inner.to ~= inner.to or
+        math.abs(inner.from) == math.huge or math.abs(inner.to) == math.huge then return false end
+    for _, value in ipairs({inner.beat, inner.beat2}) do
+        if type(value[1]) ~= 'number' or type(value[2]) ~= 'number' or
+            type(value[3]) ~= 'number' or value[3] <= 0 then return false end
+        for i = 1, 3 do
+            if value[i] ~= value[i] or math.abs(value[i]) == math.huge then return false end
+        end
+    end
+    return beat:get(inner.beat2) > beat:get(inner.beat)
+end
+
+-- 组内时间按最早起点、最晚终点归一化；各属性沿用普通事件的插值与保持规则。
+local function groupValues(instance, atBeat)
+    local startBeat, endBeat = instance:getBeatValue(), instance:getBeat2Value()
+    local progress = math.min(math.max((atBeat - startBeat) / (endBeat - startBeat), 0), 1)
+    local groupData = getCachedGroup(instance:getEventGroup())
+    if not groupData or type(groupData.event) ~= 'table' or #groupData.event == 0 then
+        return {x = instance:getFrom() + (instance:getTo() - instance:getFrom()) * progress}
+    end
+    local groupStart, groupEnd
+    for _, inner in ipairs(groupData.event) do
+        if usableInner(inner) then
+            local first, last = beat:get(inner.beat), beat:get(inner.beat2)
+            groupStart = groupStart and math.min(groupStart, first) or first
+            groupEnd = groupEnd and math.max(groupEnd, last) or last
+        end
+    end
+    if not groupStart or not groupEnd or groupEnd <= groupStart then
+        return {x = instance:getFrom() + (instance:getTo() - instance:getFrom()) * progress}
+    end
+    if instance:getFlipVertically() == 1 then progress = 1 - progress end
+    local innerBeat = groupStart + progress * (groupEnd - groupStart)
+    local selected = {}
+    for _, inner in ipairs(groupData.event) do
+        if usableInner(inner) then
+            local first = beat:get(inner.beat)
+            if first <= innerBeat and (not selected[inner.type] or
+                first >= beat:get(selected[inner.type].beat)) then
+                selected[inner.type] = inner
+            end
+        end
+    end
+    local result = {}
+    local scale = ChartService:getPreferenceField('event_scale') or 100
+    if scale == 0 then scale = 100 end
+    local offset = ChartService:getPreferenceField('x_offset') or 0
+    for kind, inner in pairs(selected) do
+        local first, last = beat:get(inner.beat), beat:get(inner.beat2)
+        local fraction = innerBeat >= last and 1 or (innerBeat - first) / (last - first)
+        local value = inner.from + (inner.to - inner.from) * innerTransition(inner, fraction)
+        local normalized = (value - (kind == 'w' and 0 or offset)) / scale
+        local target = kind
+        if instance:getFlipHorizontally() == 1 and kind ~= 'w' then
+            normalized = 1 - normalized
+            if kind == 'lpos' then target = 'rpos'
+            elseif kind == 'rpos' then target = 'lpos' end
+        end
+        result[target] = instance:getFrom() + (instance:getTo() - instance:getFrom()) * normalized
+    end
+    return result
 end
 
 --- 在事件列表中查找与指定区间重叠的事件
@@ -79,7 +169,8 @@ local function findEventInRange(eventType, pos, trackId)
         local isevent = ChartService:getEvent(i)
         local beat1 = isevent:getBeatValue()
         local beat2 = isevent:getBeat2Value() or beat1
-        if isevent:getType() == eventType and isevent:getTrack() == trackId and
+        if (isevent:getType() == eventType or isevent:getType() == 'event_group') and
+            isevent:getTrack() == trackId and
             math.intersect(beat1, beat2, event_beat_down, event_beat_up) then
             return i, isevent
         end
@@ -231,6 +322,25 @@ function event:get(istrack, isbeat, original, parent_tab, boundary_tab)
         now.rpos = getValueFromChart(istrack, "rpos", isbeat)
     end
 
+    local groupResults = {}
+    local count = ChartService:getTrackEventCount(istrack, 'event_group')
+    for i = 1, count do
+        local instance = ChartService:getTrackEvent(istrack, 'event_group', i)
+        local first, last = instance:getBeatValue(), instance:getBeat2Value()
+        if first <= isbeat and last > first then
+            for kind, value in pairs(groupValues(instance, isbeat)) do
+                groupResults[kind] = {value, beat = math.min(isbeat, last), type = kind,
+                    active = isbeat < last}
+            end
+        end
+    end
+    for _, kind in ipairs(event_property_type) do
+        local fromGroup = groupResults[kind]
+        if fromGroup and (fromGroup.active or fromGroup.beat > now[kind].beat) then
+            now[kind] = fromGroup
+        end
+    end
+
     -- 合并四种类型的值为 x, w
     local return_x, return_w = mergeEventValues(now)
 
@@ -337,7 +447,7 @@ end
 -- @tparam number|nil trackId 指定轨道（默认 track.track）
 -- @treturn number|nil 事件索引
 function event:click(eventType, pos, trackId)
-    sidebar:to("nil")
+    sidebar:to(ChartService:isEditingEventGroup() and 'event groups' or 'nil')
     local idx, foundEvent = findEventInRange(eventType, pos, trackId)
     if idx then
         sidebar.displayed_content = "event" .. idx
@@ -352,10 +462,10 @@ end
 -- @tparam number pos 屏幕 Y 坐标
 -- @tparam number|nil trackId 指定轨道（默认 track.track）
 function event:delete(eventType, pos, trackId)
-    sidebar:to("nil")
+    sidebar:to(ChartService:isEditingEventGroup() and 'event groups' or 'nil')
     local _, foundEvent = findEventInRange(eventType, pos, trackId)
     if foundEvent then
-        ChartService:delete(foundEvent, 'history.delete_' .. eventType .. '_event')
+        ChartService:delete(foundEvent, 'history.delete_' .. foundEvent:getType() .. '_event')
     end
 end
 
@@ -365,9 +475,13 @@ end
 -- @tparam number|nil trackId 指定轨道（默认 track.track）
 -- @treturn boolean|nil 是否放置成功
 function event:place(eventType, pos, trackId)
-    if not table.find(trackSequence, eventType) or eventType == 'note' then
+    if not table.find(event_type, eventType) then
         log('event type is note')
         return
+    end
+    if self.hold_type == 1 and self.local_event:getType() ~= eventType and
+        (self.local_event:getType() == 'event_group' or eventType == 'event_group') then
+        return false
     end
 
     local event_beat = beat:toNearby(CoordinateService:yToBeat(pos))
@@ -378,6 +492,13 @@ function event:place(eventType, pos, trackId)
         event.local_event:setType(eventType)
         event.local_event:setTrack(trackId or track.track)
         event.local_event:setBeat({ event_beat[1], event_beat[2], event_beat[3] })
+        if eventType == 'event_group' then
+            event.local_event:setEventGroup(self.selectedGroupName or '')
+            local offset = ChartService:getPreferenceField('x_offset') or 0
+            local scale = ChartService:getPreferenceField('event_scale') or 100
+            event.local_event:setFrom(offset)
+            event.local_event:setTo(offset + scale)
+        end
         event.local_event:setEasings(transIndex.easings)
         event.local_event:setTransData(table.copy(event.bezier[transIndex.bezier]) or { 0, 0, 1, 1 })
 
@@ -388,6 +509,17 @@ function event:place(eventType, pos, trackId)
         end
 
         event.hold_type = 1
+
+        -- 起点位于已有事件组内部时立即拒绝。
+        for i = 1, ChartService:getTrackEventCount(event.local_event:getTrack(), 'event_group') do
+            local existing = ChartService:getTrackEvent(event.local_event:getTrack(), 'event_group', i)
+            if existing:getBeatValue() <= event.local_event:getBeatValue() and
+                event.local_event:getBeatValue() < existing:getBeat2Value() then
+                messageBox:add('illegal operation')
+                self:cleanUp()
+                return false
+            end
+        end
 
         -- 将初始值设为当前位置的事件值
         local x, w = event:get(event.local_event:getTrack(), event.local_event:getBeatValue(), true)
@@ -413,9 +545,18 @@ function event:place(eventType, pos, trackId)
             messageBox:add("illegal operation")
             event:cleanUp()
             return false
+        elseif not ChartService:canPlaceEvent(event.local_event) then
+            messageBox:add('illegal operation')
+            event:cleanUp()
+            return false
         else
             -- 合法操作，添加到谱面
-            ChartService:add(event.local_event, 'history.add_' .. eventType .. '_event')
+            local ok = ChartService:add(event.local_event, 'history.add_' .. eventType .. '_event')
+            if ok == false then
+                messageBox:add('illegal operation')
+                event:cleanUp()
+                return false
+            end
             event.hold_type = 2
         end
     end

@@ -232,6 +232,12 @@ local previous_frame_beat = 0           -- 上一帧的节拍
 local previous_frame_starting_point = 1 -- 上一帧的遍历起点（note）
 local previous_frame_starting_point_event = 1 -- 上一帧的event遍历起点
 
+function demoInEdit:resetTraversal()
+    previous_frame_beat = 0
+    previous_frame_starting_point = 1
+    previous_frame_starting_point_event = 1
+end
+
 function demoInEdit:draw(pos, istrack)
     if self.tabbed then
         -- 标签页窗口：内容、裁剪与不可编辑遮罩由实例绘制；顶部数值条由 tabs 用 Nuklear 绘制。
@@ -398,20 +404,26 @@ function demoInEdit:drawEditContent(pos, istrack)
             local x_pos = trackleft[e:getType()]
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if previous_frame_starting_point_event == 0 then previous_frame_starting_point_event = i end
-                NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
-                love.graphics.printf(e:getFrom(), x_pos, y - event_h, interval, 'center')
-                NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
-
-                NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
-                love.graphics.printf(e:getTo(), x_pos, y2, interval, 'center')
-                -- beizer曲线
-                for k = 1, 10 do
-                    local nowx = (e:getFrom() - x_offset) / event_scale *
-                        interval + x_pos +
-                        fEvent:getTrans(e, k / 10) *
-                        ((e:getTo() - e:getFrom()) / event_scale * interval)
-                    local nowy = y + (y2 - y) * k / 10
-                    love.graphics.rectangle("fill", nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)                --减去一个 (y2 - y)/10是为了与头对齐
+                if e:getType() == 'event_group' then
+                    love.graphics.setColor(play.colors.cyan_fade)
+                    love.graphics.rectangle('fill', trackleft.x, y2, interval * 4, y - y2)
+                    love.graphics.setColor(1, 1, 1)
+                    love.graphics.rectangle('line', trackleft.x, y2, interval * 4, y - y2)
+                    love.graphics.printf(e:getEventGroup() ~= '' and e:getEventGroup() or
+                        i18n:get('event_group.none'), trackleft.x, y2, interval * 4, 'center')
+                else
+                    NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
+                    love.graphics.printf(e:getFrom(), x_pos, y - event_h, interval, 'center')
+                    NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
+                    NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
+                    love.graphics.printf(e:getTo(), x_pos, y2, interval, 'center')
+                    for k = 1, 10 do
+                        local nowx = (e:getFrom() - x_offset) / event_scale * interval + x_pos +
+                            fEvent:getTrans(e, k / 10) *
+                            ((e:getTo() - e:getFrom()) / event_scale * interval)
+                        local nowy = y + (y2 - y) * k / 10
+                        love.graphics.rectangle('fill', nowx, nowy - (y2 - y) / 10, 5, (y2 - y) / 10)
+                    end
                 end
             elseif y < -note_h then
                 break
@@ -428,9 +440,14 @@ function demoInEdit:drawEditContent(pos, istrack)
         local x_pos = trackleft[thelocal_event:getType()]
 
         if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
-            NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
-            NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
-            NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
+            if thelocal_event:getType() == 'event_group' then
+                love.graphics.setColor(play.colors.cyan_fade)
+                love.graphics.rectangle('fill', trackleft.x, y2, interval * 4, y - y2)
+            else
+                NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
+                NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
+                NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
+            end
         end
     end
 
@@ -441,7 +458,9 @@ function demoInEdit:drawEditContent(pos, istrack)
         local y = CoordinateService:toY(se:getBeat())
         local y2 = CoordinateService:toY(se:getBeat2())
         love.graphics.setColor(play.colors.white_half)
-        love.graphics.rectangle("fill", trackleft[se:getType()], y2, interval, y - y2)
+        local selectedX = se:getType() == 'event_group' and trackleft.x or trackleft[se:getType()]
+        local selectedW = se:getType() == 'event_group' and interval * 4 or interval
+        love.graphics.rectangle('fill', selectedX, y2, selectedW, y - y2)
     end
 
 end

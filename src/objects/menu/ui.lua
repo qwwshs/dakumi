@@ -25,7 +25,10 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
 
     menu('toedit')
 
-    ChartService:load() --初始化（构建 extra_chart 索引）
+    if not ChartService:load() then
+        messageBox:add('event_group.invalid')
+        return
+    end --初始化（构建 extra_chart 索引）
     time.nowtime = 0
     beat.nowbeat = 0
     music_data = love.sound.newSoundData(menu.musicPath)

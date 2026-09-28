@@ -18,6 +18,9 @@ function Gnil:Nui()
         messageBox:add("settings")
         sidebar:to("settings")
     end
+    if Nui:button(i18n:get('event_group.title')) then
+        sidebar:to('event groups')
+    end
     -- 操作历史、均衡器、Takana 等入口由插件在此处按层号绘制。
     self('Nui')
 end

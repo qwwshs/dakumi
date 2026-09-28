@@ -26,6 +26,7 @@ meta_key = {
     placeWipe = {'w'},                -- 放置 wipe（滑条）
     placeHold = {'e'},                -- 放置 hold（长条）
     placeEvent = {'e'},               -- 放置 event
+    placeEventGroup = {'t'},          -- 放置事件组引用
     delete = {'d'},                   -- 删除 note 或 event
     demo = {'tab'},                   -- 预览或关闭预览
     play = {'space'},                 -- 播放或暂停
@@ -69,6 +70,7 @@ meta_chart = {
         },
         note = {},          -- 音符列表
         event = {},         -- 事件列表
+        event_groups = {},  -- 事件组：名称 -> {name, event={...}}
         effect = {},        -- 效果列表
         offset = 0,         -- 音频偏移量（毫秒）
         info = {            -- 谱面信息
@@ -94,9 +96,12 @@ meta_event = {
         beat = { 0, 0, 1 },    -- 起始 beat {整数, 分子, 分母}
         beat2 = { 0, 0, 1 },   -- 结束 beat
         track = 1,             -- 所属轨道 ID
-        type = 'x',            -- 事件类型: "x", "w", "lpos", "rpos"
+        type = 'x',            -- 事件类型: "x", "w", "lpos", "rpos", "event_group"
         from = 1,              -- 起始值
         to = 1,                -- 结束值
+        event_group = '',      -- 引用的事件组名称
+        flip_horizontally = 0, -- 水平翻转（w 不翻转）
+        flip_vertically = 0,   -- 时间反向读取
         trans = {              -- 过渡参数
             trans = {0,0,1,1}, -- 贝塞尔控制点
             type = 'bezier',   -- 过渡类型: "bezier" 或 "easings"
@@ -153,11 +158,13 @@ meta_extra_chart_track = {
     w = {},      -- w 类型事件列表
     lpos = {},   -- lpos 类型事件列表
     rpos = {},   -- rpos 类型事件列表
+    event_group = {}, -- 事件组引用列表
     note = {}    -- 音符列表
 }
 
 --- 事件类型列表（有序）
-event_type = {'x','w','lpos','rpos'}
+event_property_type = {'x','w','lpos','rpos'}
+event_type = {'x','w','lpos','rpos','event_group'}
 
 --- edit 区域每个轨道类型的顺序和位置映射
 -- 用于确定鼠标点击所在的轨道类型
@@ -175,6 +182,10 @@ trackSequence = {
 -- @treturn number x1 起始 x 坐标
 -- @treturn number x2 结束 x 坐标
 function trackSequence:getRange(istype)
+    if istype == 'event_group' then
+        local x = play.layout.edit.x + play.layout.edit.interval
+        return x, x + play.layout.edit.interval * 4
+    end
     if not self[istype] then
         love.window.showMessageBox("debug", "getRange:"..istype, "info")
     end

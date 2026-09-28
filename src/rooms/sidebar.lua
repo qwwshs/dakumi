@@ -1,4 +1,5 @@
 local sidebar = group:new('sidebar')
+local ChartService = require('src.services.chartService')
 sidebar.layout = require 'config.layouts.sidebar'
 
 sidebar.displayed_content = "nil" --现在所在的界面
@@ -6,6 +7,9 @@ sidebar.incoming = {}             --传入的参数
 
 
 function sidebar:to(ty, ...)      -- 更变房间
+    if ty == 'nil' and ChartService:isEditingEventGroup() then
+        ty = 'event groups'
+    end
     local g_l = self:getGroup(self.displayed_content)
     
     if g_l and type(g_l.leave) == 'function' then
@@ -45,13 +49,15 @@ function sidebar:update(dt)
         if self.displayed_content ~= 'nil' then
             if Nui:button(i18n:get("break")) or (Nui:windowIsHovered() and iskeyboard['escape'] ) then
                 messageBox:add("break")
-                if g.nowBreak then g:nowBreak() end
-                if g and g.breakroom then
-                    sidebar:to(g.breakroom)
-                else
-                    sidebar:to("nil")
+                local canLeave = not g.nowBreak or g:nowBreak() ~= false
+                if canLeave then
+                    if g and g.breakroom then
+                        sidebar:to(g.breakroom)
+                    else
+                        sidebar:to("nil")
+                    end
+                    g = self:getGroup(self.displayed_content)
                 end
-                g = self:getGroup(self.displayed_content)
             end
         end
 
@@ -101,4 +107,5 @@ sidebar:addGroup(require 'src.objects.sidebar.chart_info')
 sidebar:addGroup(require 'src.objects.sidebar.event')
 sidebar:addGroup(require 'src.objects.sidebar.note')
 sidebar:addGroup(require 'src.objects.sidebar.events')
+sidebar:addGroup(require 'src.objects.sidebar.event_groups')
 return sidebar

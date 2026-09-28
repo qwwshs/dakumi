@@ -1,10 +1,12 @@
 local eventEdit = object:new('eventEdit')
+local ChartService = require('src.services.chartService')
 eventEdit.layout = require 'config.layouts.play'.edit
 function eventEdit:keypressed(key)
     if mouse.y < self.layout.y then
         return
     end
     local isEdit = input('placeEvent')
+    local isGroup = not ChartService:isEditingEventGroup() and input('placeEventGroup')
     local isDelete = input('delete')
 
     if tabs and not tabs:isSingle() then
@@ -13,8 +15,8 @@ function eventEdit:keypressed(key)
         local tab = tabs.list[ti]
         if not tab.edit[lane] then return end
         local istrack = tabs:getTabTrack(tab)
-        if isEdit then
-            fEvent:place(lane, mouse.y, istrack)
+        if isEdit or isGroup then
+            fEvent:place(isGroup and 'event_group' or lane, mouse.y, istrack)
             messageBox:add("event " .. lane .. " place")
         elseif isDelete then
             fEvent:delete(lane, mouse.y, istrack)
@@ -23,8 +25,8 @@ function eventEdit:keypressed(key)
         return
     end
 
-    if isEdit and trackSequence:getType(mouse.x) ~= 'note' and table.find(trackSequence,trackSequence:getType(mouse.x)) then
-       fEvent:place(trackSequence:getType(mouse.x),mouse.y)
+    if (isEdit or isGroup) and trackSequence:getType(mouse.x) ~= 'note' and table.find(trackSequence,trackSequence:getType(mouse.x)) then
+       fEvent:place(isGroup and 'event_group' or trackSequence:getType(mouse.x),mouse.y)
         messageBox:add("event " .. trackSequence:getType(mouse.x) .. " place")
     elseif isDelete and trackSequence:getType(mouse.x) then -- x delete
             fEvent:delete(trackSequence:getType(mouse.x),mouse.y)

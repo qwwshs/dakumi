@@ -22,7 +22,7 @@ for i, name in ipairs({'operation history', 'equalizer', 'takana'}) do
 end
 home:Nui()
 assert(table.concat(labels, ',') ==
-    'chart info,preference,track,settings,operation history,equalizer,takana',
+    'chart info,preference,track,settings,event_group.title,operation history,equalizer,takana',
     'track should be above settings and plugin entries')
 
 local scrollY, setCalls = 0, 0

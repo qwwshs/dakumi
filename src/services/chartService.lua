@@ -23,6 +23,8 @@ local Event = require("src.objects.Event")
 
 --- 当前谱面数据（由 setChart / load 填充默认字段）
 local chart = {}
+local eventGroupsRevision = 0
+local activeGroupEdit
 
 --- 谱面索引：{ track = { [trackId] = { x={}, w={}, lpos={}, rpos={}, note={} } } }
 local extra_chart = { track = {} }
@@ -33,6 +35,7 @@ local chart_push = {
     add = {event = {}, note = {}},  -- 待添加的元素
     del = {event = {}, note = {}},  -- 待删除的元素
 }
+local validGroupName
 
 -- ============================================================
 -- 内部辅助函数
@@ -121,8 +124,16 @@ end
 -- 深拷贝数据并补齐默认字段，同时清空旧索引（由 load() 重建）
 -- @tparam table data 谱面数据表
 function ChartService:setChart(data)
+    if activeGroupEdit then
+        local groups = sidebar and sidebar:getGroup('event groups')
+        local ok
+        if groups then ok = groups:exitGroup(true) else ok = self:finishEventGroupEdit() end
+        if not ok then return false end
+    end
     chart = table.copy(data or {})
     table.fill(chart, meta_chart.__index)
+    if type(chart.event_groups) ~= 'table' then chart.event_groups = {} end
+    eventGroupsRevision = eventGroupsRevision + 1
     extra_chart = { track = {} }
     chart_push.now = false
     chart_push.add = {event = {}, note = {}}
@@ -153,6 +164,10 @@ function ChartService:update()
     -- 新格式: trans = {trans = {0, 0, 1, 1}, type = "bezier", easings = 1}
     for i = 1, #chart.event do
         local trans = chart.event[i].trans
+        if type(trans) ~= 'table' then
+            trans = table.copy(meta_event.__index.trans)
+            chart.event[i].trans = trans
+        end
         if #trans > 0 then
             local trans_tab = {}
             for j = 1, #trans do
@@ -165,6 +180,29 @@ function ChartService:update()
         end
         trans.type = trans.type or 'bezier'
         trans.easings = trans.easings or 1
+    end
+
+    -- 组内事件使用与谱面事件相同的过渡数据格式。
+    for name, groupData in pairs(chart.event_groups) do
+        if not validGroupName(name) or type(groupData) ~= 'table' then
+            chart.event_groups[name] = nil
+        else
+            groupData.name = name
+            if type(groupData.event) ~= 'table' then groupData.event = {} end
+            for index, inner in ipairs(groupData.event) do
+                if type(inner) ~= 'table' then
+                    groupData.event[index] = nil
+                else
+                    if type(inner.trans) ~= 'table' then
+                        inner.trans = table.copy(meta_event.__index.trans)
+                    elseif #inner.trans > 0 then
+                        inner.trans = {trans = table.copy(inner.trans), type = 'bezier', easings = 1}
+                    end
+                    inner.trans.type = inner.trans.type or 'bezier'
+                    inner.trans.easings = inner.trans.easings or 1
+                end
+            end
+        end
     end
 
     -- 为 hold 类型 note 填充 note_head 和 wipe_head 字段
@@ -189,6 +227,12 @@ end
 --- 加载谱面数据（构建 extra_chart 索引）
 -- 先更新数据格式并保存，再转换为 Note/Event 对象，最后构建索引
 function ChartService:load()
+    if activeGroupEdit then
+        local groups = sidebar and sidebar:getGroup('event groups')
+        local ok
+        if groups then ok = groups:exitGroup(true) else ok = self:finishEventGroupEdit() end
+        if not ok then return false end
+    end
     self:update()
     save(chart, 'chart.json')
 
@@ -220,18 +264,248 @@ function ChartService:load()
         local n = chart.note[i]
         addNoteToIndex(n)
     end
+    return true
 end
 
 --- 序列化保存谱面（内部把私有 chart 交给 save 处理）
 -- @tparam string name 保存文件名（"chart.json" / "chart.json.auto" / 其它路径）
 function ChartService:save(name)
-    save(chart, name)
+    if activeGroupEdit then
+        local ok = self:syncEventGroupEdit()
+        if not ok then return false end
+    end
+    save(activeGroupEdit and activeGroupEdit.mainChart or chart, name)
+    return true
 end
 
 --- 将谱面编码为 JSON 字符串（拖入旧格式谱面时重写文件用）
 -- @treturn string JSON 字符串
 function ChartService:encodeJson()
-    return dkjson.encode(chart)
+    if activeGroupEdit then
+        local ok = self:syncEventGroupEdit()
+        if not ok then return nil end
+    end
+    return dkjson.encode(activeGroupEdit and activeGroupEdit.mainChart or chart)
+end
+
+-- 事件组名称直接作为 JSON 字典键使用，不参与代码执行。
+validGroupName = function(name)
+    return type(name) == 'string' and #name > 0 and #name <= 128 and
+        not name:match('^%s*$') and not name:find('[%c/\\]') and
+        name ~= '__index' and name ~= '__newindex' and name ~= '__metatable'
+end
+
+local function finiteNumber(value)
+    return type(value) == 'number' and value == value and
+        value ~= math.huge and value ~= -math.huge
+end
+
+local function validBeat(value)
+    return type(value) == 'table' and finiteNumber(value[1]) and
+        finiteNumber(value[2]) and finiteNumber(value[3]) and value[3] > 0 and
+        value[1] % 1 == 0 and value[2] % 1 == 0 and value[3] % 1 == 0
+end
+
+local function validInnerEvent(value)
+    if type(value) ~= 'table' or not table.find(event_property_type, value.type) or
+        not validBeat(value.beat) or not validBeat(value.beat2) or
+        beat:get(value.beat2) <= beat:get(value.beat) or
+        not finiteNumber(value.from) or not finiteNumber(value.to) then return false end
+    local trans = value.trans
+    if type(trans) ~= 'table' or (trans.type ~= 'bezier' and trans.type ~= 'easings') then return false end
+    if trans.type == 'bezier' then
+        if type(trans.trans) ~= 'table' or #trans.trans ~= 4 then return false end
+        for _, point in ipairs(trans.trans) do if not finiteNumber(point) then return false end end
+    elseif not finiteNumber(trans.easings) or trans.easings < 1 or
+        trans.easings > #easings or trans.easings % 1 ~= 0 then return false end
+    return true
+end
+
+local function groupChart()
+    return activeGroupEdit and activeGroupEdit.mainChart or chart
+end
+
+function ChartService:isEditingEventGroup()
+    return activeGroupEdit and activeGroupEdit.name or nil
+end
+
+-- 编辑时临时切换到只含组内事件的一条轨道。原谱面与索引原样保留。
+function ChartService:beginEventGroupEdit(name)
+    if activeGroupEdit or chart_push.now then return false end
+    local definition = chart.event_groups and chart.event_groups[name]
+    if not definition then return false end
+    local events = {}
+    for _, data in ipairs(definition.event or {}) do
+        if not validInnerEvent(data) then return false end
+        local copy = table.copy(data)
+        copy.track = 1
+        events[#events + 1] = Event.new(copy)
+    end
+    activeGroupEdit = {
+        name = name, mainChart = chart, mainIndex = extra_chart,
+        mainPush = chart_push, before = table.copy(chart.event_groups),
+        undo = redo and redo.revoke, redo = redo and redo.redo,
+    }
+    local editTrack = table.copy(meta_track.__index)
+    editTrack.w0thenShow = 1
+    chart = {
+        event = events, note = {}, effect = {}, event_groups = {},
+        bpm_list = table.copy(activeGroupEdit.mainChart.bpm_list),
+        preference = table.copy(activeGroupEdit.mainChart.preference),
+        info = table.copy(activeGroupEdit.mainChart.info),
+        offset = activeGroupEdit.mainChart.offset,
+        track = {['1'] = editTrack},
+    }
+    extra_chart = {track = {}}
+    for _, event in ipairs(events) do addEventToIndex(event) end
+    self:sortEvents()
+    chart_push = {now = false, add = {event = {}, note = {}}, del = {event = {}, note = {}}}
+    if redo then redo.revoke, redo.redo = {}, {} end
+    eventGroupsRevision = eventGroupsRevision + 1
+    return true
+end
+
+-- 自动保存和手动保存都从当前编辑轨道同步到原谱面。
+function ChartService:syncEventGroupEdit()
+    local session = activeGroupEdit
+    if not session then return true end
+    if chart_push.now then return false end
+    local events = {}
+    for _, event in ipairs(chart.event) do
+        local value = event:toTable()
+        local data = {
+            type = value.type, beat = table.copy(value.beat), beat2 = table.copy(value.beat2),
+            from = value.from, to = value.to, trans = table.copy(value.trans),
+        }
+        if not validInnerEvent(data) then return false end
+        data.track = nil
+        events[#events + 1] = data
+    end
+    local definition = session.mainChart.event_groups[session.name]
+    if not definition then return false end
+    if not table.eq(definition.event, events) then
+        definition.event = events
+        eventGroupsRevision = eventGroupsRevision + 1
+    end
+    return true
+end
+
+function ChartService:finishEventGroupEdit()
+    local session = activeGroupEdit
+    if not session then return true end
+    local ok = self:syncEventGroupEdit()
+    if not ok then return false end
+    chart, extra_chart, chart_push = session.mainChart, session.mainIndex, session.mainPush
+    activeGroupEdit = nil
+    if redo then
+        redo.revoke, redo.redo = session.undo or {}, session.redo or {}
+        redo:writeRevoke({
+            add = {event = {}, note = {}}, del = {event = {}, note = {}},
+            groups_before = session.before, groups_after = table.copy(chart.event_groups),
+        }, nil, 'history.edit_event_group')
+    end
+    eventGroupsRevision = eventGroupsRevision + 1
+    return true
+end
+
+function ChartService:getEventGroupNames()
+    local names = {}
+    for name in pairs(groupChart().event_groups or {}) do names[#names + 1] = name end
+    table.sort(names)
+    return names
+end
+
+function ChartService:getEventGroup(name)
+    local groups = groupChart().event_groups
+    local value = groups and groups[name]
+    return type(value) == 'table' and table.copy(value) or nil
+end
+function ChartService:getEventGroupsRevision()
+    return eventGroupsRevision
+end
+
+-- 仅供撤销/重做恢复整份组定义，调用者不能取得内部表引用。
+function ChartService:copyEventGroups()
+    return table.copy(groupChart().event_groups or {})
+end
+function ChartService:setEventGroups(value)
+    if activeGroupEdit then return false end
+    chart.event_groups = table.copy(value or {})
+    eventGroupsRevision = eventGroupsRevision + 1
+end
+
+-- 一个操作提交一个组定义；改名时同步更新谱面中的所有引用。
+function ChartService:putEventGroup(name, value, oldName, actionKey)
+    if activeGroupEdit then return false, 'finish editing first' end
+    if not validGroupName(name) or type(value) ~= 'table' or type(value.event) ~= 'table' then
+        return false, 'invalid name or event list'
+    end
+    oldName = oldName or name
+    if oldName ~= name and chart.event_groups[name] then return false, 'name already exists' end
+    for _, inner in ipairs(value.event) do
+        if not validInnerEvent(inner) then return false, 'invalid event' end
+    end
+    local before = self:copyEventGroups()
+    local oldRefs, newRefs = {}, {}
+    if oldName ~= name then
+        for _, e in ipairs(chart.event) do
+            if e:getType() == 'event_group' and e:getEventGroup() == oldName then
+                oldRefs[#oldRefs + 1] = e:copy()
+                e:setEventGroup(name)
+                newRefs[#newRefs + 1] = e:copy()
+            end
+        end
+        chart.event_groups[oldName] = nil
+    end
+    chart.event_groups[name] = {name = name, event = table.copy(value.event)}
+    eventGroupsRevision = eventGroupsRevision + 1
+    if redo then
+        redo:writeRevoke({
+            add = {event = newRefs, note = {}}, del = {event = oldRefs, note = {}},
+            groups_before = before, groups_after = self:copyEventGroups(),
+        }, nil, actionKey or 'history.edit_event_group')
+    end
+    return true
+end
+
+function ChartService:deleteEventGroup(name)
+    if activeGroupEdit then return false end
+    if not chart.event_groups[name] then return false end
+    local before = self:copyEventGroups()
+    chart.event_groups[name] = nil
+    eventGroupsRevision = eventGroupsRevision + 1
+    if redo then
+        redo:writeRevoke({
+            add = {event = {}, note = {}}, del = {event = {}, note = {}},
+            groups_before = before, groups_after = self:copyEventGroups(),
+        }, nil, 'history.delete_event_group')
+    end
+    return true
+end
+
+-- 组引用独占当前轨道的时间段；普通事件只与组引用互斥。
+function ChartService:canPlaceEvent(candidate, ignored)
+    local kind = candidate:getType()
+    if activeGroupEdit and kind == 'event_group' then return false end
+    local from, to = candidate:getBeatValue(), candidate:getBeat2Value()
+    if not finiteNumber(from) or not finiteNumber(to) or to <= from then return false end
+    local function conflicts(existing)
+        if rawequal(existing, ignored) or (type(ignored) == 'table' and ignored[existing]) or
+            rawequal(existing, candidate) or
+            existing:getTrack() ~= candidate:getTrack() then return false end
+        for _, pending in ipairs(chart_push.del.event) do
+            if rawequal(existing, pending) then return false end
+        end
+        if kind ~= 'event_group' and existing:getType() ~= 'event_group' then return false end
+        return from < existing:getBeat2Value() and to > existing:getBeatValue()
+    end
+    for _, existing in ipairs(chart.event) do
+        if conflicts(existing) then return false end
+    end
+    for _, existing in ipairs(chart_push.add.event) do
+        if conflicts(existing) then return false end
+    end
+    return true
 end
 
 -- ============================================================
@@ -286,6 +560,7 @@ end
 --- 添加音符到谱面（自动同步索引）
 -- @tparam table note 音符数据
 function ChartService:addNote(note)
+    if activeGroupEdit then return false end
     table.insert(chart.note, note)
     addNoteToIndex(note)
 end
@@ -294,6 +569,7 @@ end
 -- @tparam Note note 音符对象
 -- @treturn boolean 是否删除成功
 function ChartService:deleteNote(note)
+    if activeGroupEdit then return false end
     local i = findItemIndex(chart.note, note)
     if not i then return false end
     local actual = chart.note[i]
@@ -328,12 +604,14 @@ function ChartService:add(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
     local isNote = isNoteType(typeName)
+    if activeGroupEdit and isNote then return false end
 
     if not isEvent and not isNote then
         return -- 未知类型，忽略
     end
 
     if isEvent then
+        if not self:canPlaceEvent(noteorevent) then return false, 'event group overlap' end
         if chart_push.now then
             table.insert(chart_push.add.event, noteorevent)
             return
@@ -368,6 +646,7 @@ function ChartService:delete(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
     local isNote = isNoteType(typeName)
+    if activeGroupEdit and isNote then return false end
 
     if not isEvent and not isNote then
         return -- 未知类型，忽略

@@ -63,6 +63,11 @@ end
 local previous_frame_beat = 0           -- 上一帧的节拍
 local previous_frame_starting_point = 1 -- 上一帧的遍历起点
 
+function demoPlay:resetTraversal()
+    previous_frame_beat = 0
+    previous_frame_starting_point = 1
+end
+
 function demoPlay:draw()
     local sw = self.sw
     local sh = self.sh

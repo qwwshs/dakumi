@@ -21,11 +21,16 @@ function alt:keypressed(key)
             sidebar:to("nil")
         end
         if is_event then
-            local isevent = ChartService:getEvent(note_or_event_index):copy()
+            local original = ChartService:getEvent(note_or_event_index)
+            local isevent = original:copy()
             isevent:setBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            if not ChartService:canPlaceEvent(isevent, original) then
+                messageBox:add('illegal operation')
+                return
+            end
             ChartService:push()
+            ChartService:delete(original)
             ChartService:add(isevent)
-            ChartService:delete(ChartService:getEvent(note_or_event_index))
             ChartService:pop('history.move_event_start')
             sidebar:to("nil")
         end
@@ -49,11 +54,16 @@ function alt:keypressed(key)
             if beat:get(beat:toNearby(CoordinateService:yToBeat(mouse.y))) <= ChartService:getEvent(note_or_event_index):getBeatValue() then
                 return
             end
-            local isevent = ChartService:getEvent(note_or_event_index):copy()
+            local original = ChartService:getEvent(note_or_event_index)
+            local isevent = original:copy()
             isevent:setBeat2(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            if not ChartService:canPlaceEvent(isevent, original) then
+                messageBox:add('illegal operation')
+                return
+            end
             ChartService:push()
+            ChartService:delete(original)
             ChartService:add(isevent)
-            ChartService:delete(ChartService:getEvent(note_or_event_index))
             ChartService:pop('history.move_event_end')
 
             sidebar:to("nil")
@@ -61,7 +71,8 @@ function alt:keypressed(key)
     end
     if input('cutEventOrHold') then --裁切
         log('cut')
-        if is_event and ChartService:getEvent(note_or_event_index) then
+        if is_event and ChartService:getEvent(note_or_event_index) and
+            ChartService:getEvent(note_or_event_index):getType() ~= 'event_group' then
             local isevent = ChartService:getEvent(note_or_event_index)
             local temp_event = isevent:copy() -- 临时event表
             local temp_event_int = {}--得到每个位置的event数值

@@ -1,4 +1,5 @@
 local track          = object:new('track')
+local ChartService = require('src.services.chartService')
 track.fence          = 10
 track.track          = 4
 track.type           = 'custom'
@@ -41,8 +42,7 @@ function track:Nui() --渲染
         Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text))
         if ui:imageButton(isImage.up) then
-            track.track = track.track + 1
-            self.useToTrack.value = tostring(track.track)
+            self:to('track', self.track + 1)
         end
         local active,changed = ui:edit('field', self.useToTrack)
         if active == 'active' then
@@ -52,8 +52,7 @@ function track:Nui() --渲染
             end
         end
         if ui:imageButton(isImage.down) then
-            track.track = math.max(track.track - 1, 1)
-            self.useToTrack.value = tostring(track.track)
+            self:to('track', math.max(self.track - 1, 1))
         end
 
         Nui:groupEnd()
@@ -83,7 +82,8 @@ end
 
 function track:update(dt)
     if tonumber(self.useToTrack.value) then
-        self.track = math.max(math.floor(tonumber(self.useToTrack.value)), 1)
+        local wanted = math.max(math.floor(tonumber(self.useToTrack.value)), 1)
+        if wanted ~= self.track then self:to('track', wanted) end
     end
     if tonumber(self.useToFence.value) then
         self.fence = math.max(math.floor(tonumber(self.useToFence.value)), 0)
@@ -92,6 +92,13 @@ end
 
 function track:to(ty, v)
     if ty == 'track' then
+        if v ~= self.track and ChartService:isEditingEventGroup() then
+            local groups = sidebar and sidebar:getGroup('event groups')
+            if not groups or not groups:exitGroup(false) then
+                self.useToTrack.value = tostring(self.track)
+                return false
+            end
+        end
         self.track = v
         self.useToTrack.value = tostring(v)
     elseif ty == 'fence' then

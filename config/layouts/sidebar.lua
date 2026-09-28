@@ -71,4 +71,5 @@ return {
             h = 400-20,
         }
     },
+    event_groups = {uiH = 24},
 }

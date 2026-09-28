@@ -78,6 +78,7 @@ function play:update(dt)
         end
     end
 
+    play.now_all_track_pos = {}
     local all_track = fTrack:track_get_all_track()
     for i = 1, #all_track do
         local x, w = fEvent:get(all_track[i], beat.nowbeat)
@@ -131,10 +132,9 @@ function play:draw()
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
     --event渲染 于demo侧
-    for _, eventType in pairs(event_type) do
+    for _, eventType in pairs(event_property_type) do
         love.graphics.setColor(self.colors.eventInDemo[eventType])
         if not ChartService:hasTrack(track.track) then
-            print(track.track)
             break
         end
         local eventCount = ChartService:getTrackEventCount(track.track, eventType)

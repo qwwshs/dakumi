@@ -171,7 +171,9 @@ function directEventEditing:update(dt)
             -- 拖动头
             local now_beat = beat:toNearby(CoordinateService:yToBeat(mouse.y))
             if beat:get(now_beat) < isevent:getBeat2Value() then
+                local oldBeat = isevent:getBeat()
                 isevent:setBeat(now_beat)
+                if not ChartService:canPlaceEvent(isevent, isevent) then isevent:setBeat(oldBeat) end
             end
             local now_from = fTrack:track_get_near_fence_x()
             isevent:setFrom(math.roundToPrecision(now_from, 1000))
@@ -180,7 +182,9 @@ function directEventEditing:update(dt)
             -- 拖动尾
             local now_beat = beat:toNearby(CoordinateService:yToBeat(mouse.y))
             if beat:get(now_beat) > isevent:getBeatValue() then
+                local oldBeat = isevent:getBeat2()
                 isevent:setBeat2(now_beat)
+                if not ChartService:canPlaceEvent(isevent, isevent) then isevent:setBeat2(oldBeat) end
             end
             local now_to = fTrack:track_get_near_fence_x()
             isevent:setTo(math.roundToPrecision(now_to, 1000))

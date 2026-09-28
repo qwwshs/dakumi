@@ -10,6 +10,10 @@ Gevent.tov = {value = '0'}
 Gevent.bezier_index = {value = 1}
 Gevent.bezier = {}
 Gevent.easings_index = {value = 1}
+Gevent.groupNameV = {value = ''}
+Gevent.groupChoice = {value = 1}
+Gevent.flipH = {value = false}
+Gevent.flipV = {value = false}
 local Incoming_event --传入的事件 
 local Incoming_event_before_arrival  --传入的事件 传入前
 local Incoming_event_index --传入的事件索引
@@ -41,6 +45,13 @@ function Gevent:to(event_index)
     Incoming_event_before_arrival = v:copy()
     self.fromv.value = tostring(v:getFrom())
     self.tov.value = tostring(v:getTo())
+    self.groupNameV.value = v:getEventGroup() or ''
+    self.groupChoice.value = 1
+    for index, name in ipairs(ChartService:getEventGroupNames()) do
+        if name == self.groupNameV.value then self.groupChoice.value = index + 1; break end
+    end
+    self.flipH.value = v:getFlipHorizontally() == 1
+    self.flipV.value = v:getFlipVertically() == 1
     self.transv.value = ''
     if v:getTransType() == 'bezier' then
         self.transType.value = 1
@@ -157,6 +168,22 @@ function Gevent:Nui()
     if Nui:button(i18n:get("ditto")) then --同上
         self.tov.value = self.fromv.value
     end
+
+    if Incoming_event and Incoming_event:getType() == 'event_group' then
+        local names = ChartService:getEventGroupNames()
+        local choices = {i18n:get('event_group.none')}
+        for _, name in ipairs(names) do choices[#choices + 1] = name end
+        Nui:layoutRow('dynamic', self.layout.uiH, 2)
+        Nui:label(i18n:get('event_group.reference'))
+        if Nui:combobox(self.groupChoice, choices) then
+            self.groupNameV.value = names[self.groupChoice.value - 1] or ''
+        end
+        Nui:label(i18n:get('event_group.name'))
+        ui:edit('field', self.groupNameV)
+        Nui:checkbox(i18n:get('event_group.flip_h'), self.flipH)
+        Nui:checkbox(i18n:get('event_group.flip_v'), self.flipV)
+        return
+    end
     
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)
     Nui:label(i18n:get("trans_type"))
@@ -181,6 +208,19 @@ end
 function Gevent:NuiNext() --更新信息
     local v = ChartService:getEvent(sidebar.incoming[1])
     if not v then return end
+
+    if v:getType() == 'event_group' then
+        local from, to = tonumber(self.fromv.value), tonumber(self.tov.value)
+        if from and from == from and math.abs(from) < math.huge then v:setFrom(from) end
+        if to and to == to and math.abs(to) < math.huge then v:setTo(to) end
+        local name = self.groupNameV.value
+        if type(name) == 'string' and #name <= 128 and not name:find('[%c/\\]') then
+            v:setEventGroup(name)
+        end
+        v:setFlipHorizontally(self.flipH.value and 1 or 0)
+        v:setFlipVertically(self.flipV.value and 1 or 0)
+        return
+    end
 
     if iskeyboard['return'] then --对from以及to进行计算
         pcall(function ()
@@ -235,6 +275,13 @@ self.historyAction = nil
 -- 拖拽中不记录撤销（避免每帧产生一条记录），由插件在拖动完成时统一写入一次
 if directEventEditing and directEventEditing.catch_point then return end
 if Incoming_event_before_arrival == Incoming_event then return end
+if not ChartService:canPlaceEvent(Incoming_event, Incoming_event) then
+    ChartService:deleteEvent(Incoming_event)
+    ChartService:addEvent(Incoming_event_before_arrival)
+    fEvent:sort()
+    messageBox:add('illegal operation')
+    return
+end
 Incoming_event = Incoming_event:copy()
 log(ChartService:deleteEvent(Incoming_event))
 ChartService:addEvent(Incoming_event_before_arrival)

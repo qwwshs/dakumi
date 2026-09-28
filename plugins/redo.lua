@@ -60,10 +60,26 @@ local function getBeatRange(operation)
             for _, item in ipairs(change[kind] or {}) do include(item) end
         end
     end
+    local before, after = operation.groups_before or {}, operation.groups_after or {}
+    local names = {}
+    for name in pairs(before) do names[name] = true end
+    for name in pairs(after) do names[name] = true end
+    for name in pairs(names) do
+        if not table.eq(before[name], after[name]) then
+            if before[name] then
+                for _, item in ipairs(before[name].event or {}) do include(item) end
+            end
+            if after[name] then
+                for _, item in ipairs(after[name].event or {}) do include(item) end
+            end
+        end
+    end
     return first, last
 end
 
 local function hasItems(operation)
+    if operation.groups_before and operation.groups_after and
+        not table.eq(operation.groups_before, operation.groups_after) then return true end
     for _, change in ipairs({operation.add, operation.del}) do
         if #(change.note or {}) > 0 or #(change.event or {}) > 0 then return true end
     end
@@ -112,6 +128,9 @@ end
 -- @tparam table operation 操作记录 {add={note={}, event={}}, del={note={}, event={}}}
 -- @tparam boolean isUndo true 表示撤销（反转操作），false 表示重做（重放操作）
 local function applyOperation(operation, isUndo)
+    if operation.groups_before and operation.groups_after then
+        ChartService:setEventGroups(isUndo and operation.groups_before or operation.groups_after)
+    end
     if isUndo then
         -- 撤销：先删除 add 的，再恢复 del 的
         removeFromChart(operation.add.note, ChartService.deleteNote)
