@@ -1,6 +1,8 @@
 --轨道渲染
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
+local NoteSkin = require("src.services.noteSkin")
+local ThemeService = require("src.services.themeService")
 local demoPlay = object:new("demoPlay")
 local layout = require 'config.layouts.play'.demo
 local trackZindex = {} --轨道层级
@@ -15,21 +17,25 @@ demoPlay.ui.wipe = isImage.wipe2
 demoPlay.ui.hold = isImage.hold_head2
 demoPlay.ui.holdBody = isImage.hold_body2
 demoPlay.ui.holdTail = isImage.hold_tail2
+local skinNames = {
+    ['note.png'] = {'note', 'note'},
+    ['wipe.png'] = {'wipe', 'wipe'},
+    ['holdHead.png'] = {'hold', 'hold_head'},
+    ['holdBody.png'] = {'holdBody', 'hold_body'},
+    ['holdTail.png'] = {'holdTail', 'hold_tail'},
+}
 local ui_tab = nativefs.getDirectoryItems(PATH.usersPath.ui) --得到文件夹下的所有文件
 if ui_tab and #ui_tab > 0 then
     nativefs.mount(PATH.base)
     for i = 1, #ui_tab do
         local v = ui_tab[i]
-        if string.find(v, "note") then
-            demoPlay.ui.note = love.graphics.newImage(PATH.usersPath.ui .. v)
-        elseif string.find(v, "wipe") then
-            demoPlay.ui.wipe = love.graphics.newImage(PATH.usersPath.ui .. v)
-        elseif string.find(v, "holdHead") then
-            demoPlay.ui.hold = love.graphics.newImage(PATH.usersPath.ui .. v)
-        elseif string.find(v, "holdBody") then
-            demoPlay.ui.holdBody = love.graphics.newImage(PATH.usersPath.ui .. v)
-        elseif string.find(v, "holdTail") then
-            demoPlay.ui.holdTail = love.graphics.newImage(PATH.usersPath.ui .. v)
+        local names = skinNames[v]
+        if names then
+            local ok, image = pcall(love.graphics.newImage, PATH.usersPath.ui .. v)
+            if ok then
+                demoPlay.ui[names[1]] = image
+                isImage[names[2]] = image -- edit 区、预览与 demo 区共用自定义图片
+            end
         end
     end
     nativefs.unmount()
@@ -172,14 +178,10 @@ function demoPlay:draw()
     end
 
     local note_h = settings.note_height * sh                 --25 * denom.scale
-    local _width, _height = demoPlay.ui.note:getDimensions() -- 得到宽高
     love.graphics.setColor(1, 1, 1, effect.note_alpha / 100)
     local end_beat = CoordinateService:yToBeat(0)
     local noteBeat = 0
     local noteBeat2 = 0
-    local _scale_w
-    local _scale_h
-    local _scale_h2
 
     local isnote
     local x, w, y, y2
@@ -244,25 +246,20 @@ function demoPlay:draw()
                     w = spacing * w / math.abs(w)
                 end
                 x = x - w / 2
-                _scale_w = 1 / _width * w
-                _scale_h = 1 / _height * note_h
                 if y ~= y2 and y > judgePos then y = judgePos end     --hold头保持在线上
 
                 if not isnote:isHold() then
-                    love.graphics.draw(self.ui[isnote:getType()], x + w / 2, y - note_h + note_h / 2, effect.note_rotate,
-                        _scale_w, _scale_h, _width / 2, _height / 2)                                                                                  --后面两个值用于旋转
+                    NoteSkin.draw(isnote:getType(), self.ui[isnote:getType()], x, y - note_h,
+                        w, note_h, effect.note_rotate)
                 else                                                                                                                                  --hold
-                    _scale_h2 = 1 / _height * (y - y2 - note_h - note_h)
-                    love.graphics.draw(self.ui.hold, x, y - note_h, 0, _scale_w, _scale_h)
-                    love.graphics.draw(self.ui.holdBody, x, y2 + note_h, 0, _scale_w, _scale_h2) --身
-                    love.graphics.draw(self.ui.holdTail, x, y2, 0, _scale_w, _scale_h)
+                    NoteSkin.draw('hold_head', self.ui.hold, x, y - note_h, w, note_h)
+                    NoteSkin.draw('hold_body', self.ui.holdBody, x, y2 + note_h, w, y - y2 - note_h * 2)
+                    NoteSkin.draw('hold_tail', self.ui.holdTail, x, y2, w, note_h)
                     if isnote:getNoteHead() == 1 then
-                        love.graphics.draw(self.ui.note, x + w / 2, y - note_h + note_h / 2, effect.note_rotate, _scale_w,
-                            _scale_h, _width / 2, _height / 2)
+                        NoteSkin.draw('note', self.ui.note, x, y - note_h, w, note_h, effect.note_rotate)
                     end
                     if isnote:getWipeHead() == 1 then
-                        love.graphics.draw(self.ui.wipe, x + w / 2, y - note_h + note_h / 2, effect.note_rotate, _scale_w,
-                            _scale_h, _width / 2, _height / 2)
+                        NoteSkin.draw('wipe', self.ui.wipe, x, y - note_h, w, note_h, effect.note_rotate)
                     end
                 end
             end
@@ -285,11 +282,11 @@ function demoPlay:draw()
     love.graphics.rectangle("fill", start_x + (end_x - start_x) / 2 + progress_bar / 2, judgePos + 29, 1, 7)
 
     --判定线
-    love.graphics.setColor(play.colors.dcyan) --判定线内部
+    love.graphics.setColor(ThemeService:judgeColor(settings.theme, 'inner') or play.colors.dcyan) --判定线内部
     love.graphics.rectangle("fill", start_x, judgePos - 5, end_x - start_x, 10)
 
 
-    love.graphics.setColor(play.colors.white)                             --判定线 play
+    love.graphics.setColor(ThemeService:judgeColor(settings.theme, 'outer') or play.colors.white) --判定线外框
 
     love.graphics.rectangle("line", start_x, judgePos - 8, end_x - start_x, 16) --8是为了对其中心
     love.graphics.pop()

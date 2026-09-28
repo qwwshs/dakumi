@@ -1,6 +1,8 @@
 --edit区域渲染
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
+local NoteSkin = require("src.services.noteSkin")
+local ThemeService = require("src.services.themeService")
 local demoInEdit = object:new('demoInEdit')
 demoInEdit.__index = demoInEdit   -- 原型：标签页实例共享方法与图像
 
@@ -155,8 +157,6 @@ function demoInEdit:load()
     self.ui_hold_tail = isImage.hold_tail
     self.note_w = play.layout.edit.interval
 
-    self._width, self._height = self.ui_note:getDimensions() -- 得到宽高
-    self._scale_w = 1 / self._width * self.note_w
     self.layout = play.layout.edit
 end
 
@@ -263,9 +263,10 @@ end
 
 -- 绘制单个 edit 窗口内容：波形/轨道/note/event（不含 Nuklear 信息板）
 function demoInEdit:drawEditContent(pos, istrack)
-    -- 日间主题的 edit 画布使用较深底色，白色轨道线和音符保持清晰。
-    if settings.theme == 'light' then
-        love.graphics.setColor(0.38, 0.40, 0.44, 1)
+    -- edit 画布可由主题覆盖，日间未配置时保持较深底色。
+    local canvasColor = ThemeService:editorColor(settings.theme, 'canvas')
+    if canvasColor or settings.theme == 'light' then
+        love.graphics.setColor(canvasColor or {0.38, 0.40, 0.44, 1})
         love.graphics.rectangle('fill', pos, self.layout.y, self.layout.w, self.layout.h)
     end
     local one_track_w = self.layout.oneTrackW
@@ -275,7 +276,6 @@ function demoInEdit:drawEditContent(pos, istrack)
     local all_track_pos = play:get_all_track_pos()
     local all_track = fTrack:track_get_all_track()
     local note_h = settings.note_height --25 * denom.scale
-    local _scale_h = 1 / self._height * note_h
 
     local trackleft = {} --每个轨道的左边距（随窗口位置变化）
     for i = 1, #trackSequence do
@@ -298,6 +298,7 @@ function demoInEdit:drawEditContent(pos, istrack)
     love.graphics.rectangle("fill", pos + interval * #trackSequence, track_y, 3, track_h)
 
     --判定线
+    love.graphics.setColor(ThemeService:judgeColor(settings.theme, 'edit') or {1, 1, 1, 1})
     love.graphics.rectangle("line", pos, settings.judge_line_y, track_w, 10)
 
     love.graphics.setColor(1, 1, 1)
@@ -313,8 +314,6 @@ function demoInEdit:drawEditContent(pos, istrack)
     previous_frame_starting_point_event = 0
     previous_frame_beat = beat.nowbeat
     
-    local note_h2 = 0
-    local _scale_h2 = 0
     local y = 0
     local y2 = 0
     for i = index_start, ChartService:getNoteCount() do
@@ -328,21 +327,20 @@ function demoInEdit:drawEditContent(pos, istrack)
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if previous_frame_starting_point == 0 then previous_frame_starting_point = i end
                 if n:isNote() then
-                    love.graphics.draw(self.ui_note, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)
+                    NoteSkin.draw('note', self.ui_note, trackleft.note, y - note_h, self.note_w, note_h)
                 elseif n:isWipe() then
-                    love.graphics.draw(self.ui_wipe, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)
+                    NoteSkin.draw('wipe', self.ui_wipe, trackleft.note, y - note_h, self.note_w, note_h)
                 else --hold
-                    note_h2 = y - y2 - note_h * 2
-                    _scale_h2 = 1 / self._height * note_h2
-                    love.graphics.draw(self.ui_hold, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)        -- 头
-                    love.graphics.draw(self.ui_hold_tail, trackleft.note, y2, 0, self._scale_w, _scale_h)           -- 尾
-                    love.graphics.draw(self.ui_hold_body, trackleft.note, y2 + note_h, 0, self._scale_w, _scale_h2) --身
+                    local note_h2 = y - y2 - note_h * 2
+                    NoteSkin.draw('hold_head', self.ui_hold, trackleft.note, y - note_h, self.note_w, note_h)
+                    NoteSkin.draw('hold_tail', self.ui_hold_tail, trackleft.note, y2, self.note_w, note_h)
+                    NoteSkin.draw('hold_body', self.ui_hold_body, trackleft.note, y2 + note_h, self.note_w, note_h2)
                     if n:getNoteHead() == 1 then
-                        love.graphics.draw(self.ui_note, trackleft.note, y - note_h, 0, self._scale_w / 2, _scale_h)
+                        NoteSkin.draw('note', self.ui_note, trackleft.note, y - note_h, self.note_w / 2, note_h)
                     end
                     if n:getWipeHead() == 1 then
-                        love.graphics.draw(self.ui_wipe, trackleft.note + self.note_w / 2, y - note_h, 0, self._scale_w / 2,
-                            _scale_h)
+                        NoteSkin.draw('wipe', self.ui_wipe, trackleft.note + self.note_w / 2, y - note_h,
+                            self.note_w / 2, note_h)
                     end
                 end
                 if n:isFakeNote() then --假note
@@ -363,11 +361,10 @@ function demoInEdit:drawEditContent(pos, istrack)
         local y = CoordinateService:toY(thelocal_hold:getBeat())
         local y2 = CoordinateService:toY(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
         local note_h2 = y - y2 - note_h * 2
-        local _scale_h2 = 1 / self._height * note_h2
         if math.intersect(y, y2, track_y + track_h + note_h, -note_h) then
-            love.graphics.draw(self.ui_hold, trackleft.note, y - note_h, 0, self._scale_w, _scale_h)        --头
-            love.graphics.draw(self.ui_hold_body, trackleft.note, y2 + note_h, 0, self._scale_w, _scale_h2) --身
-            love.graphics.draw(self.ui_hold_tail, trackleft.note, y2, 0, self._scale_w, _scale_h)           --尾
+            NoteSkin.draw('hold_head', self.ui_hold, trackleft.note, y - note_h, self.note_w, note_h)
+            NoteSkin.draw('hold_body', self.ui_hold_body, trackleft.note, y2 + note_h, self.note_w, note_h2)
+            NoteSkin.draw('hold_tail', self.ui_hold_tail, trackleft.note, y2, self.note_w, note_h)
         end
     end
 
@@ -387,7 +384,7 @@ function demoInEdit:drawEditContent(pos, istrack)
 
     --event渲染
     local event_h = settings.note_height
-    local event_w = play.layout.edit.oneTrackW
+    local event_w = self.note_w
     local x_offset = ChartService:getPreferenceField('x_offset')
     local event_scale = ChartService:getPreferenceField('event_scale')
 
@@ -398,15 +395,14 @@ function demoInEdit:drawEditContent(pos, istrack)
             local y = CoordinateService:toY(e:getBeat())
             local y2 = CoordinateService:toY(e:getBeat2())
             local event_h2 = y - y2 - event_h * 2
-            local _scale_h2 = 1 / self._height * event_h2
             local x_pos = trackleft[e:getType()]
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if previous_frame_starting_point_event == 0 then previous_frame_starting_point_event = i end
-                love.graphics.draw(self.ui_hold, x_pos, y - event_h, 0, self._scale_w, _scale_h)        -- 头
+                NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
                 love.graphics.printf(e:getFrom(), x_pos, y - event_h, interval, 'center')
-                love.graphics.draw(self.ui_hold_body, x_pos, y2 + event_h, 0, self._scale_w, _scale_h2) --身
+                NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
 
-                love.graphics.draw(self.ui_hold_tail, x_pos, y2, 0, self._scale_w, _scale_h)            --尾
+                NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
                 love.graphics.printf(e:getTo(), x_pos, y2, interval, 'center')
                 -- beizer曲线
                 for k = 1, 10 do
@@ -429,13 +425,12 @@ function demoInEdit:drawEditContent(pos, istrack)
         local y = CoordinateService:toY(thelocal_event:getBeat())
         local y2 = CoordinateService:toY(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
         local event_h2 = y - y2 - event_h * 2
-        local _scale_h2 = 1 / self._height * event_h2
         local x_pos = trackleft[thelocal_event:getType()]
 
         if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
-            love.graphics.draw(self.ui_hold, x_pos, y - note_h, 0, self._scale_w, _scale_h)         --头
-            love.graphics.draw(self.ui_hold_body, x_pos, y2 + event_h, 0, self._scale_w, _scale_h2) --身
-            love.graphics.draw(self.ui_hold_tail, x_pos, y2, 0, self._scale_w, _scale_h)            --尾
+            NoteSkin.draw('hold_head', self.ui_hold, x_pos, y - event_h, event_w, event_h) -- 头
+            NoteSkin.draw('hold_body', self.ui_hold_body, x_pos, y2 + event_h, event_w, event_h2) -- 身
+            NoteSkin.draw('hold_tail', self.ui_hold_tail, x_pos, y2, event_w, event_h) -- 尾
         end
     end
 

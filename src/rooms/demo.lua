@@ -1,4 +1,5 @@
 local demo = group:new('demo') --演示界面
+local ThemeService = require('src.services.themeService')
 demo.layout = require 'config.layouts.demo'
 demo.colors = require 'config.colors.demo'
 demo.open = false              --演示界面开关
@@ -20,8 +21,9 @@ function demo:draw()
     if not self.open then
         return
     end
-    if settings.theme == 'light' then
-        love.graphics.setColor(0, 0, 0, 1)
+    local demoColor = ThemeService:editorColor(settings.theme, 'demo_background')
+    if demoColor or settings.theme == 'light' then
+        love.graphics.setColor(demoColor or {0, 0, 0, 1})
         love.graphics.rectangle('fill', self.layout.x, self.layout.y, self.layout.w, self.layout.h)
     end
     love.graphics.setColor(1, 1, 1, settings.bg_alpha / 100)

@@ -22,6 +22,7 @@
 
 local tabs = group:new('tabs')
 local ChartService = require("src.services.chartService")
+local ThemeService = require("src.services.themeService")
 local demoInEdit = require 'src.objects.play.demoInEdit'
 tabs.layout = require 'config.layouts.tab'
 local infoFont = love.graphics.newFont('assets/fonts/LXGWNeoXiHei.ttf', 10)
@@ -50,7 +51,8 @@ local tabColors = {
 }
 
 local function currentTabColors()
-    return tabColors[settings.theme == 'light' and 'light' or 'dark']
+    local mode = settings.theme == 'light' and 'light' or 'dark'
+    return ThemeService:tabColors(mode, tabColors[mode])
 end
 
 local function clamp(v, lo, hi)
@@ -324,11 +326,12 @@ local function transparentWindow(colors)
 end
 
 local function editInfoStyle(light, padding)
+    local colors = currentTabColors()
     return {
         ['window'] = {
-            ['background'] = light and '#E0E5EB' or '#171A1E',
-            ['fixed background'] = light and '#E0E5EB' or '#171A1E',
-            ['border color'] = light and '#AAB4C0' or '#4A4A4A',
+            ['background'] = colors.info_background or (light and '#E0E5EB' or '#171A1E'),
+            ['fixed background'] = colors.info_background or (light and '#E0E5EB' or '#171A1E'),
+            ['border color'] = colors.info_border or (light and '#AAB4C0' or '#4A4A4A'),
             ['padding'] = padding,
         },
     }

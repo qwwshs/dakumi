@@ -1,6 +1,7 @@
 local play = group:new('play')
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
+local ThemeService = require("src.services.themeService")
 play.now_all_track_pos = {} --现在所有轨道的属性
 play.effect = {
     note_alpha = 100,
@@ -89,9 +90,10 @@ function play:draw()
     if demo.open then
         return
     end
-    -- 日间主题只调整编辑器界面；demo 预览仍保持原有黑底。
-    if settings.theme == 'light' then
-        love.graphics.setColor(0, 0, 0, 1)
+    -- 主题可单独指定 demo 底色；未配置时日间沿用黑底。
+    local demoColor = ThemeService:editorColor(settings.theme, 'demo_background')
+    if demoColor or settings.theme == 'light' then
+        love.graphics.setColor(demoColor or {0, 0, 0, 1})
         love.graphics.rectangle('fill', self.layout.demo.x, self.layout.demo.y,
             self.layout.demo.w, self.layout.demo.h)
     end

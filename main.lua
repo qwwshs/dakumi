@@ -86,6 +86,8 @@ PluginManager = require("src.utils.plugin")
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
 local AudioService = require("src.services.audioService")
+local ThemeService = require("src.services.themeService")
+ThemeService:load(PATH.usersPath.ui .. 'theme.yml')
 
 --- 插件上下文：提供给插件的服务访问接口
 PluginManager:init({
@@ -152,13 +154,20 @@ local uiThemeColors = {
 function setUiTheme(theme)
     theme = theme == 'light' and 'light' or 'dark'
     settings.theme = theme
-    Nui:styleLoadColors(uiThemeColors[theme])
+    Nui:styleLoadColors(ThemeService:nuklearColors(theme, uiThemeColors[theme]))
     if isImage and isImage.setTheme then isImage:setTheme(theme) end
-    for _, name in ipairs({'menu', 'editTool'}) do
+    for _, name in ipairs({'play', 'demo', 'menu', 'editTool'}) do
         local ok, colors = pcall(require, 'config.colors.' .. name)
-        if ok and colors.setTheme then colors.setTheme(theme) end
+        if ok then
+            ThemeService:restoreColors(colors, name)
+            if colors.setTheme then colors.setTheme(theme) end
+            ThemeService:overrideColorTable(colors, name == 'editTool' and 'edit_tool' or name, theme)
+        end
     end
-    if theme == 'light' then
+    local background = ThemeService:backgroundColor(theme)
+    if background then
+        love.graphics.setBackgroundColor(unpack(background))
+    elseif theme == 'light' then
         love.graphics.setBackgroundColor(0.93, 0.94, 0.96, 1)
     else
         love.graphics.setBackgroundColor(0, 0, 0, 1)

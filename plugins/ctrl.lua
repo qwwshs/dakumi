@@ -19,6 +19,7 @@ local ChartService = require("src.services.chartService")
 local Note = require("src.objects.Note")
 local Event = require("src.objects.Event")
 local CoordinateService = require("src.services.coordinateService")
+local NoteSkin = require("src.services.noteSkin")
 
 --- 深拷贝可能包含 Note/Event 对象的表
 local function deepCopyWithNotes(tab)
@@ -427,9 +428,6 @@ function ctrl:drawPastePreview()
     local img_hold = isImage.hold_head
     local img_body = isImage.hold_body
     local img_tail = isImage.hold_tail
-    local iw, ih = img_note:getDimensions()
-    local _scale_w = note_w / iw
-    local _scale_h = note_h / ih
     local is_tabs_paste = self.copy_tab.pos == 'tabs' and tabs and not tabs:isSingle()
 
     love.graphics.setColor(1, 1, 1, settings.paste_preview_alpha / 100)
@@ -463,18 +461,17 @@ function ctrl:drawPastePreview()
                     local r = tabs.layout.region
                     love.graphics.setScissor(tabs:windowX(items.tabidx_note[i]), r.y, tabs.layout.tabW, r.h)
                 end
-                local _sw = w / iw -- 按目标宽度等比缩放
                 if n:isNote() then
-                    love.graphics.draw(img_note, x, y - note_h, 0, _sw, _scale_h)
+                    NoteSkin.draw('note', img_note, x, y - note_h, w, note_h)
                 elseif n:isWipe() then
-                    love.graphics.draw(img_wipe, x, y - note_h, 0, _sw, _scale_h)
+                    NoteSkin.draw('wipe', img_wipe, x, y - note_h, w, note_h)
                 else -- hold：头/身/尾
-                    love.graphics.draw(img_hold, x, y - note_h, 0, _sw, _scale_h)
+                    NoteSkin.draw('hold_head', img_hold, x, y - note_h, w, note_h)
                     local body_h = y - y2 - note_h * 2
                     if body_h > 0 then
-                        love.graphics.draw(img_body, x, y2 + note_h, 0, _sw, body_h / ih)
+                        NoteSkin.draw('hold_body', img_body, x, y2 + note_h, w, body_h)
                     end
-                    love.graphics.draw(img_tail, x, y2, 0, _sw, _scale_h)
+                    NoteSkin.draw('hold_tail', img_tail, x, y2, w, note_h)
                 end
             end
         end
@@ -500,13 +497,13 @@ function ctrl:drawPastePreview()
                         love.graphics.setScissor(tabs:windowX(items.tabidx_event[i]), r.y, tabs.layout.tabW, r.h)
                     end
                     local lx = x + interval * ((trackSequence[e:getType()] or trackSequence.note) - 1)
-                    love.graphics.draw(img_hold, lx, y - note_h, 0, _scale_w, _scale_h)
+                    NoteSkin.draw('hold_head', img_hold, lx, y - note_h, note_w, note_h)
                     love.graphics.printf(e:getFrom(), lx, y - note_h, interval, 'center')
                     local body_h = y - y2 - note_h * 2
                     if body_h > 0 then
-                        love.graphics.draw(img_body, lx, y2 + note_h, 0, _scale_w, body_h / ih)
+                        NoteSkin.draw('hold_body', img_body, lx, y2 + note_h, note_w, body_h)
                     end
-                    love.graphics.draw(img_tail, lx, y2, 0, _scale_w, _scale_h)
+                    NoteSkin.draw('hold_tail', img_tail, lx, y2, note_w, note_h)
                     love.graphics.printf(e:getTo(), lx, y2, interval, 'center')
                 end
             end

@@ -67,6 +67,10 @@ dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
 
 插件可以放入 `plugins/` 自动加载，并指定目标 room/group 和执行层。示例和 API 见 [插件开发文档](plugins/README.md)。
 
+## 自定义主题
+
+在游戏目录的 `users/ui/theme.yml` 中可分别配置日间、夜间配色、UI 图片颜色、demo 判定线颜色，以及 note、wipe、hold 图片的九宫格缩放。字段、图片切线示意和完整示例见 [主题自定义说明](readme/theme.md)。修改文件后重新启动游戏生效。
+
 ## 依赖
 
 - [LxgwNeoXiHei](https://github.com/lxgw/LxgwNeoXiHei)

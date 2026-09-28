@@ -26,7 +26,7 @@ isImage = {
     hit_light = love.graphics.newImage("assets/img/hit_light.png"),
 }
 
--- UI图标缓存：浅色主题将白色图标转换为深色，保留原始透明度和抗锯齿。
+-- UI 图标缓存：主题可指定图标颜色；默认日间图标转深色，并保留原始透明度。
 local uiIconPaths = {
     add = "assets/img/add.png", sub = "assets/img/sub.png",
     isbreak = "assets/img/break.png", up = "assets/img/up.png",
@@ -35,10 +35,16 @@ local uiIconPaths = {
     pause = "assets/img/pause.png", github = "assets/img/github-mark-white.png",
 }
 local uiIconCache = { dark = {}, light = {} }
+local ThemeService = require('src.services.themeService')
 
-local function makeUiIcon(path, theme)
+local function makeUiIcon(path, theme, name)
     local data = love.image.newImageData(path)
-    if theme == 'light' then
+    local tint = ThemeService:iconColor(theme, name)
+    if tint then
+        data:mapPixel(function(x, y, r, g, b, a)
+            return tint[1], tint[2], tint[3], a * tint[4]
+        end)
+    elseif theme == 'light' then
         data:mapPixel(function(x, y, r, g, b, a)
             -- 灰度抗锯齿仍由 alpha 保留，颜色统一为深灰。
             return 0.16, 0.17, 0.19, a
@@ -52,7 +58,7 @@ function isImage:setTheme(theme)
     local previousSave = self.save
     for name, path in pairs(uiIconPaths) do
         if not uiIconCache[theme][name] then
-            uiIconCache[theme][name] = makeUiIcon(path, theme)
+            uiIconCache[theme][name] = makeUiIcon(path, theme, name)
         end
         self[name] = uiIconCache[theme][name]
     end
