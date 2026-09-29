@@ -3,6 +3,7 @@ local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
 local NoteSkin = require("src.services.noteSkin")
 local ThemeService = require("src.services.themeService")
+local Spectrogram = require("src.services.spectrogramService")
 local demoInEdit = object:new('demoInEdit')
 demoInEdit.__index = demoInEdit   -- 原型：标签页实例共享方法与图像
 
@@ -288,15 +289,20 @@ function demoInEdit:drawEditContent(pos, istrack)
         trackleft[trackSequence[i]] = pos + interval * (i - 1)
     end
 
+    if settings.spectrogram == 1 then
+        Spectrogram:draw(music_data, pos, self.layout.w, self.layout.y,
+            math.min(settings.judge_line_y, self.layout.y + self.layout.h))
+    end
     if settings.wavfrom == 1 then
         self:drawSample(pos, istrack)
     end
 
-    love.graphics.setColor(1, 1, 1) -- 轨道线显式设色（多标签页时否则会继承 demo 遮罩颜色而不可见）
+    love.graphics.setColor(1, 1, 1, 0.4) -- 轨道分界线透明度
     for i = 1, #trackSequence do
         love.graphics.rectangle("line", pos + interval * (i-1), track_y,interval , track_h)
     end
 
+    love.graphics.setColor(1, 1, 1)
     -- 侧线左
     love.graphics.rectangle("fill", pos, track_y, 3, track_h)
 

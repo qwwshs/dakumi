@@ -1,4 +1,5 @@
 -- 读取设置文件
+local SpectrogramConfig = require('src.services.spectrogramConfig')
 local file = io.open(PATH.usersPath.settings .. 'settings.json', "r")
 if file then
     settings = dkjson.decode(file:read("*a"))
@@ -10,6 +11,7 @@ end
 setmetatable(settings, meta_settings)
 
 table.fill(settings, meta_settings.__index)
+SpectrogramConfig.sanitize(settings)
 
 
 --setting界面
@@ -30,6 +32,17 @@ Gsettings.setting_type = { --类型
     { 'hit_light_time', "edit" },
     { '',               'separator' },
     { 'wavfrom',        "switch" },
+    { 'spectrogram',    "switch" },
+    { 'spectrogram_mode', 'combobox', {'transient', 'balanced', 'harmonics', 'bass'} },
+    { 'spectrogram_window', 'combobox', {'hann', 'blackman_harris'} },
+    { 'spectrogram_scale', 'combobox', {'pitch', 'log', 'linear'} },
+    { 'spectrogram_min_hz', 'edit' },
+    { 'spectrogram_max_hz', 'edit' },
+    { 'spectrogram_floor_db', 'edit' },
+    { 'spectrogram_ceiling_db', 'edit' },
+    { 'spectrogram_gain_db', 'edit' },
+    { 'spectrogram_opacity', 'PercentageSlider' },
+    { 'spectrogram_ruler', 'switch' },
     { 'contact_roller', "edit" },
     { 'auto_save',      "switch" },
     { 'default_trans_type', "combobox", { 'easings', 'bezier' }, default_trans_index },
@@ -58,45 +71,75 @@ for i, v in ipairs(Gsettings.setting_type) do
         v.value = settings[v[1]]
     elseif v[2] == "combobox" then
         v.items = v[3]
-        v.value = v[4]
+        v.value = v[4] or 1
+        if v[1]:match('^spectrogram_') then
+            for index, item in ipairs(v.items) do if item == settings[v[1]] then v.value = index end end
+        end
     elseif v[2] == "PercentageSlider" then --百分比滑块
         v.value = settings[v[1]]
     end
 end
 
+-- 声纹图即时预览；频率尺修改范围后，设置框也应同步，不能在保存时覆盖回旧值。
+local function syncSpectrogramField(v)
+    local value = settings[v[1]]
+    if v.externalValue == value then return end
+    if v[2] == 'edit' then
+        v.value = type(value) == 'number' and string.format('%.8g', value) or tostring(value)
+    elseif v[2] == 'combobox' then
+        for index, item in ipairs(v.items) do if item == value then v.value = index end end
+    else v.value = value end
+    v.externalValue = value
+end
+
 function Gsettings:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     for i, v in ipairs(self.setting_type) do
-        if v[1] ~= "" then
-            Nui:label(i18n:get(v[1]))
-        end
-        if v[2] == "edit" then
-            ui:edit('field', v)
-
-        elseif v[2] == "switch" then
-            local temp = Nui:checkbox('',v.value == 1)
-            if temp then
-                v.value = 1
-            else
-                v.value = 0
+        local spectral = v[1] == 'spectrogram' or v[1]:match('^spectrogram_')
+        if spectral then syncSpectrogramField(v) end
+        if not v[1]:match('^spectrogram_') or settings.spectrogram == 1 then
+            if v[1] ~= "" then
+                Nui:label(i18n:get(v[1]))
             end
-        elseif v[2] == "combobox" then
-            if v[1] == 'theme' then
-                Nui:combobox(v, { i18n:get('dark'), i18n:get('light') })
-            else
-                Nui:combobox(v, v.items)
+            if v[2] == "edit" then
+                ui:edit('field', v)
+
+            elseif v[2] == "switch" then
+                local temp = Nui:checkbox('',v.value == 1)
+                if temp then
+                    v.value = 1
+                else
+                    v.value = 0
+                end
+            elseif v[2] == "combobox" then
+                if v[1] == 'theme' then
+                    Nui:combobox(v, { i18n:get('dark'), i18n:get('light') })
+                elseif spectral then
+                    local labels = {}
+                    for index, item in ipairs(v.items) do labels[index] = i18n:get('spectrogram_choice_' .. item) end
+                    Nui:combobox(v, labels)
+                else
+                    Nui:combobox(v, v.items)
+                end
+
+            elseif v[2] == "PercentageSlider" then
+                Nui:slider(0, v, 100, 1)
+
+            elseif v[2] == "separator" then
+                -- 获取当前widget的边界
+                Nui:layoutRow('dynamic', 1, 1)
+                local x, y, width, height = Nui:widgetBounds()
+                -- 绘制水平线
+                Nui:rectMultiColor(x, y, width, 2, '#333333', '#333333', '#333333', '#333333')
+                Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
             end
-
-        elseif v[2] == "PercentageSlider" then
-            Nui:slider(0, v, 100, 1)
-
-        elseif v[2] == "separator" then
-            -- 获取当前widget的边界
-            Nui:layoutRow('dynamic', 1, 1)
-            local x, y, width, height = Nui:widgetBounds()
-            -- 绘制水平线
-            Nui:rectMultiColor(x, y, width, 2, '#333333', '#333333', '#333333', '#333333')
-            Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+            if spectral then
+                local value = v.value
+                if v[2] == 'edit' then value = tonumber(value)
+                elseif v[2] == 'combobox' then value = v.items[value] end
+                if value ~= nil then settings[v[1]] = value end
+                v.externalValue = settings[v[1]]
+            end
         end
     end
 
@@ -111,6 +154,10 @@ function Gsettings:Nui()
             elseif v[2] == "edit" then
                 settings[v[1]] = tonumber(v.value) or 0
             end
+        end
+        SpectrogramConfig.sanitize(settings)
+        for _, v in ipairs(self.setting_type) do
+            if v[1]:match('^spectrogram_') then syncSpectrogramField(v) end
         end
         if setUiTheme then setUiTheme(settings.theme) end
         save(dkjson.encode(settings, { indent = true }), PATH.usersPath.settings .. 'settings.json')

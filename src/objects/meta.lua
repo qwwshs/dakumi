@@ -232,6 +232,17 @@ meta_settings = {
         window_height = WINDOW.h,       -- 窗口高度
         auto_save = 1,                  -- 自动保存间隔（分钟）
         wavfrom = 1,                    -- 是否显示波形图
+        spectrogram = 0,                -- 是否显示声纹图（默认关闭）
+        spectrogram_mode = 'harmonics', -- 分析方式：鼓点 / 均衡 / 谐波 / 低音
+        spectrogram_window = 'hann',    -- 分线优先；blackman_harris 为弱音优先
+        spectrogram_scale = 'pitch',    -- 刻度：音名 / 对数频率 / 均匀频率
+        spectrogram_min_hz = 40,        -- 左端频率（赫兹）
+        spectrogram_max_hz = 12000,     -- 右端频率（赫兹）
+        spectrogram_floor_db = -84,     -- 显示下限（分贝），更低的声音透明
+        spectrogram_ceiling_db = 0,     -- 显示上限（分贝），达到上限时最亮
+        spectrogram_gain_db = 0,        -- 只调整显示亮度，不改变音乐音量
+        spectrogram_opacity = 90,       -- 声纹不透明度（0-100）
+        spectrogram_ruler = 1,          -- 是否显示判定线下方的频率尺
         paste_preview_alpha = 0.75,     -- 粘贴预览透明度
         theme = 'dark'                  -- 界面主题：dark / light
     }

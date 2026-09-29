@@ -1,4 +1,5 @@
 edit = room:new("edit")
+local SpectrogramRuler = require('src.services.spectrogramRuler')
 
 play = require 'src.rooms.play'
 sidebar = require 'src.rooms.sidebar'
@@ -31,6 +32,7 @@ function edit:keyreleased(key)
 end
 
 function edit:mousepressed( x, y, button, istouch, presses )
+    if SpectrogramRuler:contains(x, y) then return end
     self('mousepressed',x, y, button)
 end
 
@@ -39,6 +41,7 @@ function edit:mousereleased( x, y, button, istouch, presses )
 end
 
 function edit:wheelmoved(x,y)
+    if SpectrogramRuler:wheelmoved(x,y) then return end
     self('wheelmoved',x,y)
 end
 

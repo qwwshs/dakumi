@@ -23,6 +23,7 @@
 local tabs = group:new('tabs')
 local ChartService = require("src.services.chartService")
 local ThemeService = require("src.services.themeService")
+local SpectrogramRuler = require('src.services.spectrogramRuler')
 local demoInEdit = require 'src.objects.play.demoInEdit'
 tabs.layout = require 'config.layouts.tab'
 local infoFont = love.graphics.newFont('assets/fonts/LXGWNeoXiHei.ttf', 10)
@@ -58,6 +59,10 @@ end
 local function clamp(v, lo, hi)
     return math.max(lo, math.min(hi, v))
 end
+
+-- 频率尺默认收起；展开状态跟随各标签页保存。
+local rulerExpanded = setmetatable({}, { __mode = 'k' })
+local rulerToggleBounds = {}
 
 --- 新建标签页（默认轨道 0 = 跟随 track.track）
 local function newTab(trackId)
@@ -350,19 +355,46 @@ local function drawEditInfo(tab, index, x, width)
     local topY = tabs.layout.region.y
     local topHeight = 22
     local topName = 'edit_position_' .. index
+    local rulerKey = index == 'event_group' and 'event_group' or tab
+    local expanded = rulerExpanded[rulerKey] == true
     Nui:stylePush(editInfoStyle(light, { x = 3, y = 0 }))
     Nui:styleSetFont(infoFont)
     if Nui:windowBegin(topName, x, topY, width, topHeight, 'border', 'background') then
-        Nui:layoutRow('dynamic', 18, 4)
+        Nui:layoutRow('dynamic', 18, {0.2, 0.17, 0.22, 0.22, 0.19})
         Nui:label('x:' .. math.roundToPrecision(nowX, 100))
         Nui:label('w:' .. math.roundToPrecision(nowW, 100))
         Nui:label('lpos:' .. math.roundToPrecision(leftPos, 100))
         Nui:label('rpos:' .. math.roundToPrecision(rightPos, 100))
+        if settings.spectrogram == 1 and settings.spectrogram_ruler ~= 0 then
+            Nui:button(expanded and '^' or 'v')
+            rulerToggleBounds[rulerKey] = {
+                x = x + width * 0.8, y = topY, w = width * 0.2, h = topHeight,
+                index = type(index) == 'number' and index or nil,
+            }
+        else
+            Nui:label('')
+        end
     end
     Nui:windowEnd()
     Nui:windowSetBounds(topName, x, topY, width, topHeight)
     Nui:styleSetFont(FONT.normal)
     Nui:stylePop()
+
+    -- 频率控件紧贴位置栏下方；收起时不占编辑区域空间。
+    if expanded and settings.spectrogram == 1 and settings.spectrogram_ruler ~= 0 then
+        local rulerY = topY + topHeight
+        local rulerHeight = 32
+        local rulerName = 'edit_spectrogram_ruler_' .. index
+        Nui:stylePush(editInfoStyle(light, { x = 3, y = 0 }))
+        Nui:styleSetFont(infoFont)
+        if Nui:windowBegin(rulerName, x, rulerY, width, rulerHeight, 'border', 'background') then
+            SpectrogramRuler:draw(Nui, x, width)
+        end
+        Nui:windowEnd()
+        Nui:windowSetBounds(rulerName, x, rulerY, width, rulerHeight)
+        Nui:styleSetFont(FONT.normal)
+        Nui:stylePop()
+    end
 
     -- 面板始终从判定线下方开始，不再为了容纳内容向上盖住判定线。
     local y = math.max(tabs.layout.region.y + topHeight, settings.judge_line_y + 20)
@@ -389,6 +421,7 @@ end
 -- ============================================================
 
 function tabs:update(dt)
+    rulerToggleBounds = {}
     if demo.open then return end
     local editing = ChartService:isEditingEventGroup()
     if editing then
@@ -593,7 +626,20 @@ function tabs:update(dt)
     end
 
 end
-    
+
+-- 展开按钮由主鼠标事件优先处理，避免点击被编辑区当作放置操作。
+function tabs:handleRulerToggleClick(x, y, button)
+    if button ~= 1 then return false end
+    for key, r in pairs(rulerToggleBounds) do
+        if x >= r.x and x < r.x + r.w and y >= r.y and y < r.y + r.h then
+            rulerExpanded[key] = not rulerExpanded[key]
+            if r.index then self.active = r.index end
+            return true
+        end
+    end
+    return false
+end
+
 function tabs:draw()
     if demo.open then return end
     if ChartService:isEditingEventGroup() then return end

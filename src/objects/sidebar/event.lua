@@ -97,15 +97,17 @@ function Gevent:transTypeIsBezier()
         local value = tonumber(i) or 0
         table.insert(istrans,value)
     end
-    --event的bezier
-    love.graphics.setColor(1,1,1,1)
+    -- 日间背景上用黑色曲线，深色模式保持白色。
+    local curveColor = settings.theme == 'light' and 0 or 1
+    local oldR, oldG, oldB, oldA = love.graphics.getColor()
+    love.graphics.setColor(curveColor,curveColor,curveColor,1)
     for i = 1,100 do --曲线绘制
         bezier_y = bezier(1,100,y + h,y,istrans,i) or 0
         bezier_y_end = bezier(1,100,y + h,y,istrans,i + 1) or 0
         Nui:line(w/100 * i +x,bezier_y,w/100 * (i+1) +x,bezier_y_end)
     end
     --当前的bezier
-    love.graphics.setColor(1,1,1,0.5)
+    love.graphics.setColor(curveColor,curveColor,curveColor,0.5)
     for i = 1,100 do --曲线绘制
         bezier_y = bezier(1,100,y + h,y,self.bezier[self.bezier_index.value],i) or 0
         bezier_y_end = bezier(1,100,y + h,y,self.bezier[self.bezier_index.value],i + 1) or 0
@@ -115,6 +117,7 @@ function Gevent:transTypeIsBezier()
     Nui:polygon('fill',x,y + h,x + w,y + h,x + w,y + h+3,x,y + h+3)
     --侧线
     Nui:polygon('fill',x + w,y,x + w,y + h,x + w+3,y + h,x + w+3,y)
+    love.graphics.setColor(oldR,oldG,oldB,oldA)
 end
 
 function Gevent:transTypeIsEasings()
@@ -142,7 +145,9 @@ function Gevent:transTypeIsEasings()
     local istrans = self.easings_index
     local easings_y
     local easings_y_end
-    love.graphics.setColor(1,1,1)
+    local curveColor = settings.theme == 'light' and 0 or 1
+    local oldR, oldG, oldB, oldA = love.graphics.getColor()
+    love.graphics.setColor(curveColor,curveColor,curveColor,1)
     for i = 1,100 do --曲线绘制
         easings_y = (y+h - h*easings[self.easings_index.value](i/100)) or 0
         easings_y_end = (y+h - h*easings[self.easings_index.value]((i + 1)/100)) or 0
@@ -152,6 +157,7 @@ function Gevent:transTypeIsEasings()
     Nui:polygon('fill',x,y + h,x + w,y + h,x + w,y + h+3,x,y + h+3)
     --侧线
     Nui:polygon('fill',x + w,y,x + w,y + h,x + w+3,y + h,x + w+3,y)
+    love.graphics.setColor(oldR,oldG,oldB,oldA)
 
 end
 

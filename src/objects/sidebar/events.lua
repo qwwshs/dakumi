@@ -221,7 +221,9 @@ function Gevents:Nui()
         self:transDo()
     end
 
-    love.graphics.setColor(1,1,1)
+    local curveColor = settings.theme == 'light' and 0 or 1
+    local oldR, oldG, oldB, oldA = love.graphics.getColor()
+    love.graphics.setColor(curveColor,curveColor,curveColor,1)
     local x = self.layout.bezier.x
     local y = self.layout.bezier.y
     local w = self.layout.bezier.w
@@ -242,6 +244,7 @@ function Gevents:Nui()
     Nui:polygon('fill',x,y + h,x + w,y + h,x + w,y + h+3,x,y + h+3)
     --侧线
     Nui:polygon('fill',x + w,y,x + w,y + h,x + w+3,y + h,x + w+3,y)
+    love.graphics.setColor(oldR,oldG,oldB,oldA)
 
 end
 

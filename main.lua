@@ -337,17 +337,29 @@ function love.wheelmoved(x, y)
     room("wheelmoved", x, y)
 end
 
+local rulerToggleMouseDown = false
+
 function love.mousepressed(x, y, button, istouch, presses)
+    local gameX = x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
+    local gameY = y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
+    if tabs and tabs.handleRulerToggleClick and tabs:handleRulerToggleClick(gameX, gameY, button) then
+        rulerToggleMouseDown = true
+        mouse.down = true
+        return
+    end
     local success = pcall(function() Nui:mousepressed(x, y, button, istouch, presses) end)
     if not success then return end
 
-    x = mouse.x --对缩放进行处理
-    y = mouse.y
     mouse.down = true
-    room("mousepressed", x, y, button, istouch, presses)
+    room("mousepressed", gameX, gameY, button, istouch, presses)
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
+    if rulerToggleMouseDown and button == 1 then
+        rulerToggleMouseDown = false
+        mouse.down = false
+        return
+    end
     local success = pcall(function() Nui:mousereleased(x, y, button, istouch, presses) end)
     if not success then return end
 
