@@ -83,6 +83,7 @@ require 'isRequire'
 -- 初始化插件管理器和服务层
 PluginManager = require("src.utils.plugin")
 local ChartService = require("src.services.chartService")
+local BpmMeasureService = require('src.services.bpmMeasureService')
 local CoordinateService = require("src.services.coordinateService")
 local AudioService = require("src.services.audioService")
 local ThemeService = require("src.services.themeService")
@@ -277,6 +278,7 @@ function love.update(dt)
     mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
     mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
 
+    BpmMeasureService:update()
     room("update", dt)
 
     if mouse.cursor ~= '' then

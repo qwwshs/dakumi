@@ -1,5 +1,6 @@
 --chartInfo界面
 local ChartService = require("src.services.chartService")
+local BpmMeasure = require('src.services.bpmMeasureService')
 local GchartInfo = group:new('chart info')
 GchartInfo.type = "chart info"
 GchartInfo.layout = require('config.layouts.sidebar').chartInfo
@@ -60,6 +61,18 @@ function GchartInfo:Nui()
     editTextField(self.song_name_v)
     Nui:label(i18n:get'offset(ms)')
     ui:edit('field',self.offset)
+
+    Nui:layoutRow('dynamic', self.layout.uiH, 1)
+    if Nui:button(i18n:get(BpmMeasure:isBusy() and 'bpm_measure_busy' or 'bpm_measure')) and not BpmMeasure:isBusy() then
+        BpmMeasure:start(function(bpm, offset)
+            -- 仅更新测量字段，保留本页其它尚未保存的输入。
+            self.offset.value = tostring(offset)
+            self.bpmList[1] = self.bpmList[1] or {
+                bpm = {value = ''}, beat = {{value = '0'}, {value = '0'}, {value = '1'}}, linear_ramp = 0,
+            }
+            self.bpmList[1].bpm.value = tostring(bpm)
+        end)
+    end
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols) --换两行
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)

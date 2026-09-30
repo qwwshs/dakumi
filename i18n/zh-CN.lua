@@ -1,4 +1,15 @@
 return {
+    ['bpm_measure_group'] = '请先退出事件组编辑，再测量整张谱面的 BPM 与 offset。',
+    ['bpm_measure'] = '测量 BPM 与 offset',
+    ['bpm_measure_busy'] = '正在测量，请稍候…',
+    ['bpm_measure_no_audio'] = '请先打开一张带有音乐的谱面。',
+    ['bpm_measure_failed'] = '无法完成测量。请检查音频是否至少有 2 秒、包含非静音内容且不超过 30 分钟。',
+    ['bpm_measure_confirm'] = '测量完成：\nBPM：%.1f\n谱面 offset：%.1f ms\n开头静音：%.1f ms\n\n是否填入 offset 和第一项 BPM？其余 BPM 条目与起始拍保持不变。',
+    ['bpm_measure_uncertain'] = '节奏拟合不稳定，可能存在变速或倍速判断偏差，请填入后试听确认。',
+    ['bpm_measure_keep'] = '不填入',
+    ['bpm_measure_apply'] = '填入',
+    ['history.measure_bpm'] = '填入测量的 BPM 与 offset',
+
     -- Settings Panel (Gsettings) - Global application settings
     ['judge_line_y'] = '判定线y坐标',
     ['music_volume'] = '音乐音量',

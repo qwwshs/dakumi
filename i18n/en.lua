@@ -1,4 +1,15 @@
-return {  
+return {
+    ['bpm_measure_group'] = 'Leave event-group editing before measuring the chart tempo.',
+    ['bpm_measure'] = 'Measure BPM and offset',
+    ['bpm_measure_busy'] = 'Measuring, please wait...',
+    ['bpm_measure_no_audio'] = 'Open a chart with audio first.',
+    ['bpm_measure_failed'] = 'Measurement failed. Use non-silent audio between 2 seconds and 30 minutes.',
+    ['bpm_measure_confirm'] = 'Measurement complete:\nBPM: %.1f\nChart offset: %.1f ms\nLeading silence: %.1f ms\n\nApply to offset and the first BPM? Other entries and beat positions are preserved.',
+    ['bpm_measure_uncertain'] = 'The tempo fit is unstable. Tempo changes or beat subdivisions may affect this estimate. Please check by listening.',
+    ['bpm_measure_keep'] = 'Keep current values',
+    ['bpm_measure_apply'] = 'Apply',
+    ['history.measure_bpm'] = 'Apply measured BPM and offset',
+
     -- Settings Panel (Gsettings) - Global application settings  
     ['judge_line_y'] = 'judge line y',  
     ['music_volume'] = 'music volume',  
