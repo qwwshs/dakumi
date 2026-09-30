@@ -2,9 +2,12 @@
     模块名: ctrl
     描述: 复制/粘贴/框选管理模块
     作者: qwwshs
-    依赖: object, mouse, input, beat, fTrack, fEvent, fNote, chart, sidebar, track, trackSequence, messageBox
+    依赖: object, mouse, input, beat, fTrack, fEvent, fNote, chart, sidebar, track, trackSequence, messageBox,
+          clipboard (核心, require), eventBus (核心, require)
 
     实现了 note 和 event 的复制、剪切、粘贴、框选删除功能。
+    剪贴板数据本体与纯变换在核心模块 src/utils/clipboard.lua，本插件只承担交互与渲染；
+    内部模块不得引用本插件全局，渲染顺序经事件总栈（tabs:edit_content_drawn）衔接。
     支持：
     - 单选（右键点击）
     - 框选（Shift + 左键拖拽）
@@ -20,6 +23,8 @@ local Note = require("src.objects.Note")
 local Event = require("src.objects.Event")
 local CoordinateService = require("src.services.coordinateService")
 local NoteSkin = require("src.services.noteSkin")
+local clipboard = require("src.utils.clipboard") -- 剪贴板数据本体（核心）
+local eventBus = require("src.utils.eventBus")
 
 --- 深拷贝可能包含 Note/Event 对象的表
 local function deepCopyWithNotes(tab)
@@ -39,60 +44,16 @@ local function deepCopyWithNotes(tab)
     return result
 end
 
---- 鼠标按下时的起始位置和状态
-ctrl.mouse_start_pos = { x = 0, y = 0, down = false }
-
---- 默认的空剪贴板结构
-ctrl.meta_copy_tab = {
-    note = {},
-    event = {},
-    note_tracks = {},   -- 与 note 并行的轨道数组（框选时的实际轨道）
-    event_tracks = {},  -- 与 event 并行的轨道数组
-    note_tabidx = {},   -- 与 note 并行的标签页下标数组
-    event_tabidx = {},  -- 与 event 并行的标签页下标数组
-    type = "",   -- 操作类型: "copy" 或 "cut"
-    pos = "",    -- 来源位置: "play" 或 "edit" 或 "tabs"
-}
-
---- 当前剪贴板数据
-ctrl.copy_tab = table.copy(ctrl.meta_copy_tab)
-
 -- ============================================================
 -- 剪贴板操作辅助函数
 -- ============================================================
-
---- 按 beat 排序剪贴板（保持轨道/标签页并行数组对齐）
-local function sortCopy(istype)
-    local items = ctrl.copy_tab[istype]
-    local tracks = ctrl.copy_tab[istype .. '_tracks']
-    local tabidx = ctrl.copy_tab[istype .. '_tabidx']
-    local order = {}
-    for i = 1, #items do order[i] = i end
-    table.sort(order, function(a, b) return items[a]:getBeatValue() < items[b]:getBeatValue() end)
-    local nitems, ntracks, ntabidx = {}, {}, {}
-    for i, idx in ipairs(order) do
-        nitems[i] = items[idx]
-        ntracks[i] = tracks[idx]
-        ntabidx[i] = tabidx[idx]
-    end
-    ctrl.copy_tab[istype] = nitems
-    ctrl.copy_tab[istype .. '_tracks'] = ntracks
-    ctrl.copy_tab[istype .. '_tabidx'] = ntabidx
-end
 
 --- 从剪贴板中移除指定元素
 -- @tparam table new_table 要移除的元素
 -- @tparam string istype 类型 ("note" 或 "event")
 function ctrl:copy_sub(new_table, istype)
-    if istype ~= "note" and istype ~= "event" then return end
-    for i, v in ipairs(self.copy_tab[istype]) do
-        if rawequal(self.copy_tab[istype][i], new_table) then
-            table.remove(self.copy_tab[istype], i)
-            table.remove(self.copy_tab[istype .. '_tracks'], i)
-            table.remove(self.copy_tab[istype .. '_tabidx'], i)
-            return
-        end
-    end
+    -- 数据本体在核心 clipboard 模块；保留方法供插件间调用与测试兼容
+    return clipboard:sub(new_table, istype)
 end
 
 --- 向剪贴板添加元素（去重）
@@ -101,16 +62,7 @@ end
 -- @tparam number|nil track 元素所在实际轨道
 -- @tparam number|nil tabidx 元素所在标签页下标
 function ctrl:copy_add(new_table, istype, track, tabidx)
-    if istype ~= "note" and istype ~= "event" then return end
-    for i = 1, #self.copy_tab[istype] do
-        if rawequal(self.copy_tab[istype][i], new_table) then
-            return -- 已存在，不重复添加
-        end
-    end
-    self.copy_tab[istype][#self.copy_tab[istype] + 1] = new_table
-    self.copy_tab[istype .. '_tracks'][#self.copy_tab[istype .. '_tracks'] + 1] = track or 0
-    self.copy_tab[istype .. '_tabidx'][#self.copy_tab[istype .. '_tabidx'] + 1] = tabidx or 1
-    sortCopy(istype)
+    return clipboard:add(new_table, istype, track, tabidx)
 end
 
 --- 检查元素是否在剪贴板中
@@ -118,29 +70,18 @@ end
 -- @tparam string istype 类型 ("note" 或 "event")
 -- @treturn boolean 是否存在
 function ctrl:copy_exist(new_table, istype)
-    if istype ~= "note" and istype ~= "event" then return end
-    for i = 1, #self.copy_tab[istype] do
-        if rawequal(self.copy_tab[istype][i], new_table) then
-            return true
-        end
-    end
-    return false
+    return clipboard:exist(new_table, istype)
 end
 
 --- 获取剪贴板数据
 -- @treturn table 剪贴板数据
 function ctrl:get_copy()
-    return self.copy_tab
+    return clipboard:get()
 end
 
 --- 多标签页收起为单标签页后，改用 demo 区域的跨轨道复制规则。
 function ctrl:convertTabsClipboardToPlay()
-    if self.copy_tab.pos ~= 'tabs' then return end
-    self.copy_tab.pos = 'play'
-    self.copy_tab.note_tracks = {}
-    self.copy_tab.event_tracks = {}
-    self.copy_tab.note_tabidx = {}
-    self.copy_tab.event_tabidx = {}
+    return clipboard:convertTabsToPlay()
 end
 
 -- ============================================================
@@ -153,7 +94,7 @@ end
 -- @tparam boolean all 是否包含 event（Ctrl+A+V）
 -- @treturn table items 变换后的内容，含 note/event 与各自目标标签页下标
 function ctrl:getPasteItems(flip, all)
-    local copy_tab2 = deepCopyWithNotes(self.copy_tab)
+    local copy_tab2 = deepCopyWithNotes(clipboard.tab)
     local items = {
         note = copy_tab2.note,
         event = copy_tab2.event,
@@ -279,7 +220,7 @@ end
 --- 每帧更新：重置鼠标按下状态
 function ctrl:update(dt)
     if not love.mouse.isDown(1) then
-        self.mouse_start_pos.down = false
+        clipboard.mouse_start_pos.down = false
     end
 end
 
@@ -292,17 +233,17 @@ function ctrl:draw(drawInTabs)
     local note_w = play.layout.edit.noteW
 
     -- 绘制框选矩形
-    if self.mouse_start_pos.down then
+    if clipboard.mouse_start_pos.down then
         love.graphics.setColor(play.colors.cyan_fade)
-        love.graphics.rectangle("fill", self.mouse_start_pos.x, self.mouse_start_pos.y,
-            mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
+        love.graphics.rectangle("fill", clipboard.mouse_start_pos.x, clipboard.mouse_start_pos.y,
+            mouse.x - clipboard.mouse_start_pos.x, mouse.y - clipboard.mouse_start_pos.y)
         love.graphics.setColor(play.colors.cyan)
-        love.graphics.rectangle("line", self.mouse_start_pos.x, self.mouse_start_pos.y,
-            mouse.x - self.mouse_start_pos.x, mouse.y - self.mouse_start_pos.y)
+        love.graphics.rectangle("line", clipboard.mouse_start_pos.x, clipboard.mouse_start_pos.y,
+            mouse.x - clipboard.mouse_start_pos.x, mouse.y - clipboard.mouse_start_pos.y)
     end
 
     -- 绘制剪贴板中的选中标记
-    if self.copy_tab.type ~= "cut" then
+    if clipboard.tab.type ~= "cut" then
         love.graphics.setColor(play.colors.cyan_half)
     else
         love.graphics.setColor(play.colors.white_half)
@@ -311,9 +252,9 @@ function ctrl:draw(drawInTabs)
     -- 标记 edit 区域中的 note
     if tabs and not tabs:isSingle() then
         -- 多标签页：按标签页位置绘制（仅记录过标签页下标的项）
-        for i = 1, #self.copy_tab.note do
-            local n = self.copy_tab.note[i]
-            local ti = self.copy_tab.note_tabidx[i]
+        for i = 1, #clipboard.tab.note do
+            local n = clipboard.tab.note[i]
+            local ti = clipboard.tab.note_tabidx[i]
             if ti then
                 local y = CoordinateService:toY(n:getBeat())
                 local y2 = y - note_h
@@ -326,8 +267,8 @@ function ctrl:draw(drawInTabs)
             end
         end
     else
-        for i = 1, #self.copy_tab.note do
-            local n = self.copy_tab.note[i]
+        for i = 1, #clipboard.tab.note do
+            local n = clipboard.tab.note[i]
             local y = CoordinateService:toY(n:getBeat())
             local y2 = y - note_h
             if n:isHold() then
@@ -342,10 +283,10 @@ function ctrl:draw(drawInTabs)
     end
 
     -- 标记 play 区域中的 note
-    if self.copy_tab.pos == "play" then
+    if clipboard.tab.pos == "play" then
         local all_track_pos = play:get_all_track_pos()
-        for i = 1, #self.copy_tab.note do
-            local n = self.copy_tab.note[i]
+        for i = 1, #clipboard.tab.note do
+            local n = clipboard.tab.note[i]
             local trackPos = all_track_pos[n:getTrack()]
             local x, w = fTrack:to_play_track(trackPos.x, trackPos.w)
             local y = CoordinateService:toY(n:getBeat())
@@ -369,9 +310,9 @@ function ctrl:draw(drawInTabs)
     -- 标记 edit 区域中的 event
     if tabs and not tabs:isSingle() then
         -- 多标签页：按标签页位置与事件类型轨道绘制
-        for i = 1, #self.copy_tab.event do
-            local e = self.copy_tab.event[i]
-            local ti = self.copy_tab.event_tabidx[i]
+        for i = 1, #clipboard.tab.event do
+            local e = clipboard.tab.event[i]
+            local ti = clipboard.tab.event_tabidx[i]
             if ti then
                 local lane_k
                 for k = 1, #tabs.layout.lane do
@@ -393,8 +334,8 @@ function ctrl:draw(drawInTabs)
             end
         end
     else
-        for i = 1, #self.copy_tab.event do
-            local e = self.copy_tab.event[i]
+        for i = 1, #clipboard.tab.event do
+            local e = clipboard.tab.event[i]
             local y = CoordinateService:toY(e:getBeat())
             local y2 = CoordinateService:toY(e:getBeat2())
             local x_pos = trackSequence:getRange(e:getType())
@@ -408,7 +349,7 @@ function ctrl:draw(drawInTabs)
     end
 
     -- 粘贴预览：复制表有内容时，在粘贴目标位置显示 50% 透明度的 ghost
-    if #self.copy_tab.note > 0 or #self.copy_tab.event > 0 then
+    if #clipboard.tab.note > 0 or #clipboard.tab.event > 0 then
         self:drawPastePreview()
     end
 end
@@ -433,7 +374,7 @@ function ctrl:drawPastePreview()
     local img_hold = isImage.hold_head
     local img_body = isImage.hold_body
     local img_tail = isImage.hold_tail
-    local is_tabs_paste = self.copy_tab.pos == 'tabs' and tabs and not tabs:isSingle()
+    local is_tabs_paste = clipboard.tab.pos == 'tabs' and tabs and not tabs:isSingle()
 
     love.graphics.setColor(1, 1, 1, settings.paste_preview_alpha / 100)
 
@@ -441,7 +382,7 @@ function ctrl:drawPastePreview()
     for i = 1, #items.note do
         local n = items.note[i]
         local x, w = nil, note_w
-        if self.copy_tab.pos == 'play' and not is_tabs_paste then
+        if clipboard.tab.pos == 'play' and not is_tabs_paste then
             -- play 区域来源：保持原轨道，映射到 demo 区 x
             local trackPos = play:get_all_track_pos()[n:getTrack()]
             if trackPos then
@@ -483,7 +424,7 @@ function ctrl:drawPastePreview()
     end
 
     -- event ghost：仅在 edit 窗口目标显示（play 区域粘贴 event 仅 pasteAll 时发生且 demo 区不渲染 event 详情，跳过）
-    if self.copy_tab.pos ~= 'play' then
+    if clipboard.tab.pos ~= 'play' then
         for i = 1, #items.event do
             local e = items.event[i]
             local x
@@ -549,7 +490,7 @@ function ctrl:mousepressed(x, y, button)
             track_type = lane
             istrack = tabs:getTabTrack(tab)
             tabidx = ti
-            self.copy_tab.pos = 'tabs'
+            clipboard.tab.pos = 'tabs'
         else
             track_type = trackSequence:getType(mouse.x)
             if not track_type then return end
@@ -576,14 +517,14 @@ function ctrl:mousepressed(x, y, button)
         end
         messageBox:add("add copy")
 
-        if #self.copy_tab.event > 0 then
+        if #clipboard.tab.event > 0 then
             sidebar:to('events')
         end
     end
 
     -- 左键开始框选
     if love.mouse.isDown(1) then
-        self.mouse_start_pos = { x = mouse.x, y = mouse.y, down = true }
+        clipboard.mouse_start_pos = { x = mouse.x, y = mouse.y, down = true }
     end
 end
 
@@ -597,7 +538,7 @@ end
 -- @tparam number min_y_beat 最小 beat 值
 -- @tparam number max_y_beat 最大 beat 值
 local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
-    ctrl.copy_tab.pos = 'play'
+    clipboard.tab.pos = 'play'
 
     -- 按当前轨道位置找水平选区；无事件或首个事件较晚的轨道也要参与。
     local local_track = {}
@@ -626,7 +567,7 @@ local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
             isbeat2 = n:getBeat2Value()
         end
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and local_track[n:getTrack()] then
-            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n
+            clipboard.tab.note[#clipboard.tab.note + 1] = n
         end
         if isbeat > max_y_beat then break end
     end
@@ -637,7 +578,7 @@ local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
         local isbeat = e:getBeatValue()
         local isbeat2 = e:getBeat2Value()
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and local_track[e:getTrack()] then
-            ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e
+            clipboard.tab.event[#clipboard.tab.event + 1] = e
         end
         if e:getBeatValue() > max_y_beat then break end
     end
@@ -655,7 +596,7 @@ local function selectInNoteTrack(min_y_beat, max_y_beat)
             isbeat2 = n:getBeat2Value()
         end
         if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and track.track == n:getTrack() then
-            ctrl.copy_tab.note[#ctrl.copy_tab.note + 1] = n
+            clipboard.tab.note[#clipboard.tab.note + 1] = n
         end
         if isbeat > max_y_beat then break end
     end
@@ -674,7 +615,7 @@ local function selectInEventTrack(x, start_x, min_y_beat, max_y_beat)
             local isbeat = e:getBeatValue()
             local isbeat2 = e:getBeat2Value()
             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and track.track == e:getTrack() then
-                ctrl.copy_tab.event[#ctrl.copy_tab.event + 1] = e
+                clipboard.tab.event[#clipboard.tab.event + 1] = e
             end
         end
         if e:getBeatValue() > max_y_beat then break end
@@ -687,7 +628,7 @@ end
 -- @tparam number min_y_beat 最小 beat 值
 -- @tparam number max_y_beat 最大 beat 值
 local function selectInTabs(selx1, selx2, min_y_beat, max_y_beat)
-    ctrl.copy_tab.pos = 'tabs'
+    clipboard.tab.pos = 'tabs'
     local interval = play.layout.edit.interval
     for ti = 1, #tabs.list do
         local tab = tabs.list[ti]
@@ -736,12 +677,12 @@ function ctrl:mousereleased(x, y)
         return
     end
     messageBox:add('select')
-    self.copy_tab = table.copy(self.meta_copy_tab)
+    clipboard.tab = table.copy(clipboard.meta)
 
-    local min_x = fTrack:to_play_track(fTrack:to_chart_track(math.min(x, self.mouse_start_pos.x)), 1)
-    local max_x = fTrack:to_play_track(fTrack:to_chart_track(math.max(x, self.mouse_start_pos.x)), 1)
-    local min_y_beat = CoordinateService:yToBeat(math.max(y, self.mouse_start_pos.y))
-    local max_y_beat = CoordinateService:yToBeat(math.min(y, self.mouse_start_pos.y))
+    local min_x = fTrack:to_play_track(fTrack:to_chart_track(math.min(x, clipboard.mouse_start_pos.x)), 1)
+    local max_x = fTrack:to_play_track(fTrack:to_chart_track(math.max(x, clipboard.mouse_start_pos.x)), 1)
+    local min_y_beat = CoordinateService:yToBeat(math.max(y, clipboard.mouse_start_pos.y))
+    local max_y_beat = CoordinateService:yToBeat(math.min(y, clipboard.mouse_start_pos.y))
 
     local edit_start = play.layout.edit.x
     local edit_end = play.layout.edit.x + play.layout.edit.interval * 5
@@ -750,32 +691,32 @@ function ctrl:mousereleased(x, y)
 
     if tabs and not tabs:isSingle() then
         -- 多标签页：跨标签页框选，demo 区域不可交互
-        local selx1 = math.min(x, self.mouse_start_pos.x)
-        local selx2 = math.max(x, self.mouse_start_pos.x)
+        local selx1 = math.min(x, clipboard.mouse_start_pos.x)
+        local selx2 = math.max(x, clipboard.mouse_start_pos.x)
         selectInTabs(selx1, selx2, min_y_beat, max_y_beat)
-        if #self.copy_tab.event > 0 then
+        if #clipboard.tab.event > 0 then
             sidebar:to('events')
         end
         return
     end
 
-    if not math.intersect(x, self.mouse_start_pos.x, edit_start, edit_end) then
+    if not math.intersect(x, clipboard.mouse_start_pos.x, edit_start, edit_end) then
         -- 在 play 区域框选
         selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
         return
     end
 
-    if math.intersect(x, self.mouse_start_pos.x, edit_start, note_track_end) then
+    if math.intersect(x, clipboard.mouse_start_pos.x, edit_start, note_track_end) then
         -- 在 note 轨道框选
         selectInNoteTrack(min_y_beat, max_y_beat)
     end
 
-    if math.intersect(x, self.mouse_start_pos.x, event_track_start, edit_end) then
+    if math.intersect(x, clipboard.mouse_start_pos.x, event_track_start, edit_end) then
         -- 在 event 轨道框选
-        selectInEventTrack(x, self.mouse_start_pos.x, min_y_beat, max_y_beat)
+        selectInEventTrack(x, clipboard.mouse_start_pos.x, min_y_beat, max_y_beat)
     end
 
-    if #self.copy_tab.event > 0 then
+    if #clipboard.tab.event > 0 then
         sidebar:to('events')
     end
 end
@@ -786,7 +727,7 @@ end
 
 --- 鼠标滚轮：调整 beat 位置（仅框选过程中）
 function ctrl:wheelmoved(x, y)
-    if not self.mouse_start_pos.down then return end
+    if not clipboard.mouse_start_pos.down then return end
     local temp = settings.contact_roller
     if input('accelerate') then
         temp = temp * 4
@@ -798,7 +739,7 @@ function ctrl:wheelmoved(x, y)
         temp = -temp / denom.denom
     end
     local y_beat = temp
-    self.mouse_start_pos.y = self.mouse_start_pos.y + CoordinateService:toY(0) - CoordinateService:toY(y_beat)
+    clipboard.mouse_start_pos.y = clipboard.mouse_start_pos.y + CoordinateService:toY(0) - CoordinateService:toY(y_beat)
 end
 
 -- ============================================================
@@ -807,13 +748,13 @@ end
 
 --- 处理复制操作
 local function handleCopy()
-    ctrl.copy_tab.type = "copy"
+    clipboard.tab.type = "copy"
     messageBox:add("copy")
 end
 
 --- 处理剪切操作
 local function handleCut()
-    ctrl.copy_tab.type = "cut"
+    clipboard.tab.type = "cut"
     messageBox:add("cut")
 end
 
@@ -824,19 +765,19 @@ local function handleDelete()
     ChartService:push()
 
     -- 选区保留谱面对象引用；批量删除在 pop 时统一提交。
-    for _, note in ipairs(ctrl.copy_tab.note) do
+    for _, note in ipairs(clipboard.tab.note) do
         ChartService:delete(note)
     end
 
     -- 删除选中的 event（仅在非 play 模式或全部删除时）
-    if ctrl.copy_tab.pos ~= 'play' or all then
-        for _, event in ipairs(ctrl.copy_tab.event) do
+    if clipboard.tab.pos ~= 'play' or all then
+        for _, event in ipairs(clipboard.tab.event) do
             ChartService:delete(event)
         end
     end
 
     ChartService:pop('history.batch_delete')
-    ctrl.copy_tab = table.copy(ctrl.meta_copy_tab)
+    clipboard.tab = table.copy(clipboard.meta)
 end
 
 --- 处理粘贴操作
@@ -845,18 +786,18 @@ local function handlePaste()
     local flip = input('flipPaste') or input('flipPasteAll')
     local copy_tab2 = ctrl:getPasteItems(flip, all) -- 变换后的粘贴内容（与粘贴预览共用）
     local actionKey
-    if ctrl.copy_tab.type == 'copy' then
+    if clipboard.tab.type == 'copy' then
         actionKey = flip and 'history.paste_flipped' or 'history.paste'
     else
         actionKey = flip and 'history.move_paste_flipped' or 'history.move_paste'
     end
 
     sidebar:to("nil")
-    local includeEvents = ctrl.copy_tab.pos ~= 'play' or all
+    local includeEvents = clipboard.tab.pos ~= 'play' or all
     if includeEvents then
         local ignored = {}
-        if ctrl.copy_tab.type ~= 'copy' then
-            for _, original in ipairs(ctrl.copy_tab.event) do ignored[original] = true end
+        if clipboard.tab.type ~= 'copy' then
+            for _, original in ipairs(clipboard.tab.event) do ignored[original] = true end
         end
         for i, candidate in ipairs(copy_tab2.event) do
             if not ChartService:canPlaceEvent(candidate, ignored) then
@@ -878,8 +819,8 @@ local function handlePaste()
     ChartService:push()
 
     -- 移动时先把旧事件加入待删除表，后续冲突检查才不会与它自身相撞。
-    if ctrl.copy_tab.type ~= 'copy' and includeEvents then
-        for _, original in ipairs(ctrl.copy_tab.event) do ChartService:delete(original) end
+    if clipboard.tab.type ~= 'copy' and includeEvents then
+        for _, original in ipairs(clipboard.tab.event) do ChartService:delete(original) end
     end
 
     -- 写入谱面
@@ -892,13 +833,13 @@ local function handlePaste()
         end
     end
 
-    if ctrl.copy_tab.type == "copy" then
+    if clipboard.tab.type == "copy" then
         ChartService:pop(actionKey)
         return
     end
 
     -- 剪切模式：删除原始数据
-    for _, note in ipairs(ctrl.copy_tab.note) do
+    for _, note in ipairs(clipboard.tab.note) do
         ChartService:delete(note)
     end
     -- event 原件已在添加前加入待删除表。
@@ -914,7 +855,7 @@ function ctrl:keypressed(key)
 
     -- Escape 取消框选
     if key == 'escape' then
-        self.copy_tab = table.copy(self.meta_copy_tab)
+        clipboard.tab = table.copy(clipboard.meta)
     end
 
     if not iskeyboard.ctrl then return end
@@ -929,6 +870,12 @@ function ctrl:keypressed(key)
         handlePaste()
     end
 end
+
+-- 多标签页 edit 内容绘制完成后叠加框选标记与粘贴预览；
+-- 渲染顺序经事件总栈衔接，核心 tabs 模块不再反向引用本插件。
+eventBus:on('tabs:edit_content_drawn', function()
+    if tabs and not tabs:isSingle() then ctrl:draw(true) end
+end)
 
 -- 注册信息由 plugins/init.lua 读取；生命周期仍使用对象的冒号方法。
 ctrl.plugin = {

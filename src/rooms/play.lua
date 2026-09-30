@@ -2,6 +2,7 @@ local play = group:new('play')
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
 local ThemeService = require("src.services.themeService")
+local editState = require("src.utils.editState") -- 插件接管交互的状态（核心持有）
 play.now_all_track_pos = {} --现在所有轨道的属性
 play.effect = {
     note_alpha = 100,
@@ -202,7 +203,7 @@ function play:mousepressed(x, y, button, istouch, presses)
     self('mousepressed', x, y, button, istouch, presses)
 
     
-    if self:mouseInDemo() and love.mouse.isDown(1) and (not directEventEditing or not directEventEditing.open) and tabs:isSingle() then -- 选择轨道 在demo区域
+    if self:mouseInDemo() and love.mouse.isDown(1) and not editState.demoCaptured and tabs:isSingle() then -- 选择轨道 在demo区域
         messageBox:add("track click")
         local local_track = {}
         for i = 1, ChartService:getEventCount() do                                   --点击轨道进入轨道的编辑事件

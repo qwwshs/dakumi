@@ -21,6 +21,7 @@ mouse = { down = false }
 local activeAction = 'deleteSelect'
 input = function(action) return action == activeAction end
 local ctrl = require('plugins.ctrl')
+local clipboard = require('src.utils.clipboard')
 
 local function note(beatValue)
     return Note.new({ track = 1, beat = { beatValue, 0, 1 } })
@@ -30,8 +31,8 @@ local function event(beatValue)
 end
 local function reset()
     ChartService:setChart({ note = {}, event = {} })
-    ctrl.copy_tab = table.copy(ctrl.meta_copy_tab)
-    ctrl.copy_tab.pos = 'edit'
+    clipboard.tab = table.copy(clipboard.meta)
+    clipboard.tab.pos = 'edit'
 end
 
 reset()
@@ -41,7 +42,7 @@ for _, item in ipairs({ a, b, c, untouched }) do ChartService:addNote(item) end
 for _, item in ipairs({ x, y }) do ChartService:addEvent(item) end
 for _, item in ipairs({ a, b, c }) do ctrl:copy_add(item, 'note') end
 for _, item in ipairs({ x, y }) do ctrl:copy_add(item, 'event') end
-assert(#ctrl.copy_tab.note == 3 and #ctrl.copy_tab.event == 2, '内容相同的对象应分别进入选区')
+assert(#clipboard.tab.note == 3 and #clipboard.tab.event == 2, '内容相同的对象应分别进入选区')
 ctrl:keypressed('d')
 assert(ChartService:getNoteCount() == 1 and rawequal(ChartService:getNote(1), untouched), '所有选中 note 应被删除')
 assert(ChartService:getEventCount() == 0, '所有选中 event 应被删除')
@@ -60,7 +61,7 @@ ChartService:addNote(a)
 ChartService:addNote(b)
 ctrl:copy_add(a, 'note')
 ctrl:copy_add(b, 'note')
-ctrl.copy_tab.type = 'cut'
+clipboard.tab.type = 'cut'
 ctrl.getPasteItems = function() return { note = { a:copy(), b:copy() }, event = {} } end
 activeAction = 'paste'
 ctrl:keypressed('v')
@@ -80,7 +81,7 @@ fTrack = {
     to_play_track = function(_, x, w) return x, w end,
 }
 fEvent.get = function() return 150, 30 end
-ctrl.mouse_start_pos = { x = 100, y = 600, down = true }
+clipboard.mouse_start_pos = { x = 100, y = 600, down = true }
 ctrl:mousereleased(200, 500)
-assert(#ctrl.copy_tab.note == 1 and rawequal(ctrl.copy_tab.note[1], a), 'play 区域应能框选无事件轨道的音符')
+assert(#clipboard.tab.note == 1 and rawequal(clipboard.tab.note[1], a), 'play 区域应能框选无事件轨道的音符')
 print('bulk_delete: PASS')

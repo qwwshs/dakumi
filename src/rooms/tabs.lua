@@ -25,6 +25,8 @@ local ChartService = require("src.services.chartService")
 local ThemeService = require("src.services.themeService")
 local SpectrogramRuler = require('src.services.spectrogramRuler')
 local demoInEdit = require 'src.objects.play.demoInEdit'
+local clipboard = require("src.utils.clipboard") -- 剪贴板数据（核心），不引用 ctrl 插件
+local eventBus = require("src.utils.eventBus")
 tabs.layout = require 'config.layouts.tab'
 local infoFont = love.graphics.newFont('assets/fonts/LXGWNeoXiHei.ttf', 10)
 infoFont:setFilter('linear', 'nearest')
@@ -117,7 +119,7 @@ function tabs:load()
     self._scrollGrab = 0
     self._lastClick = { index = 0, time = 0 }
     self._renameRect = nil
-    if ctrl then ctrl:convertTabsClipboardToPlay() end
+    clipboard:convertTabsToPlay()
     self('load')
 end
 
@@ -233,8 +235,8 @@ function tabs:closeTab(i)
     if self.active == 1 then
         self.list[1].track = 0
     end
-    if #self.list == 1 and ctrl then
-        ctrl:convertTabsClipboardToPlay()
+    if #self.list == 1 then
+        clipboard:convertTabsToPlay()
     end
     messageBox:add("tab close")
 end
@@ -684,10 +686,8 @@ function tabs:draw()
         end
     end
     self('draw')
-    -- edit 窗口绘制完成后，再绘制框选与复制/粘贴预览。
-    if not self:isSingle() and ctrl then
-        ctrl:draw(true)
-    end
+    -- edit 窗口绘制完成：广播给叠加层（ctrl 插件在此画框选标记与粘贴预览）
+    eventBus:emit('tabs:edit_content_drawn')
 end
 
 function tabs:mousepressed(x, y, button, istouch, presses)

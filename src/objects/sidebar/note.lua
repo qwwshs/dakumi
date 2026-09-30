@@ -53,23 +53,27 @@ end
 
 function Gnote:NuiNext() --更新信息
     local v = ChartService:getNote(sidebar.incoming[1])
-    if self.fakev.value then
-        v:setFake(1)
-    else
-        v:setFake(0)
-    end
-    if v:isHold() then
-        if self.noteHeadv.value then
-            v:setNoteHead(1)
+    if not v then return end
+    -- 一次勾选更新的全部字段归入同一事务
+    ChartService:change('history.edit_note', function()
+        if self.fakev.value then
+            v:setFake(1)
         else
-            v:setNoteHead(0)
+            v:setFake(0)
         end
-        if self.wipeHeadv.value then
-            v:setWipeHead(1)
-        else
-            v:setWipeHead(0)
+        if v:isHold() then
+            if self.noteHeadv.value then
+                v:setNoteHead(1)
+            else
+                v:setNoteHead(0)
+            end
+            if self.wipeHeadv.value then
+                v:setWipeHead(1)
+            else
+                v:setWipeHead(0)
+            end
         end
-    end
+    end)
 end
 
 return Gnote

@@ -1,5 +1,6 @@
 --event界面
 local ChartService = require("src.services.chartService")
+local editState = require("src.utils.editState") -- 插件拖拽状态（核心持有）
 local Gevent = group:new('event')
 Gevent.type = "event"
 Gevent.layout = require 'config.layouts.sidebar'.event
@@ -61,6 +62,8 @@ function Gevent:to(event_index)
         self.transv.value = tostring(v:getEasings())
         self.easings_index.value = v:getEasings()
     end
+    -- 打开页面事务：页面期间的实体修改（含拖拽）全部累积，leave 时合并为一条记录
+    ChartService:beginChange()
 end
 
 function Gevent:transTypeIsBezier()
@@ -274,26 +277,32 @@ function Gevent:NuiNext() --更新信息
 end
 
 function Gevent:leave()
---用于撤销
-local actionKey = self.historyAction or 'history.edit_event'
-self.historyAction = nil
--- directEventEditing 拖拽期间每帧 sidebar:to 会刷新本页面：
--- 拖拽中不记录撤销（避免每帧产生一条记录），由插件在拖动完成时统一写入一次
-if directEventEditing and directEventEditing.catch_point then return end
-if Incoming_event_before_arrival == Incoming_event then return end
-if not ChartService:canPlaceEvent(Incoming_event, Incoming_event) then
-    ChartService:deleteEvent(Incoming_event)
-    ChartService:addEvent(Incoming_event_before_arrival)
-    fEvent:sort()
-    messageBox:add('illegal operation')
-    return
-end
-Incoming_event = Incoming_event:copy()
-log(ChartService:deleteEvent(Incoming_event))
-ChartService:addEvent(Incoming_event_before_arrival)
-ChartService:push()
-ChartService:delete(Incoming_event_before_arrival)
-ChartService:add(Incoming_event)
-ChartService:pop(actionKey)
+    local actionKey = self.historyAction or 'history.edit_event'
+    self.historyAction = nil
+    -- directEventEditing 拖拽期间每帧 sidebar:to 会刷新本页面：
+    -- 刷新时不提交（页面事务继续，离开页面时统一合并为一条记录）
+    if editState.draggingEvent then return end
+    -- 非法落点：页面编辑实时生效，非法时回退到进入页面前的值（回退本身不产生记录）
+    if Incoming_event and Incoming_event_before_arrival and
+        not ChartService:canPlaceEvent(Incoming_event, Incoming_event) then
+        ChartService:suspend(function()
+            Incoming_event:setBeat(Incoming_event_before_arrival:getBeat())
+            Incoming_event:setBeat2(Incoming_event_before_arrival:getBeat2())
+            Incoming_event:setTrack(Incoming_event_before_arrival:getTrack())
+            Incoming_event:setType(Incoming_event_before_arrival:getType())
+            Incoming_event:setFrom(Incoming_event_before_arrival:getFrom())
+            Incoming_event:setTo(Incoming_event_before_arrival:getTo())
+            Incoming_event:setTrans(table.copy(Incoming_event_before_arrival:getTrans()))
+            Incoming_event:setEventGroup(Incoming_event_before_arrival:getEventGroup())
+            Incoming_event:setFlipHorizontally(Incoming_event_before_arrival:getFlipHorizontally())
+            Incoming_event:setFlipVertically(Incoming_event_before_arrival:getFlipVertically())
+        end)
+        ChartService:abortChange()
+        fEvent:sort()
+        messageBox:add('illegal operation')
+        return
+    end
+    -- 提交页面事务：进入页面以来的全部变更合并为一条记录（无差异则不产生记录）
+    ChartService:commitChange(actionKey)
 end
 return Gevent

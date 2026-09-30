@@ -18,8 +18,10 @@ function Gpreference:Nui()
 
     if ui:tip(i18n:get('save')) then
         local old = ChartService:getPreferenceField('x_offset')
-        ChartService:setPreferenceField('x_offset', tonumber(self.x_offset_v.value) or 0)
-        ChartService:setPreferenceField('event_scale', tonumber(self.event_scale_v.value) or 100)
+        ChartService:change('history.edit_preference', function()
+            ChartService:setPreferenceField('x_offset', tonumber(self.x_offset_v.value) or 0)
+            ChartService:setPreferenceField('event_scale', tonumber(self.event_scale_v.value) or 100)
+        end)
 
         --[[if love.window.showMessageBox( "", i18n:get("Whether to offset the previously written event value"),{'no','yes'} ) == 2 then
             for i = 1,#chart.event do

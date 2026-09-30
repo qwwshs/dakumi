@@ -126,8 +126,10 @@ function alt:keypressed(key)
         if is_event and ChartService:getEvent(note_or_event_index) then
             local e = ChartService:getEvent(note_or_event_index)
             local center = 2*(ChartService:getPreferenceField('x_offset') + ChartService:getPreferenceField('event_scale')/2)
-            e:setFrom(center - e:getFrom())
-            e:setTo(center - e:getTo())
+            ChartService:change('history.flip_event', function()
+                e:setFrom(center - e:getFrom())
+                e:setTo(center - e:getTo())
+            end)
             log('flip')
             sidebar:getGroup('event').historyAction = 'history.flip_event'
             sidebar:to('event',note_or_event_index)
@@ -137,11 +139,13 @@ function alt:keypressed(key)
         if is_event and ChartService:getEvent(note_or_event_index) then
             local e = ChartService:getEvent(note_or_event_index)
             local fence_x = fTrack:track_get_near_fence_x()
-            if CoordinateService:yToBeat(mouse.y) < e:getBeatValue() then --在event之前
-                e:setFrom(fence_x)
-            else
-                e:setTo(fence_x)
-            end
+            ChartService:change('history.adjust_event_value', function()
+                if CoordinateService:yToBeat(mouse.y) < e:getBeatValue() then --在event之前
+                    e:setFrom(fence_x)
+                else
+                    e:setTo(fence_x)
+                end
+            end)
             sidebar:getGroup('event').historyAction = 'history.adjust_event_value'
             sidebar:to('event',note_or_event_index)
         end
@@ -149,9 +153,11 @@ function alt:keypressed(key)
     if input('flipUpsideDownEvent') then
         if is_event and ChartService:getEvent(note_or_event_index) then
             local e = ChartService:getEvent(note_or_event_index)
-            local from, to = e:getTo(), e:getFrom()
-            e:setFrom(from)
-            e:setTo(to)
+            ChartService:change('history.flip_event_vertical', function()
+                local from, to = e:getTo(), e:getFrom()
+                e:setFrom(from)
+                e:setTo(to)
+            end)
             log('flip')
             sidebar:getGroup('event').historyAction = 'history.flip_event_vertical'
             sidebar:to('event',note_or_event_index)

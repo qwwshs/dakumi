@@ -32,6 +32,8 @@ function GchartInfo:load()
     self.song_name_v.value = sanitizeUtf8(ChartService:getInfoField('song_name'))
     self.offset.value = tostring(ChartService:getOffset()) or "0"
 
+    -- 整份重建：本页每次进入都会 load，残留上一次的多余条目会让保存把已删除的 BPM 写回谱面
+    self.bpmList = {}
     for i = 1, ChartService:getBpmCount() do
         local v = ChartService:getBpm(i)
         self.bpmList[i] = {
@@ -100,6 +102,8 @@ function GchartInfo:Nui()
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     if ui:tip(i18n:get('save')) then
+        -- 信息/offset/BPM 列表的整次保存归入同一事务
+        ChartService:change('history.edit_chart_info', function()
         ChartService:setInfoField('chartor', sanitizeUtf8(self.chartor_v.value))
         ChartService:setInfoField('artist', sanitizeUtf8(self.artist_v.value))
         ChartService:setInfoField('chart_name', sanitizeUtf8(self.chart_name_v.value))
@@ -124,6 +128,7 @@ function GchartInfo:Nui()
         ChartService:setBpmList(new_bpm_list)
 
         ChartService:sortBpmList()
+        end)
     end
 end
 

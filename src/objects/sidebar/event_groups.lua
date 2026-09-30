@@ -1,6 +1,7 @@
 -- 事件组管理。组内事件使用编辑区的普通事件操作，侧边栏只负责进出编辑模式。
 local ChartService = require('src.services.chartService')
 local demoInEdit = require('src.objects.play.demoInEdit')
+local clipboard = require('src.utils.clipboard') -- 剪贴板数据（核心），不引用 ctrl 插件
 local Ggroups = group:new('event groups')
 Ggroups.type = 'event groups'
 Ggroups.layout = require('config.layouts.sidebar').event_groups
@@ -29,17 +30,15 @@ function Ggroups:selectGroup(name)
     if fEvent then fEvent:cleanUp() end
     if fNote then fNote:holdCleanUp() end
     self.previousTrack = track and track.track or 1
-    self.previousClipboard = ctrl and ctrl.copy_tab or nil
+    self.previousClipboard = clipboard.tab
     if track then track:to('track', 1) end
     if not ChartService:beginEventGroupEdit(name) then
         if track then track:to('track', self.previousTrack) end
         showError()
         return false
     end
-    if ctrl then
-        ctrl.copy_tab = table.copy(ctrl.meta_copy_tab)
-        ctrl.mouse_start_pos.down = false
-    end
+    clipboard.tab = table.copy(clipboard.meta)
+    clipboard.mouse_start_pos.down = false
     if play then
         self.previousEffect = play.effect
         play.effect = play:get_init_effect()
@@ -58,9 +57,9 @@ function Ggroups:exitGroup(restoreTrack)
     local ok = ChartService:finishEventGroupEdit()
     if not ok then showError(); return false end
     if fEvent then fEvent:cleanUp() end
-    if ctrl and self.previousClipboard then
-        ctrl.copy_tab = self.previousClipboard
-        ctrl.mouse_start_pos.down = false
+    if self.previousClipboard then
+        clipboard.tab = self.previousClipboard
+        clipboard.mouse_start_pos.down = false
     end
     self.previousClipboard = nil
     if restoreTrack and track and self.previousTrack then

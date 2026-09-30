@@ -26,6 +26,10 @@ function sidebar:to(ty, ...)      -- 更变房间
     end
     if type(g.to) == 'function' then
         g:to(...)
+    elseif type(g.load) == 'function' then
+        -- 没有 to 的页面（谱面信息 / 偏好等）在进入时用 load 从数据整体刷新：
+        -- 否则撤销、重做或其它入口改动数据后，页面会一直显示进入前残留的旧值
+        g:load()
     end
 end
 

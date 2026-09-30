@@ -14,6 +14,8 @@
 
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
+local eventBus = require("src.utils.eventBus")
+local editState = require("src.utils.editState") -- 交互状态写入核心，内部模块不反向引用本插件
 local directEventEditing = object:new('directEventEditing')
 
 --- 是否开启直观编辑模式
@@ -97,6 +99,7 @@ end
 function directEventEditing:keypressed(key)
     if input('directEventEditing') then
         self.open = not self.open
+        editState.demoCaptured = self.open
         if self.open then
             messageBox:add("direct event editing open")
         else
@@ -136,17 +139,14 @@ end
 
 --- 每帧更新：处理拖拽和右键菜单
 function directEventEditing:update(dt)
+    -- 交互状态同步给核心 editState（sidebar/play 读它判断让位，不直接引用本插件）
+    editState.demoCaptured = self.open
+    editState.draggingEvent = self.catch_point ~= nil
     -- 松手清除：拖动完成时写入一次撤销记录（还原到拖动前的快照）
     if not love.mouse.isDown(1) and self.catch_point then
         local cur_event = getCurrentEvent() or self.drag_event
-        if cur_event and self.drag_before and not self.drag_before:eq(cur_event) then
-            if redo then
-                redo:writeRevoke({
-                    add = { event = { cur_event:copy() }, note = {} },
-                    del = { event = { self.drag_before }, note = {} },
-                }, nil, 'history.drag_event')
-            end
-        end
+        -- 拖拽修改经 setter 进入页面事务，离开事件页时统一产生记录；
+        -- drag_before 仅保留用于对比，判断是否有必要刷新页面
         -- 仍处于 catch_point 状态时调用 sidebar:to：leave() 会忽略刷新（不产生记录），
         -- 但 Gevent:to 会把进入基线同步为当前值，之后离开页面时不会重复记录
         if sidebar.displayed_content == 'event' then
@@ -231,58 +231,71 @@ function directEventEditing:update(dt)
             Nui:layoutRow('dynamic', MENU_ITEM_H, 1)
             -- 切换过渡类型
             if Nui:contextualItem(i18n:get('switch trans type')) then
-                if isevent:getTransType() == 'bezier' then
-                    isevent:setTransType('easings')
-                else
-                    isevent:setTransType('bezier')
-                end
+                ChartService:change('history.edit_event', function()
+                    if isevent:getTransType() == 'bezier' then
+                        isevent:setTransType('easings')
+                    else
+                        isevent:setTransType('bezier')
+                    end
+                end)
             end
 
             -- 切换到下一个曲线类型
             if Nui:contextualItem(i18n:get('switch the curve to the next type')) then
-                if isevent:getTransType() == 'bezier' then
-                    if fEvent.bezier[transIndex.bezier + 1] then
-                        transIndex.bezier = transIndex.bezier + 1
-                        isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
+                ChartService:change('history.edit_event', function()
+                    if isevent:getTransType() == 'bezier' then
+                        if fEvent.bezier[transIndex.bezier + 1] then
+                            transIndex.bezier = transIndex.bezier + 1
+                            isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
+                        end
+                    else
+                        if easings[transIndex.easings + 1] then
+                            transIndex.easings = transIndex.easings + 1
+                            isevent:setEasings(transIndex.easings)
+                        end
                     end
-                else
-                    if easings[transIndex.easings + 1] then
-                        transIndex.easings = transIndex.easings + 1
-                        isevent:setEasings(transIndex.easings)
-                    end
-                end
+                end)
             end
 
             -- 切换到上一个曲线类型
             if Nui:contextualItem(i18n:get('switch the curve back to the previous type')) then
-                if isevent:getTransType() == 'bezier' then
-                    if fEvent.bezier[transIndex.bezier - 1] then
-                        transIndex.bezier = transIndex.bezier - 1
-                        isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
+                ChartService:change('history.edit_event', function()
+                    if isevent:getTransType() == 'bezier' then
+                        if fEvent.bezier[transIndex.bezier - 1] then
+                            transIndex.bezier = transIndex.bezier - 1
+                            isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
+                        end
+                    else
+                        if easings[transIndex.easings - 1] then
+                            transIndex.easings = transIndex.easings - 1
+                            isevent:setEasings(transIndex.easings)
+                        end
                     end
-                else
-                    if easings[transIndex.easings - 1] then
-                        transIndex.easings = transIndex.easings - 1
-                        isevent:setEasings(transIndex.easings)
-                    end
-                end
+                end)
             end
 
             -- bezier 控制点操作
             if isevent:getTransType() == 'bezier' then
+                -- 控制点直接改 trans 数组（未经 setter），需先显式快照再入事务
                 if Nui:contextualItem(i18n:get('add control point')) then
-                    local x = (mouse.x - c_x) / (c_x2 - c_x)
-                    local y = (mouse.y - c_y) / (c_y2 - c_y)
-                    local td = isevent:getTransData()
-                    table.insert(td, x)
-                    table.insert(td, y)
+                    ChartService:change('history.edit_event', function()
+                        ChartService:snapshotEntity(isevent)
+                        local x = (mouse.x - c_x) / (c_x2 - c_x)
+                        local y = (mouse.y - c_y) / (c_y2 - c_y)
+                        local td = isevent:getTransData()
+                        table.insert(td, x)
+                        table.insert(td, y)
+                    end)
                 end
                 if Nui:contextualItem(i18n:get('delete control point')) then
-                    local td = isevent:getTransData()
-                    if #td > 2 then
-                        table.remove(td, #td)
-                        table.remove(td, #td)
-                    end
+                    ChartService:change('history.edit_event', function()
+                        ChartService:snapshotEntity(isevent)
+                        local td = isevent:getTransData()
+                        if #td > 2 then
+                            table.remove(td, #td)
+                            table.remove(td, #td)
+                        end
+                    end)
                 end
             end
 

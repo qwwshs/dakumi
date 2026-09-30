@@ -3,7 +3,15 @@
     描述: 谱面数据服务层，chart 和 extra_chart 的唯一持有者
     作者: qwwshs
     依赖: meta_chart/event_type/meta_track/meta_extra_chart_track (全局, isRequire 加载),
-          table/beat/save/dkjson (全局), fNote/fEvent/redo/PluginManager (全局, 调用时存在)
+          table/beat/save/dkjson (全局), fNote/fEvent/PluginManager (全局, 调用时存在),
+          eventBus/chartRecorder (require)
+
+    撤销强制记录（chartRecorder）:
+    - 所有谱面变更必须发生在 recorder 事务内；事务外的低层增删/字段修改自动包单发事务，
+      **调用方无法跳过撤销记录**（唯一豁免是撤销回放与内部定位舞步：recorder.suspend）
+    - 实体内容变更经 Note/Event setter 拦截自动快照（旧值在事务内只取第一次）
+    - 字段变更（offset/info/preference/track/bpm_list）经 touchField 记录前后值
+    - change(actionKey, fn) 供手势层开显式事务（一个手势一条记录）
 
     设计原则:
     - chart 与 extra_chart 是本模块的私有状态（module-local），不再有全局变量
@@ -16,6 +24,8 @@
 local ChartService = {}
 local Note = require("src.objects.Note")
 local Event = require("src.objects.Event")
+local eventBus = require("src.utils.eventBus")
+local recorder = require("src.utils.chartRecorder")
 
 -- ============================================================
 -- 私有状态
@@ -28,14 +38,79 @@ local activeGroupEdit
 
 --- 谱面索引：{ track = { [trackId] = { x={}, w={}, lpos={}, rpos={}, note={} } } }
 local extra_chart = { track = {} }
-
---- 批量操作缓冲区（push 与 pop 之间缓存的增删操作）
-local chart_push = {
-    now = false,                    -- 是否正在批量操作中
-    add = {event = {}, note = {}},  -- 待添加的元素
-    del = {event = {}, note = {}},  -- 待删除的元素
-}
 local validGroupName
+
+-- ============================================================
+-- 撤销强制记录（变更事务）
+-- ============================================================
+
+--- 重建成员注册表（哪些实体当前属于谱面——setter 拦截据此决定是否记录）
+local function rebuildRegistry()
+    recorder.clearIn()
+    for i = 1, #(chart.event or {}) do recorder.markIn(chart.event[i]) end
+    for i = 1, #(chart.note or {}) do recorder.markIn(chart.note[i]) end
+end
+
+--- 读取字段现值（事务提交时与 fields_before 对比）
+local function currentFieldValue(kind, key)
+    if kind == 'offset' then return chart.offset or 0 end
+    if kind == 'info' then return chart.info and chart.info[key] or nil end
+    if kind == 'preference' then return chart.preference and chart.preference[key] or nil end
+    if kind == 'track' then
+        return chart.track and chart.track[tostring(key)] and table.copy(chart.track[tostring(key)]) or nil
+    end
+    if kind == 'bpm_list' then return chart.bpm_list and table.copy(chart.bpm_list) or nil end
+end
+
+--- 提交当前事务：补齐字段前后值后广播 chart:committed（无实际变更则不产生记录）
+local function commitTxn(actionKey)
+    local t = recorder.txn and recorder.txn() or nil
+    if not t then return false end
+    local fieldsAfter = {}
+    for _, entry in pairs(t.fields_before) do
+        fieldsAfter[#fieldsAfter + 1] = {kind = entry.kind, key = entry.key,
+            value = currentFieldValue(entry.kind, entry.key)}
+    end
+    return recorder.commit(actionKey, fieldsAfter)
+end
+
+--- 在变更事务中执行 fn：无事务时自动开一个并在结束后提交（强制记录的统一入口）
+-- 已有事务（手势批量 / push 批量）时 fn 直接执行，记录归入外层事务
+-- @treturn any fn 的返回值原样透传
+function ChartService:change(actionKey, fn)
+    if recorder.suspended() then return fn() end
+    local had = recorder.hasTxn()
+    if not had then recorder.begin() end
+    local results = {fn()}
+    if not had then commitTxn(actionKey) end
+    return unpack(results, 1, #results)
+end
+
+--- 打开/提交一个跨帧的事务（拖拽等无法用 change 包住的手势）
+function ChartService:beginChange()
+    recorder.begin()
+end
+
+--- 提交当前事务（通常与 beginChange 配对；由手势层提供 actionKey）
+function ChartService:commitChange(actionKey)
+    if recorder.suspended() then recorder.reset(); return false end
+    return commitTxn(actionKey)
+end
+
+--- 放弃当前事务（不产生记录；调用方需自行把谱面恢复原状）
+function ChartService:abortChange()
+    recorder.reset()
+end
+
+--- 手动快照一个图谱面实体（内容经嵌套表直接修改而未经 setter 的场景，先调本函数）
+function ChartService:snapshotEntity(e)
+    recorder.beforeEntityChange(e)
+end
+
+--- 豁免区间：fn 内的谱面变更不产生撤销记录（撤销回放 / 内部定位舞步专用）
+function ChartService:suspend(fn)
+    return recorder.suspend(fn)
+end
 
 -- ============================================================
 -- 内部辅助函数
@@ -135,10 +210,9 @@ function ChartService:setChart(data)
     if type(chart.event_groups) ~= 'table' then chart.event_groups = {} end
     eventGroupsRevision = eventGroupsRevision + 1
     extra_chart = { track = {} }
-    chart_push.now = false
-    chart_push.add = {event = {}, note = {}}
-    chart_push.del = {event = {}, note = {}}
-    if redo then redo:clear() end
+    recorder.reset()
+    rebuildRegistry()
+    eventBus:emit('chart:replaced')
 end
 
 --- 更新谱面数据（版本迁移和字段填充）
@@ -331,7 +405,7 @@ end
 
 -- 编辑时临时切换到只含组内事件的一条轨道。原谱面与索引原样保留。
 function ChartService:beginEventGroupEdit(name)
-    if activeGroupEdit or chart_push.now then return false end
+    if activeGroupEdit then return false end
     local definition = chart.event_groups and chart.event_groups[name]
     if not definition then return false end
     local events = {}
@@ -343,8 +417,7 @@ function ChartService:beginEventGroupEdit(name)
     end
     activeGroupEdit = {
         name = name, mainChart = chart, mainIndex = extra_chart,
-        mainPush = chart_push, before = table.copy(chart.event_groups),
-        undo = redo and redo.revoke, redo = redo and redo.redo,
+        before = table.copy(chart.event_groups),
     }
     local editTrack = table.copy(meta_track.__index)
     editTrack.w0thenShow = 1
@@ -359,8 +432,10 @@ function ChartService:beginEventGroupEdit(name)
     extra_chart = {track = {}}
     for _, event in ipairs(events) do addEventToIndex(event) end
     self:sortEvents()
-    chart_push = {now = false, add = {event = {}, note = {}}, del = {event = {}, note = {}}}
-    if redo then redo.revoke, redo.redo = {}, {} end
+    recorder.reset()
+    rebuildRegistry()
+    -- 通知订阅方挂起自身状态（如撤销栈），组内编辑使用独立状态
+    eventBus:emit('chart:group_edit_begin')
     eventGroupsRevision = eventGroupsRevision + 1
     return true
 end
@@ -369,7 +444,6 @@ end
 function ChartService:syncEventGroupEdit()
     local session = activeGroupEdit
     if not session then return true end
-    if chart_push.now then return false end
     local events = {}
     for _, event in ipairs(chart.event) do
         local value = event:toTable()
@@ -395,15 +469,15 @@ function ChartService:finishEventGroupEdit()
     if not session then return true end
     local ok = self:syncEventGroupEdit()
     if not ok then return false end
-    chart, extra_chart, chart_push = session.mainChart, session.mainIndex, session.mainPush
+    chart, extra_chart = session.mainChart, session.mainIndex
     activeGroupEdit = nil
-    if redo then
-        redo.revoke, redo.redo = session.undo or {}, session.redo or {}
-        redo:writeRevoke({
-            add = {event = {}, note = {}}, del = {event = {}, note = {}},
-            groups_before = session.before, groups_after = table.copy(chart.event_groups),
-        }, nil, 'history.edit_event_group')
-    end
+    recorder.reset()
+    rebuildRegistry()
+    -- 通知订阅方恢复挂起的状态，并带上组定义变更供撤销记录
+    eventBus:emit('chart:group_edit_end', {
+        add = {event = {}, note = {}}, del = {event = {}, note = {}},
+        groups_before = session.before, groups_after = table.copy(chart.event_groups),
+    }, 'history.edit_event_group')
     eventGroupsRevision = eventGroupsRevision + 1
     return true
 end
@@ -459,12 +533,10 @@ function ChartService:putEventGroup(name, value, oldName, actionKey)
     end
     chart.event_groups[name] = {name = name, event = table.copy(value.event)}
     eventGroupsRevision = eventGroupsRevision + 1
-    if redo then
-        redo:writeRevoke({
-            add = {event = newRefs, note = {}}, del = {event = oldRefs, note = {}},
-            groups_before = before, groups_after = self:copyEventGroups(),
-        }, nil, actionKey or 'history.edit_event_group')
-    end
+    eventBus:emit('chart:committed', {
+        add = {event = newRefs, note = {}}, del = {event = oldRefs, note = {}},
+        groups_before = before, groups_after = self:copyEventGroups(),
+    }, actionKey or 'history.edit_event_group')
     return true
 end
 
@@ -474,12 +546,10 @@ function ChartService:deleteEventGroup(name)
     local before = self:copyEventGroups()
     chart.event_groups[name] = nil
     eventGroupsRevision = eventGroupsRevision + 1
-    if redo then
-        redo:writeRevoke({
-            add = {event = {}, note = {}}, del = {event = {}, note = {}},
-            groups_before = before, groups_after = self:copyEventGroups(),
-        }, nil, 'history.delete_event_group')
-    end
+    eventBus:emit('chart:committed', {
+        add = {event = {}, note = {}}, del = {event = {}, note = {}},
+        groups_before = before, groups_after = self:copyEventGroups(),
+    }, 'history.delete_event_group')
     return true
 end
 
@@ -493,16 +563,10 @@ function ChartService:canPlaceEvent(candidate, ignored)
         if rawequal(existing, ignored) or (type(ignored) == 'table' and ignored[existing]) or
             rawequal(existing, candidate) or
             existing:getTrack() ~= candidate:getTrack() then return false end
-        for _, pending in ipairs(chart_push.del.event) do
-            if rawequal(existing, pending) then return false end
-        end
         if kind ~= 'event_group' and existing:getType() ~= 'event_group' then return false end
         return from < existing:getBeat2Value() and to > existing:getBeatValue()
     end
     for _, existing in ipairs(chart.event) do
-        if conflicts(existing) then return false end
-    end
-    for _, existing in ipairs(chart_push.add.event) do
         if conflicts(existing) then return false end
     end
     return true
@@ -512,94 +576,87 @@ end
 -- 批量操作
 -- ============================================================
 
---- 开始批量操作（延迟提交模式）
--- 在 push 和 pop 之间的所有 add/delete 操作会被缓冲，pop 时统一提交
+--- 开始批量操作：push 与 pop 之间的所有变更（增删/内容/字段）归入同一事务，
+--- pop 时合并为一条撤销记录。变更在事务期间即时生效（chart 即实时状态）
 function ChartService:push()
-    chart_push.now = true
+    recorder.begin()
 end
 
---- 结束批量操作并提交所有缓冲的操作
--- 将缓冲的 add/delete 操作应用到 chart（自动同步 extra_chart），
--- 然后写入撤销记录并排序
+--- 结束批量操作：合并为一条撤销记录并排序
 -- @tparam string actionKey 本次操作的 i18n 说明键
 function ChartService:pop(actionKey)
-    chart_push.now = false
-
-    -- 1. 将缓冲的添加操作应用到 chart（自动同步 extra_chart）
-    for _, v in ipairs(chart_push.add.event) do
-        self:addEvent(v)
-    end
-    for _, v in ipairs(chart_push.add.note) do
-        self:addNote(v)
-    end
-
-    -- 2. 将缓冲的删除操作从 chart 中移除（自动同步 extra_chart）
-    for _, v in ipairs(chart_push.del.event) do
-        self:deleteEvent(v)
-    end
-    for _, v in ipairs(chart_push.del.note) do
-        self:deleteNote(v)
-    end
-
-    -- 3. 写入撤销记录
-    if redo then redo:writeRevoke(chart_push, nil, actionKey) end
-
-    -- 4. 清空缓冲区
-    chart_push.add = {event = {}, note = {}}
-    chart_push.del = {event = {}, note = {}}
-
-    -- 5. 重新排序
     fNote:sort()
     fEvent:sort()
+    commitTxn(actionKey)
 end
 
 -- ============================================================
 -- 增删操作（同步 chart 与 extra_chart）
 -- ============================================================
 
---- 添加音符到谱面（自动同步索引）
--- @tparam table note 音符数据
-function ChartService:addNote(note)
-    if activeGroupEdit then return false end
-    table.insert(chart.note, note)
-    addNoteToIndex(note)
-end
-
---- 从谱面删除音符（自动同步索引）
+--- 添加音符到谱面（自动同步索引；强制入撤销事务）
 -- @tparam Note note 音符对象
--- @treturn boolean 是否删除成功
-function ChartService:deleteNote(note)
+-- @tparam string|nil actionKey 事务外调用时的记录说明键
+function ChartService:addNote(note, actionKey)
     if activeGroupEdit then return false end
-    local i = findItemIndex(chart.note, note)
-    if not i then return false end
-    local actual = chart.note[i]
-    table.remove(chart.note, i)
-    removeNoteFromIndex(actual)
-    return true
+    return self:change(actionKey, function()
+        table.insert(chart.note, note)
+        addNoteToIndex(note)
+        recorder.markIn(note)
+        recorder.trackAdd(note)
+    end)
 end
 
---- 添加事件到谱面（自动同步索引）
--- @tparam table event 事件数据
-function ChartService:addEvent(event)
-    table.insert(chart.event, event)
-    addEventToIndex(event)
-end
-
---- 从谱面删除事件（自动同步索引）
--- @tparam Event event 事件对象
+--- 从谱面删除音符（自动同步索引；强制入撤销事务）
+-- @tparam Note note 音符对象
+-- @tparam string|nil actionKey 事务外调用时的记录说明键
 -- @treturn boolean 是否删除成功
-function ChartService:deleteEvent(event)
-    local i = findItemIndex(chart.event, event)
-    if not i then return false end
-    local actual = chart.event[i]
-    table.remove(chart.event, i)
-    removeEventFromIndex(actual)
-    return true
+function ChartService:deleteNote(note, actionKey)
+    if activeGroupEdit then return false end
+    return self:change(actionKey, function()
+        local i = findItemIndex(chart.note, note)
+        if not i then return false end
+        local actual = chart.note[i]
+        table.remove(chart.note, i)
+        removeNoteFromIndex(actual)
+        recorder.unmarkIn(actual)
+        recorder.trackDel(actual)
+        return true
+    end)
 end
 
---- 添加 note 或 event 到谱面
--- 如果处于批量操作模式，则缓冲到 chart_push；否则直接添加
--- @tparam table noteorevent 要添加的音符或事件数据
+--- 添加事件到谱面（自动同步索引；强制入撤销事务）
+-- @tparam Event event 事件对象
+-- @tparam string|nil actionKey 事务外调用时的记录说明键
+function ChartService:addEvent(event, actionKey)
+    return self:change(actionKey, function()
+        table.insert(chart.event, event)
+        addEventToIndex(event)
+        recorder.markIn(event)
+        recorder.trackAdd(event)
+    end)
+end
+
+--- 从谱面删除事件（自动同步索引；强制入撤销事务）
+-- @tparam Event event 事件对象
+-- @tparam string|nil actionKey 事务外调用时的记录说明键
+-- @treturn boolean 是否删除成功
+function ChartService:deleteEvent(event, actionKey)
+    return self:change(actionKey, function()
+        local i = findItemIndex(chart.event, event)
+        if not i then return false end
+        local actual = chart.event[i]
+        table.remove(chart.event, i)
+        removeEventFromIndex(actual)
+        recorder.unmarkIn(actual)
+        recorder.trackDel(actual)
+        return true
+    end)
+end
+
+--- 添加 note 或 event 到谱面（强制入撤销事务）
+-- @tparam Note|Event noteorevent 要添加的音符或事件数据
+-- @tparam string|nil actionKey 记录说明键
 function ChartService:add(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
@@ -610,22 +667,13 @@ function ChartService:add(noteorevent, actionKey)
         return -- 未知类型，忽略
     end
 
+    local result
     if isEvent then
         if not self:canPlaceEvent(noteorevent) then return false, 'event group overlap' end
-        if chart_push.now then
-            table.insert(chart_push.add.event, noteorevent)
-            return
-        end
-        self:addEvent(noteorevent)
-        if redo then redo:writeRevoke(noteorevent, 'add', actionKey) end
+        result = self:addEvent(noteorevent, actionKey)
         fEvent:sort()
-    elseif isNote then
-        if chart_push.now then
-            table.insert(chart_push.add.note, noteorevent)
-            return
-        end
-        self:addNote(noteorevent)
-        if redo then redo:writeRevoke(noteorevent, 'add', actionKey) end
+    else
+        result = self:addNote(noteorevent, actionKey)
         fNote:sort()
     end
 
@@ -637,11 +685,12 @@ function ChartService:add(noteorevent, actionKey)
             PluginManager:emit('onNoteAdd', noteorevent)
         end
     end
+    return result
 end
 
---- 从谱面删除 note 或 event
--- 如果处于批量操作模式，则缓冲到 chart_push；否则直接删除
--- @tparam table noteorevent 要删除的音符或事件数据
+--- 从谱面删除 note 或 event（强制入撤销事务）
+-- @tparam Note|Event noteorevent 要删除的音符或事件数据
+-- @tparam string|nil actionKey 记录说明键
 function ChartService:delete(noteorevent, actionKey)
     local typeName = noteorevent.type or (noteorevent._data and noteorevent:getType())
     local isEvent = isEventType(typeName)
@@ -652,28 +701,13 @@ function ChartService:delete(noteorevent, actionKey)
         return -- 未知类型，忽略
     end
 
+    local result
     if isEvent then
         local i = findItemIndex(chart.event, noteorevent)
-        if i then
-            local actual = chart.event[i]
-            if chart_push.now then
-                table.insert(chart_push.del.event, actual)
-                return
-            end
-            self:deleteEvent(actual)
-            if redo then redo:writeRevoke(actual, 'del', actionKey) end
-        end
-    elseif isNote then
+        if i then result = self:deleteEvent(chart.event[i], actionKey) end
+    else
         local i = findItemIndex(chart.note, noteorevent)
-        if i then
-            local actual = chart.note[i]
-            if chart_push.now then
-                table.insert(chart_push.del.note, actual)
-                return
-            end
-            self:deleteNote(actual)
-            if redo then redo:writeRevoke(actual, 'del', actionKey) end
-        end
+        if i then result = self:deleteNote(chart.note[i], actionKey) end
     end
 
     -- 触发插件钩子
@@ -684,6 +718,7 @@ function ChartService:delete(noteorevent, actionKey)
             PluginManager:emit('onNoteDelete', noteorevent)
         end
     end
+    return result
 end
 
 -- ============================================================
@@ -798,7 +833,10 @@ end
 --- 设置音频偏移量
 -- @tparam number v 偏移量（毫秒）
 function ChartService:setOffset(v)
-    chart.offset = v
+    self:change(nil, function()
+        recorder.touchField('offset', nil, chart.offset or 0)
+        chart.offset = v
+    end)
 end
 
 --- 获取谱面信息字段（song_name / chart_name / chartor / artist）
@@ -812,7 +850,10 @@ end
 -- @tparam string field 字段名
 -- @tparam any v 字段值
 function ChartService:setInfoField(field, v)
-    chart.info[field] = v
+    self:change(nil, function()
+        recorder.touchField('info', field, chart.info and chart.info[field] or nil)
+        chart.info[field] = v
+    end)
 end
 
 --- 获取偏好字段（x_offset / event_scale）
@@ -826,13 +867,20 @@ end
 -- @tparam string field 字段名
 -- @tparam number v 字段值
 function ChartService:setPreferenceField(field, v)
-    chart.preference[field] = v
+    self:change(nil, function()
+        local cur = chart.preference and chart.preference[field] or nil
+        recorder.touchField('preference', field, type(cur) == 'table' and table.copy(cur) or cur)
+        chart.preference[field] = v
+    end)
 end
 
 --- 整体替换 BPM 列表（chart_info 界面保存时使用）
 -- @tparam table list 新的 BPM 列表
 function ChartService:setBpmList(list)
-    chart.bpm_list = list
+    self:change(nil, function()
+        recorder.touchField('bpm_list', nil, chart.bpm_list and table.copy(chart.bpm_list) or nil)
+        chart.bpm_list = list
+    end)
 end
 
 -- ============================================================
@@ -861,8 +909,38 @@ end
 -- @tparam string field 字段名
 -- @tparam any v 字段值
 function ChartService:setTrackField(trackId, field, v)
-    self:ensureTrack(trackId)
-    chart.track[tostring(trackId)][field] = v
+    self:change(nil, function()
+        self:ensureTrack(trackId)
+        recorder.touchField('track', trackId, table.copy(chart.track[tostring(trackId)]))
+        chart.track[tostring(trackId)][field] = v
+    end)
+end
+
+--- 撤销/重做回放：按操作记录恢复字段值（须处于豁免期内调用）
+-- @tparam table entries fields_before 或 fields_after 列表 {kind=, key=, value=}
+function ChartService:restoreFields(entries)
+    for _, entry in ipairs(entries or {}) do
+        local kind, key, value = entry.kind, entry.key, entry.value
+        -- 表值拷贝防污染（恢复后的修改不得写穿到撤销记录），标量直接赋值
+        local function detach(v) return type(v) == 'table' and table.copy(v) or v end
+        if kind == 'offset' then
+            chart.offset = value
+        elseif kind == 'info' then
+            chart.info[key] = detach(value)
+        elseif kind == 'preference' then
+            chart.preference[key] = detach(value)
+        elseif kind == 'track' then
+            if value then
+                self:ensureTrack(key)
+                chart.track[tostring(key)] = detach(value)
+            else
+                chart.track[tostring(key)] = nil
+            end
+        elseif kind == 'bpm_list' then
+            chart.bpm_list = detach(value)
+            if chart.bpm_list then self:sortBpmList() end
+        end
+    end
 end
 
 -- ============================================================

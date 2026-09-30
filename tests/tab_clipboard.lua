@@ -20,6 +20,7 @@ mouse = { y = 700 }
 messageBox = { add = function() end }
 
 ctrl = require('plugins.ctrl')
+local clipboard = require('src.utils.clipboard')
 local tabs = require('src.rooms.tabs')
 tabs:load()
 tabs:addTab()
@@ -27,7 +28,7 @@ tabs:addTab()
 
 local note = Note.new({ track = 2, beat = { 1, 0, 1 } })
 local event = Event.new({ track = 4, type = 'x', beat = { 2, 0, 1 }, beat2 = { 3, 0, 1 } })
-ctrl.copy_tab = {
+clipboard.tab = {
     note = { note }, event = { event },
     note_tracks = { 2 }, event_tracks = { 4 },
     note_tabidx = { 1 }, event_tabidx = { 3 },
@@ -35,12 +36,12 @@ ctrl.copy_tab = {
 }
 
 tabs:closeTab(2)
-assert(ctrl.copy_tab.pos == 'tabs', '仍有多个标签页时不应转换复制表')
+assert(clipboard.tab.pos == 'tabs', '仍有多个标签页时不应转换复制表')
 tabs:closeTab(2)
-assert(ctrl.copy_tab.pos == 'play', '单标签页应改为 demo 区域复制表')
-assert(ctrl.copy_tab.type == 'cut' and rawequal(ctrl.copy_tab.note[1], note) and
-    rawequal(ctrl.copy_tab.event[1], event), '复制内容和剪切状态应保留')
-assert(#ctrl.copy_tab.note_tabidx == 0 and #ctrl.copy_tab.event_tabidx == 0, '旧标签页下标应清除')
+assert(clipboard.tab.pos == 'play', '单标签页应改为 demo 区域复制表')
+assert(clipboard.tab.type == 'cut' and rawequal(clipboard.tab.note[1], note) and
+    rawequal(clipboard.tab.event[1], event), '复制内容和剪切状态应保留')
+assert(#clipboard.tab.note_tabidx == 0 and #clipboard.tab.event_tabidx == 0, '旧标签页下标应清除')
 
 local items = ctrl:getPasteItems(false, true)
 assert(items.note[1]:getTrack() == 2 and items.event[1]:getTrack() == 4,

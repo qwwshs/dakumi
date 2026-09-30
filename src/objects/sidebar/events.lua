@@ -1,5 +1,7 @@
 --events界面
 local ChartService = require("src.services.chartService")
+local eventBus = require("src.utils.eventBus")
+local clipboard = require("src.utils.clipboard") -- 剪贴板数据（核心），不引用 ctrl 插件
 local Gevents = group:new('events')
 Gevents.type = "events"
 Gevents.layout = require 'config.layouts.sidebar'.events
@@ -73,9 +75,9 @@ function Gevents:transDo() --写出表达式
     end
 end
 function Gevents:eventsDo() --执行
-    if not ctrl then return end
-    local copy_table = ctrl:get_copy()
-    local before_map = {} --修改前的快照：k -> 该次 do 前的 event 副本
+    local copy_table = clipboard:get()
+    -- 一个 do 的全部修改归入同一事务：旧值快照与撤销记录由 chartRecorder 自动处理
+    ChartService:change('history.batch_edit_events', function()
     for i = 1,#copy_table.event do
         for k = 1, ChartService:getEventCount() do
             if copy_table.event[i] == ChartService:getEvent(k) then
@@ -95,7 +97,6 @@ function Gevents:eventsDo() --执行
                 ((self.to - self.from) *
                 self.expression(((ce:getBeat2Value() - copy_table.event[1]:getBeatValue())/
                 (copy_table.event[#copy_table.event]:getBeat2Value() - copy_table.event[1]:getBeatValue()) )) )
-                before_map[k] = before_map[k] or ChartService:getEvent(k):copy()
                 ce:setFrom(new_from)
                 ce:setTo(new_to)
                 ChartService:getEvent(k):setFrom(new_from)
@@ -103,21 +104,7 @@ function Gevents:eventsDo() --执行
             end
         end
     end
-    --一次 do 产生一条撤销记录（只记录实际发生变更的事件）
-    if redo and next(before_map) then
-        local add, del = {}, {}
-        for k, old in pairs(before_map) do
-            local cur = ChartService:getEvent(k)
-            if cur and not old:eq(cur) then
-                table.insert(del, old)
-                table.insert(add, cur:copy())
-            end
-        end
-        if next(add) then
-            redo:writeRevoke({add = {event = add, note = {}}, del = {event = del, note = {}}},
-                nil, 'history.batch_edit_events')
-        end
-    end
+    end)
 end
 
 function Gevents:transToType() --更改过渡类型

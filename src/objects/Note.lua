@@ -138,4 +138,19 @@ Note.__tojson = function(self, state)
     return dkjson.encode(self:toTable(), { indent = true })
 end
 
+-- ============================================================
+-- 撤销强制记录：所有 setter 经 chartRecorder 拦截（src/utils/chartRecorder.lua）
+-- 图谱面的对象自动快照旧值并归入当前事务；事务外的单次 setter 自动成为一条记录；
+-- 豁免期（撤销回放/内部舞步）与谱面外副本（粘贴预览、编辑副本等）不产生记录
+-- ============================================================
+local recorder = require("src.utils.chartRecorder")
+local MUTATING_SETTERS = { 'setBeat', 'setTrack', 'setType', 'setFake', 'setBeat2', 'setNoteHead', 'setWipeHead' }
+for i = 1, #MUTATING_SETTERS do
+    local name = MUTATING_SETTERS[i]
+    local original = Note[name]
+    Note[name] = function(self, v)
+        return recorder.autoCommit(function() original(self, v) end, self)
+    end
+end
+
 return Note

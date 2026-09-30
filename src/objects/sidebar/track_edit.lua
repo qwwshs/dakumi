@@ -105,6 +105,8 @@ function GtrackEdit:Nui()
 end
 function GtrackEdit:NuiNext()
     local istrack = self.track
+    -- 一次轨道属性保存的全部字段归入同一事务
+    ChartService:change('history.edit_track', function()
     ChartService:setTrackField(istrack, 'name', self.trackName.value)
     
     if self.w0thenShow.value then
@@ -126,6 +128,7 @@ function GtrackEdit:NuiNext()
     ChartService:setTrackField(istrack, 'boundary_type', self.boundary_type.items[self.boundary_type.value] or 'nil')
     ChartService:setTrackField(istrack, 'left_reference', self.left_reference.items[self.left_reference.value] or 'nil')
     ChartService:setTrackField(istrack, 'right_reference', self.right_reference.items[self.right_reference.value] or 'nil')
+    end)
 end
 
 return GtrackEdit

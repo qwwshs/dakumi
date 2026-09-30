@@ -85,9 +85,10 @@ track = require('src.objects.editTool.track')
 track:to('track', 4)
 play = {now_all_track_pos = {old = true}, effect = {old = true},
     get_init_effect = function() return {} end}
-ctrl = {meta_copy_tab = {event = {}, note = {}}, copy_tab = {event = {'main'}},
-    mouse_start_pos = {down = true}}
-local mainClipboard = ctrl.copy_tab
+local clipboard = require('src.utils.clipboard') -- event_groups 改用核心剪贴板模块
+clipboard.tab = {event = {'main'}, note = {}}
+clipboard.mouse_start_pos = {down = true}
+local mainClipboard = clipboard.tab
 local mainCount = ChartService:getEventCount()
 local mainHistory = #redo.revoke
 assert(groupSidebar:selectGroup('编辑'))
@@ -98,7 +99,7 @@ local tabs = require('src.rooms.tabs')
 tabs.list = {{track = 0}, {track = 2}}
 assert(tabs:isSingle(), 'group editing should ignore existing tabs')
 assert(ChartService:getEventCount() == 2 and ChartService:getNoteCount() == 0)
-assert(#redo.revoke == 0 and ctrl.copy_tab ~= mainClipboard and not ctrl.mouse_start_pos.down)
+assert(#redo.revoke == 0 and clipboard.tab ~= mainClipboard and not clipboard.mouse_start_pos.down)
 assert(not ChartService:canPlaceEvent(Event.new({type = 'event_group', track = 1,
     beat = at(3), beat2 = at(4)})))
 local added = Event.new(inner('lpos', 3, 8, 3, 4))
@@ -116,7 +117,7 @@ assert(#savedChart.event == mainCount and #savedChart.event_groups['编辑'].eve
 assert(groupSidebar:exitGroup(true))
 assert(not ChartService:isEditingEventGroup() and track.track == 4)
 assert(not tabs:isSingle(), 'tabs should return after group editing')
-assert(ChartService:getEventCount() == mainCount and ctrl.copy_tab == mainClipboard)
+assert(ChartService:getEventCount() == mainCount and clipboard.tab == mainClipboard)
 assert(#redo.revoke == mainHistory + 1)
 assert(redo.revoke[#redo.revoke].beat_start == 0 and
     redo.revoke[#redo.revoke].beat_end == 4)

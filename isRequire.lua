@@ -7,8 +7,8 @@
     1. 平台/语言内置模块 (utf8, socket, ffi)
     2. GUI 框架 (nuklear)
     3. 序列化/工具库 (serpent, yaml, timer, moonshine, cursor)
-    4. 核心系统模块 (file, pass, room, window, meta)
-    5. 业务逻辑模块 (beat, event, note, log, string, table, save)
+    4. 核心系统模块 (file, pass, eventBus, room, window, meta)
+    5. 业务逻辑模块 (beat, event, note, clipboard, editState, log, string, table, save)
     6. 数据处理库 (nativefs, dkjson, easings, bezier, math, track, input)
     7. UI 和对象模块 (messageBox, i18n, allImage, ui)
     8. 场景模块 (edit, menu, start)
@@ -42,6 +42,7 @@ cursor = require 'src.utils.cursor'      -- 鼠标光标样式管理
 -- ============================================================
 require('src.utils.file')    -- 文件工具函数（getFileExtension）
 require('src.utils.pass')    -- 空函数占位符
+eventBus = require('src.utils.eventBus')  -- 事件总栈（全局发布/订阅，模块间解耦）
 
 require("src.utils.room")    -- 房间/场景管理系统（object, container, group, room）
 require("src.utils.window")  -- 窗口坐标变换管理
@@ -57,6 +58,8 @@ fNote = require("src.utils.note")    -- 音符处理模块
 require("src.utils.log")     -- 日志系统
 require("src.utils.string")  -- 字符串工具函数
 require("src.utils.table")   -- 表工具函数（eq, copy, find, fill）
+clipboard = require("src.utils.clipboard")  -- 选区/剪贴板数据与纯变换（ctrl 插件承担交互；依赖 table.copy，必须在 table 之后）
+editState = require("src.utils.editState")  -- 编辑器交互状态（插件写、核心读）
 require("src.utils.save")    -- 谱面保存功能
 
 -- ============================================================
