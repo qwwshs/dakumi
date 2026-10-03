@@ -1,5 +1,6 @@
 local sidebar = group:new('sidebar')
 local ChartService = require('src.services.chartService')
+local KeyCapture = require('src.services.keyCapture')
 sidebar.layout = require 'config.layouts.sidebar'
 
 sidebar.displayed_content = "nil" --现在所在的界面
@@ -51,7 +52,7 @@ function sidebar:update(dt)
         Nui:layoutRow('dynamic', layout.uiH, layout.cols)
         Nui:label(i18n:get("version") .. DAKUMI._VERSION..'  '.."FPS:" .. love.timer.getFPS())
         if self.displayed_content ~= 'nil' then
-            if Nui:button(i18n:get("break")) or (Nui:windowIsHovered() and iskeyboard['escape'] ) then
+            if Nui:button(i18n:get("break")) or (not KeyCapture:isActive() and Nui:windowIsHovered() and iskeyboard['escape'] ) then
                 messageBox:add("break")
                 local canLeave = not g.nowBreak or g:nowBreak() ~= false
                 if canLeave then

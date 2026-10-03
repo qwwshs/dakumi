@@ -1,5 +1,6 @@
 -- 读取设置文件
 local SpectrogramConfig = require('src.services.spectrogramConfig')
+local KeyCapture = require('src.services.keyCapture')
 local file = io.open(PATH.usersPath.settings .. 'settings.json', "r")
 if file then
     settings = dkjson.decode(file:read("*a"))
@@ -18,6 +19,11 @@ SpectrogramConfig.sanitize(settings)
 local Gsettings = group:new('settings')
 Gsettings.type = "settings"
 Gsettings.layout = require('config.layouts.sidebar').settings
+Gsettings.keybindingsExpanded = false
+
+function Gsettings:leave()
+    KeyCapture:cancel()
+end
 
 local default_trans_index = 1
 if settings.default_trans_type == 'bezier' then
@@ -93,6 +99,21 @@ local function syncSpectrogramField(v)
 end
 
 function Gsettings:Nui()
+    Nui:layoutRow('dynamic', 28, 1)
+    if Nui:button(i18n:get(self.keybindingsExpanded and 'keybind.collapse' or 'keybind.expand')) then
+        self.keybindingsExpanded = not self.keybindingsExpanded
+    end
+    if self.keybindingsExpanded then
+        for _, action in ipairs(input:getBindingNames()) do
+            Nui:layoutRow('dynamic', 27, {0.55, 0.45})
+            local labelKey = 'keybind.action.' .. action
+            local label = i18n:get(labelKey)
+            Nui:label(label == labelKey and action or label)
+            if Nui:button(KeyCapture:format(input:getBinding(action))) then
+                KeyCapture:begin(action)
+            end
+        end
+    end
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     for i, v in ipairs(self.setting_type) do
         local spectral = v[1] == 'spectrogram' or v[1]:match('^spectrogram_')
@@ -163,6 +184,30 @@ function Gsettings:Nui()
         save(dkjson.encode(settings, { indent = true }), PATH.usersPath.settings .. 'settings.json')
         room('settings')
     end
+end
+
+-- 侧边栏窗口结束后绘制小窗口，使录入提示保持在最上层。
+function Gsettings:NuiNext()
+    if not KeyCapture:isActive() then return end
+    local width, height = 370, 170
+    local x, y = math.floor((WINDOW.w - width) / 2), math.floor((WINDOW.h - height) / 2)
+    local opened = Nui:windowBegin('keybinding-capture', i18n:get('keybind.capture_title'),
+        x, y, width, height, 'border', 'title')
+    if opened then
+        Nui:layoutRow('dynamic', 26, 1)
+        Nui:label(i18n:get('keybind.capture_instruction'))
+        Nui:label(KeyCapture:getDisplay() ~= '' and KeyCapture:getDisplay() or
+            i18n:get('keybind.waiting'))
+        Nui:label(KeyCapture:isReady() and i18n:get('keybind.ready') or
+            i18n:get('keybind.release_hint'))
+        if KeyCapture.error then Nui:label(i18n:get('keybind.save_failed')) end
+        Nui:layoutRow('dynamic', 30, 2)
+        if Nui:button(i18n:get('keybind.confirm')) and KeyCapture:isReady() then
+            KeyCapture:confirm()
+        end
+        if Nui:button(i18n:get('keybind.cancel')) then KeyCapture:cancel() end
+    end
+    Nui:windowEnd()
 end
 
 return Gsettings

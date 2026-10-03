@@ -170,7 +170,7 @@ for i = 1, #MUTATING_SETTERS do
     local name = MUTATING_SETTERS[i]
     local original = Event[name]
     Event[name] = function(self, v)
-        return recorder.autoCommit(function() original(self, v) end, self)
+        return recorder.autoCommit(function() original(self, v) end, self, name)
     end
 end
 

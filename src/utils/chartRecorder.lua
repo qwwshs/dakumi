@@ -107,16 +107,29 @@ function recorder.beforeEntityChange(e)
 end
 
 --- 事务外的单次 setter 变更：自动包单发事务并立即提交（强制记录的核心）
-function recorder.autoCommit(fn, e)
+function recorder.autoCommit(fn, e, method)
     if suspendDepth > 0 or not inChart[e] then return fn() end
+    local before = eventBus:count('chart:mutated') > 0 and e:copy() or nil
     if txn then
         recorder.beforeEntityChange(e)
-        return fn()
+        local result = fn()
+        if before and not before:eq(e) then
+            eventBus:emit('chart:mutated', {kind = table.find(event_type, e:getType()) and
+                'event_updated' or 'note_updated', entity = e, method = method,
+                before = before, after = e:copy()})
+        end
+        return result
     end
     recorder.begin()
     recorder.beforeEntityChange(e)
-    fn()
+    local result = fn()
+    if before and not before:eq(e) then
+        eventBus:emit('chart:mutated', {kind = table.find(event_type, e:getType()) and
+            'event_updated' or 'note_updated', entity = e, method = method,
+            before = before, after = e:copy()})
+    end
     recorder.commit()
+    return result
 end
 
 -- ============================================================
@@ -166,6 +179,7 @@ function recorder.commit(actionKey, fieldsAfter)
     end
     if operationEmpty(operation) then return false end
     eventBus:emit('chart:committed', operation, actionKey)
+    eventBus:emit('chart:changed', {kind = 'commit', operation = operation, actionKey = actionKey})
     return true
 end
 

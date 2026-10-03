@@ -83,6 +83,7 @@ require 'isRequire'
 -- 初始化插件管理器和服务层
 PluginManager = require("src.utils.plugin")
 local ChartService = require("src.services.chartService")
+local KeyCapture = require('src.services.keyCapture')
 local BpmMeasureService = require('src.services.bpmMeasureService')
 local CoordinateService = require("src.services.coordinateService")
 local AudioService = require("src.services.audioService")
@@ -94,6 +95,7 @@ PluginManager:init({
     root = room,              -- 根场景，可按路径定位任意 room/group
     input = input,            -- 快捷键查询
     chart = ChartService,      -- 谱面数据服务
+    eventBus = eventBus,       -- 谱面变更等全局事件
     coord = CoordinateService, -- 坐标转换服务
     audio = AudioService,      -- 音频服务
     beat = beat,               -- 节拍计算模块
@@ -293,6 +295,10 @@ function love.draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
+    if KeyCapture:isActive() then
+        KeyCapture:keypressed(key, isrepeat)
+        return
+    end
     -- 将键盘事件传递给 Nuklear UI，如果 UI 消费了事件则跳过游戏逻辑
     local success = pcall(function() Nui:keypressed(key, scancode, isrepeat) end)
     if not success then return end
@@ -315,6 +321,14 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.keyreleased(key, scancode)
+    if KeyCapture:isActive() then
+        KeyCapture:keyreleased(key)
+        iskeyboard[key] = false
+        if key == 'lctrl' or key == 'rctrl' then iskeyboard.ctrl = false end
+        if key == 'lalt' or key == 'ralt' then iskeyboard.alt = false end
+        if key == 'lshift' or key == 'rshift' then iskeyboard.shift = false end
+        return
+    end
     local success = pcall(function() Nui:keyreleased(key, scancode) end)
     if not success then return end
 
@@ -333,6 +347,7 @@ function love.keyreleased(key, scancode)
 end
 
 function love.wheelmoved(x, y)
+    if KeyCapture:isActive() then return end
     local success = pcall(function() Nui:wheelmoved(x, y) end)
     if not success then return end
 
@@ -353,6 +368,7 @@ function love.mousepressed(x, y, button, istouch, presses)
     if not success then return end
 
     mouse.down = true
+    if KeyCapture:isActive() then return end
     room("mousepressed", gameX, gameY, button, istouch, presses)
 end
 
@@ -369,6 +385,7 @@ function love.mousereleased(x, y, button, istouch, presses)
     y = mouse.y
     mouse.down = false
 
+    if KeyCapture:isActive() then return end
     room("mousereleased", x, y, button, istouch, presses)
 end
 
@@ -379,10 +396,12 @@ function love.mousemoved(x, y, dx, dy, istouch)
     x = mouse.x --对缩放进行处理
     y = mouse.y
 
+    if KeyCapture:isActive() then return end
     room("mousemoved", x, y, dx, dy, istouch)
 end
 
 function love.textinput(input)
+    if KeyCapture:isActive() then return end
     local success = pcall(function() Nui:textinput(input) end)
     if not success then return end
 

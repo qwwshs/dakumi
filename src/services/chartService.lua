@@ -27,6 +27,15 @@ local Event = require("src.objects.Event")
 local eventBus = require("src.utils.eventBus")
 local recorder = require("src.utils.chartRecorder")
 
+local function emitMutation(change)
+    if not recorder.suspended() then eventBus:emit('chart:mutated', change) end
+end
+
+local function valuesDiffer(a, b)
+    if type(a) == 'table' and type(b) == 'table' then return not table.eq(a, b) end
+    return a ~= b
+end
+
 -- ============================================================
 -- 私有状态
 -- ============================================================
@@ -213,6 +222,7 @@ function ChartService:setChart(data)
     recorder.reset()
     rebuildRegistry()
     eventBus:emit('chart:replaced')
+    eventBus:emit('chart:changed', {kind = 'replace'})
 end
 
 --- 更新谱面数据（版本迁移和字段填充）
@@ -338,6 +348,7 @@ function ChartService:load()
         local n = chart.note[i]
         addNoteToIndex(n)
     end
+    eventBus:emit('chart:changed', {kind = 'load'})
     return true
 end
 
@@ -436,6 +447,7 @@ function ChartService:beginEventGroupEdit(name)
     rebuildRegistry()
     -- 通知订阅方挂起自身状态（如撤销栈），组内编辑使用独立状态
     eventBus:emit('chart:group_edit_begin')
+    eventBus:emit('chart:changed', {kind = 'group_edit_begin', group = name})
     eventGroupsRevision = eventGroupsRevision + 1
     return true
 end
@@ -458,8 +470,14 @@ function ChartService:syncEventGroupEdit()
     local definition = session.mainChart.event_groups[session.name]
     if not definition then return false end
     if not table.eq(definition.event, events) then
+        local before = table.copy(session.mainChart.event_groups)
         definition.event = events
         eventGroupsRevision = eventGroupsRevision + 1
+        emitMutation({kind = 'group_updated', group = session.name,
+            before = before[session.name], after = table.copy(definition)})
+        eventBus:emit('chart:changed', {kind = 'group_sync', group = session.name,
+            operation = {add = {event = {}, note = {}}, del = {event = {}, note = {}},
+                groups_before = before, groups_after = table.copy(session.mainChart.event_groups)}})
     end
     return true
 end
@@ -474,10 +492,13 @@ function ChartService:finishEventGroupEdit()
     recorder.reset()
     rebuildRegistry()
     -- 通知订阅方恢复挂起的状态，并带上组定义变更供撤销记录
-    eventBus:emit('chart:group_edit_end', {
+    local operation = {
         add = {event = {}, note = {}}, del = {event = {}, note = {}},
         groups_before = session.before, groups_after = table.copy(chart.event_groups),
-    }, 'history.edit_event_group')
+    }
+    eventBus:emit('chart:group_edit_end', operation, 'history.edit_event_group')
+    eventBus:emit('chart:changed', {kind = 'group_edit_end', group = session.name,
+        operation = operation, actionKey = 'history.edit_event_group'})
     eventGroupsRevision = eventGroupsRevision + 1
     return true
 end
@@ -504,8 +525,15 @@ function ChartService:copyEventGroups()
 end
 function ChartService:setEventGroups(value)
     if activeGroupEdit then return false end
-    chart.event_groups = table.copy(value or {})
+    local nextGroups = table.copy(value or {})
+    if table.eq(chart.event_groups, nextGroups) then return false end
+    chart.event_groups = nextGroups
     eventGroupsRevision = eventGroupsRevision + 1
+    if not recorder.suspended() then
+        emitMutation({kind = 'group_definitions_updated'})
+        eventBus:emit('chart:changed', {kind = 'group_definitions'})
+    end
+    return true
 end
 
 -- 一个操作提交一个组定义；改名时同步更新谱面中的所有引用。
@@ -519,24 +547,33 @@ function ChartService:putEventGroup(name, value, oldName, actionKey)
     for _, inner in ipairs(value.event) do
         if not validInnerEvent(inner) then return false, 'invalid event' end
     end
+    if oldName == name and table.eq(chart.event_groups[name],
+        {name = name, event = value.event}) then return true end
     local before = self:copyEventGroups()
     local oldRefs, newRefs = {}, {}
     if oldName ~= name then
-        for _, e in ipairs(chart.event) do
-            if e:getType() == 'event_group' and e:getEventGroup() == oldName then
-                oldRefs[#oldRefs + 1] = e:copy()
-                e:setEventGroup(name)
-                newRefs[#newRefs + 1] = e:copy()
+        self:suspend(function()
+            for _, e in ipairs(chart.event) do
+                if e:getType() == 'event_group' and e:getEventGroup() == oldName then
+                    oldRefs[#oldRefs + 1] = e:copy()
+                    e:setEventGroup(name)
+                    newRefs[#newRefs + 1] = e:copy()
+                end
             end
-        end
+        end)
         chart.event_groups[oldName] = nil
     end
     chart.event_groups[name] = {name = name, event = table.copy(value.event)}
     eventGroupsRevision = eventGroupsRevision + 1
-    eventBus:emit('chart:committed', {
+    emitMutation({kind = 'group_updated', group = name, before = before[oldName],
+        after = table.copy(chart.event_groups[name])})
+    local operation = {
         add = {event = newRefs, note = {}}, del = {event = oldRefs, note = {}},
         groups_before = before, groups_after = self:copyEventGroups(),
-    }, actionKey or 'history.edit_event_group')
+    }
+    eventBus:emit('chart:committed', operation, actionKey or 'history.edit_event_group')
+    eventBus:emit('chart:changed', {kind = 'commit', operation = operation,
+        actionKey = actionKey or 'history.edit_event_group'})
     return true
 end
 
@@ -546,10 +583,14 @@ function ChartService:deleteEventGroup(name)
     local before = self:copyEventGroups()
     chart.event_groups[name] = nil
     eventGroupsRevision = eventGroupsRevision + 1
-    eventBus:emit('chart:committed', {
+    emitMutation({kind = 'group_deleted', group = name, before = before[name]})
+    local operation = {
         add = {event = {}, note = {}}, del = {event = {}, note = {}},
         groups_before = before, groups_after = self:copyEventGroups(),
-    }, 'history.delete_event_group')
+    }
+    eventBus:emit('chart:committed', operation, 'history.delete_event_group')
+    eventBus:emit('chart:changed', {kind = 'commit', operation = operation,
+        actionKey = 'history.delete_event_group'})
     return true
 end
 
@@ -604,6 +645,7 @@ function ChartService:addNote(note, actionKey)
         addNoteToIndex(note)
         recorder.markIn(note)
         recorder.trackAdd(note)
+        emitMutation({kind = 'note_added', entity = note})
     end)
 end
 
@@ -621,6 +663,7 @@ function ChartService:deleteNote(note, actionKey)
         removeNoteFromIndex(actual)
         recorder.unmarkIn(actual)
         recorder.trackDel(actual)
+        emitMutation({kind = 'note_deleted', entity = actual})
         return true
     end)
 end
@@ -634,6 +677,7 @@ function ChartService:addEvent(event, actionKey)
         addEventToIndex(event)
         recorder.markIn(event)
         recorder.trackAdd(event)
+        emitMutation({kind = 'event_added', entity = event})
     end)
 end
 
@@ -650,6 +694,7 @@ function ChartService:deleteEvent(event, actionKey)
         removeEventFromIndex(actual)
         recorder.unmarkIn(actual)
         recorder.trackDel(actual)
+        emitMutation({kind = 'event_deleted', entity = actual})
         return true
     end)
 end
@@ -670,11 +715,17 @@ function ChartService:add(noteorevent, actionKey)
     local result
     if isEvent then
         if not self:canPlaceEvent(noteorevent) then return false, 'event group overlap' end
-        result = self:addEvent(noteorevent, actionKey)
-        fEvent:sort()
+        result = self:change(actionKey, function()
+            local added = self:addEvent(noteorevent)
+            fEvent:sort()
+            return added
+        end)
     else
-        result = self:addNote(noteorevent, actionKey)
-        fNote:sort()
+        result = self:change(actionKey, function()
+            local added = self:addNote(noteorevent)
+            fNote:sort()
+            return added
+        end)
     end
 
     -- 触发插件钩子
@@ -761,7 +812,7 @@ end
 -- @tparam number i 下标（1 起）
 -- @treturn table|nil BPM 条目 {beat={...}, bpm=..., linear_ramp=...}
 function ChartService:getBpm(i)
-    return chart.bpm_list and chart.bpm_list[i] or nil
+    return chart.bpm_list and chart.bpm_list[i] and table.copy(chart.bpm_list[i]) or nil
 end
 
 --- 获取效果数量
@@ -775,7 +826,7 @@ end
 -- @tparam number i 下标（1 起）
 -- @treturn table|nil 效果条目
 function ChartService:getEffect(i)
-    return chart.effect and chart.effect[i] or nil
+    return chart.effect and chart.effect[i] and table.copy(chart.effect[i]) or nil
 end
 
 -- ============================================================
@@ -834,8 +885,12 @@ end
 -- @tparam number v 偏移量（毫秒）
 function ChartService:setOffset(v)
     self:change(nil, function()
-        recorder.touchField('offset', nil, chart.offset or 0)
+        local before = chart.offset or 0
+        recorder.touchField('offset', nil, before)
         chart.offset = v
+        if valuesDiffer(before, v) then
+            emitMutation({kind = 'field_updated', field = 'offset', before = before, after = v})
+        end
     end)
 end
 
@@ -851,8 +906,13 @@ end
 -- @tparam any v 字段值
 function ChartService:setInfoField(field, v)
     self:change(nil, function()
-        recorder.touchField('info', field, chart.info and chart.info[field] or nil)
+        local before = chart.info and chart.info[field] or nil
+        recorder.touchField('info', field, before)
         chart.info[field] = v
+        if valuesDiffer(before, v) then
+            emitMutation({kind = 'field_updated', field = 'info', key = field,
+                before = before, after = v})
+        end
     end)
 end
 
@@ -871,6 +931,10 @@ function ChartService:setPreferenceField(field, v)
         local cur = chart.preference and chart.preference[field] or nil
         recorder.touchField('preference', field, type(cur) == 'table' and table.copy(cur) or cur)
         chart.preference[field] = v
+        if valuesDiffer(cur, v) then
+            emitMutation({kind = 'field_updated', field = 'preference', key = field,
+                before = cur, after = v})
+        end
     end)
 end
 
@@ -878,8 +942,13 @@ end
 -- @tparam table list 新的 BPM 列表
 function ChartService:setBpmList(list)
     self:change(nil, function()
-        recorder.touchField('bpm_list', nil, chart.bpm_list and table.copy(chart.bpm_list) or nil)
-        chart.bpm_list = list
+        local before = chart.bpm_list and table.copy(chart.bpm_list) or nil
+        recorder.touchField('bpm_list', nil, before)
+        chart.bpm_list = list and table.copy(list) or nil
+        if valuesDiffer(before, chart.bpm_list) then
+            emitMutation({kind = 'field_updated', field = 'bpm_list',
+                before = before, after = chart.bpm_list and table.copy(chart.bpm_list) or nil})
+        end
     end)
 end
 
@@ -892,6 +961,11 @@ end
 function ChartService:ensureTrack(trackId)
     if not chart.track[tostring(trackId)] then
         chart.track[tostring(trackId)] = table.copy(meta_track.__index)
+        emitMutation({kind = 'track_created', field = 'track', key = trackId,
+            after = table.copy(chart.track[tostring(trackId)])})
+        if not recorder.hasTxn() and not recorder.suspended() then
+            eventBus:emit('chart:changed', {kind = 'track_created', track = trackId})
+        end
     end
 end
 
@@ -911,8 +985,13 @@ end
 function ChartService:setTrackField(trackId, field, v)
     self:change(nil, function()
         self:ensureTrack(trackId)
-        recorder.touchField('track', trackId, table.copy(chart.track[tostring(trackId)]))
+        local before = table.copy(chart.track[tostring(trackId)])
+        recorder.touchField('track', trackId, before)
         chart.track[tostring(trackId)][field] = v
+        if valuesDiffer(before, chart.track[tostring(trackId)]) then
+            emitMutation({kind = 'field_updated', field = 'track', key = trackId,
+                before = before, after = table.copy(chart.track[tostring(trackId)]), method = field})
+        end
     end)
 end
 

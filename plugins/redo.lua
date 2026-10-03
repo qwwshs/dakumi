@@ -367,6 +367,8 @@ function redo:undo()
     node.parent.active_child = node
     self.tree.current = node.parent
     rebuildBranch(self)
+    eventBus:emit('chart:changed', {kind = 'undo', operation = node.operation,
+        actionKey = node.operation.action_key})
     return true
 end
 
@@ -382,6 +384,8 @@ function redo:redoOne()
     end
     self.tree.current = child
     rebuildBranch(self)
+    eventBus:emit('chart:changed', {kind = 'redo', operation = child.operation,
+        actionKey = child.operation.action_key})
     return true
 end
 

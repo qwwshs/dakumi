@@ -208,6 +208,30 @@ hooks = {
 
 当前上述四种钩子由普通 `ChartService:add/delete` 触发。`push/pop` 批量操作、撤销重做、直接 `addNote/deleteNote/addEvent/deleteEvent`、对象字段 setter、整谱加载不会触发这些钩子。它们还不是“所有谱面变化通知”。
 
+要跟踪所有谱面变化，请订阅全局 `eventBus` 的 `chart:changed`。插件上下文提供 `ctx.eventBus`；`init` 中订阅、`destroy` 中退订。回调在谱面更新后同步运行，此时可用 `ctx.chart` 读取最新数据。一次批量编辑在提交时通知一次；无实际变化的提交不通知。事件组编辑会在切换上下文和同步组定义时通知。
+
+```lua
+local unsubscribe
+return {
+    name = 'chart_observer', target = 'main',
+    init = function(ctx)
+        unsubscribe = ctx.eventBus:on('chart:changed', function(change)
+            print(change.kind, ctx.chart:getNoteCount(), ctx.chart:getEventCount())
+            -- change.operation 含 add/del 的 note、event，以及修改前后的字段/事件组。
+        end)
+    end,
+    destroy = function()
+        if unsubscribe then unsubscribe(); unsubscribe = nil end
+    end,
+}
+```
+
+`change.kind` 可为 `commit`（新增、删除、修改和批量提交）、`undo`、`redo`、`replace`（换谱）、`load`（换谱后的对象和索引就绪）、`group_edit_begin`、`group_sync`、`group_edit_end`、`group_definitions`、`track_created`。有操作记录时提供 `change.operation` 和 `change.actionKey`；事件组相关变化带 `change.group`。`replace` 会先于 `load`，需要读取 Note/Event 对象时以 `load` 为准。回调参数用于读取，不要修改操作记录；需要编辑谱面时使用 `ctx.chart` 的方法。
+
+如果插件要在拖拽中逐次响应，则订阅 `chart:mutated`。它在每次实际写入后触发，`kind` 为 `note_added/deleted/updated`、`event_added/deleted/updated`、`field_updated`、`group_updated/deleted`、`group_definitions_updated` 或 `track_created`；根据情况提供 `entity`、`field`、`key`、`method`、`before`、`after`、`group`。这时一组批量操作可能仍在进行，适合刷新实时预览；需要完整、稳定的最终结果时订阅 `chart:changed`。撤销和重做只发一次 `chart:changed`，不会逐项重放 `chart:mutated`。同样要在插件卸载时退订。
+
+插件修改音符或事件时使用对象的 `set...` 方法，修改谱面字段时使用 `ctx.chart` 的设置方法。不要直接写对象的 `_data`、BPM 列表或内部嵌套表；这样的写入无法可靠地发出通知，也无法保证撤销记录完整。
+
 添加数据请创建 Note/Event 对象并调用服务：
 
 ```lua
