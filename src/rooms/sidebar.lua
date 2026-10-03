@@ -49,10 +49,16 @@ function sidebar:update(dt)
     local g = self:getGroup(self.displayed_content)
     local opened = Nui:windowBegin(i18n:get(sidebar.displayed_content), layout.x, layout.y, layout.w, layout.h, 'border', 'scrollbar', 'background','title')
     if opened then
-        Nui:layoutRow('dynamic', layout.uiH, layout.cols)
+        if self.displayed_content ~= 'nil' then
+            Nui:layoutRow('dynamic', layout.uiH, {0.82, 0.18})
+        else
+            Nui:layoutRow('dynamic', layout.uiH, 1)
+        end
         Nui:label(i18n:get("version") .. DAKUMI._VERSION..'  '.."FPS:" .. love.timer.getFPS())
         if self.displayed_content ~= 'nil' then
-            if Nui:button(i18n:get("break")) or (not KeyCapture:isActive() and Nui:windowIsHovered() and iskeyboard['escape'] ) then
+            local backClicked = ui:imageButton(isImage.isbreak, 8)
+            if Nui:widgetIsHovered() then Nui:tooltip(i18n:get('break')) end
+            if backClicked or (not KeyCapture:isActive() and Nui:windowIsHovered() and iskeyboard['escape'] ) then
                 messageBox:add("break")
                 local canLeave = not g.nowBreak or g:nowBreak() ~= false
                 if canLeave then
@@ -72,7 +78,7 @@ function sidebar:update(dt)
     end
     Nui:windowEnd()
 
-    if opened and g and g.NuiNext then
+    if opened and g and g.NuiNext and self:getGroup(self.displayed_content) == g then
         g:NuiNext()
     end
 end

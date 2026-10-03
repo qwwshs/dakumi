@@ -29,6 +29,7 @@ function GtrackEdit:to(istrack)
     self.track = istrack
     ChartService:ensureTrack(istrack)
     self.trackName.value = ChartService:getTrackField(istrack, 'name')
+    self.zindex.value = ChartService:getTrackField(istrack, 'zindex')
     self.parentTrack.value = ChartService:getTrackField(istrack, 'parent')
     self.left_boundary.value = ChartService:getTrackField(istrack, 'left_boundary')
     self.right_boundary.value = ChartService:getTrackField(istrack, 'right_boundary')

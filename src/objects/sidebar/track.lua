@@ -1,11 +1,92 @@
---track界面
-local ChartService = require("src.services.chartService")
+-- 轨道列表与筛选界面
+local ChartService = require('src.services.chartService')
 local Gtrack = group:new('track')
-Gtrack.type = "track"
-Gtrack.range = {x = {from = {value = '0'},to = {value = '0'}},w = {from = {value = '0'},to = {value = '0'}}} --轨道搜索范围
-Gtrack.layout = require 'config.layouts.sidebar'.track
-Gtrack.turnOnFilter = {}
-Gtrack.turnOnFilter.value = false --筛选
+Gtrack.type = 'track'
+Gtrack.layout = require('config.layouts.sidebar').track
+Gtrack.turnOnFilter = {value = false}
+Gtrack.filterExpanded = true
+Gtrack.filterMode = {value = 1}
+Gtrack.range = {
+    x = {from = {value = ''}, to = {value = ''}},
+    w = {from = {value = ''}, to = {value = ''}},
+}
+Gtrack.nameQuery = {value = ''}
+Gtrack.settingIndex = {value = 1}
+Gtrack.settingQuery = {value = ''}
+Gtrack.switchValue = {value = 1}
+
+local settingFields = {
+    {key = 'type'},
+    {key = 'w0thenShow', switch = true},
+    {key = 'parent'},
+    {key = 'scale_with_parent', switch = true},
+    {key = 'zindex'},
+    {key = 'boundary_type'},
+    {key = 'left_boundary'},
+    {key = 'right_boundary'},
+    {key = 'left_reference'},
+    {key = 'right_reference'},
+}
+
+local function trim(value)
+    return tostring(value or ''):match('^%s*(.-)%s*$')
+end
+
+local function contains(bounds, x, y)
+    return bounds and x >= bounds.x and x <= bounds.x + bounds.w and
+        y >= bounds.y and y <= bounds.y + bounds.h
+end
+
+-- 记录下拉框及弹出列表的实际范围，避免同一次滚轮又滚动轨道列表。
+function Gtrack:drawCombobox(id, state, items)
+    local x, y, w, h = Nui:widgetBounds()
+    self.comboHeaders[id] = {x = x, y = y, w = w, h = h}
+    if Nui:comboboxBegin(items[state.value] or items[1]) then
+        local px, py, pw, ph = Nui:windowGetBounds()
+        self.comboPopup = {x = px, y = py, w = pw, h = ph}
+        Nui:layoutRow('dynamic', h, 1)
+        for index, label in ipairs(items) do
+            if Nui:comboboxItem(label) then
+                state.value = index
+                Nui:comboboxClose()
+                break
+            end
+        end
+        Nui:comboboxEnd()
+    end
+end
+
+-- 空白端点表示不限；数字填写错误时不显示匹配结果。
+local function inRange(value, bounds)
+    local fromText, toText = trim(bounds.from.value), trim(bounds.to.value)
+    if fromText == '' and toText == '' then return true end
+    local from = fromText ~= '' and tonumber(fromText) or nil
+    local to = toText ~= '' and tonumber(toText) or nil
+    if (fromText ~= '' and not from) or (toText ~= '' and not to) then return false end
+    if type(value) ~= 'number' then return false end
+    if from and to and from > to then from, to = to, from end
+    return (not from or value >= from) and (not to or value <= to)
+end
+
+function Gtrack:matches(trackId, position, name)
+    if not self.turnOnFilter.value then return true end
+    local mode = self.filterMode.value
+    if mode == 1 then
+        return inRange(position.x, self.range.x) and inRange(position.w, self.range.w)
+    elseif mode == 2 then
+        local query = trim(self.nameQuery.value):lower()
+        return query == '' or tostring(name or ''):lower():find(query, 1, true) ~= nil
+    elseif mode == 3 then
+        local field = settingFields[self.settingIndex.value] or settingFields[1]
+        local actual = ChartService:getTrackField(trackId, field.key)
+        if field.switch then return tonumber(actual) == self.switchValue.value - 1 end
+        local query = trim(self.settingQuery.value)
+        if query == '' then return true end
+        if type(actual) == 'number' then return tonumber(query) == actual end
+        return tostring(actual or ''):lower():find(query:lower(), 1, true) ~= nil
+    end
+    return true
+end
 
 -- 主窗口通常自行处理滚轮；若 Nuklear 没有移动滚动条，下帧补一次。
 function Gtrack:wheelmoved(x, y)
@@ -13,11 +94,10 @@ function Gtrack:wheelmoved(x, y)
     local bounds = sidebar.layout
     if mouse.x < bounds.x or mouse.x > bounds.x + bounds.w or
         mouse.y < bounds.y or mouse.y > bounds.y + bounds.h then return end
-
-    -- 筛选浮窗覆盖在列表上方，不把它的滚轮输入转给后面的列表。
-    local range = self.rangeBounds or self.layout.range
-    if mouse.x >= range.x and mouse.x <= range.x + range.w and
-        mouse.y >= range.y and mouse.y <= range.y + range.h then return end
+    if contains(self.comboPopup, mouse.x, mouse.y) then return end
+    for _, combo in pairs(self.comboHeaders or {}) do
+        if contains(combo, mouse.x, mouse.y) then return end
+    end
 
     if not self.pendingWheel or self.pendingWheel == 0 then
         self.wheelStartScroll = self.lastScrollY
@@ -30,8 +110,8 @@ function Gtrack:applyPendingWheel()
     if self.pendingWheel ~= nil then
         if self.pendingWheel ~= 0 and
             (self.wheelStartScroll == nil or math.abs(scrollY - self.wheelStartScroll) < 0.01) then
-            -- 每格约为一条轨道的两行按钮，向下滚动时增加纵向滚动值。
-            scrollY = math.max(0, scrollY - self.pendingWheel * self.layout.uiH * 2)
+            -- 每格约为一条轨道的高度，向下滚动时增加纵向滚动值。
+            scrollY = math.max(0, scrollY - self.pendingWheel * self.layout.uiH)
             Nui:windowSetScroll(scrollX, scrollY)
         end
         self.pendingWheel = nil
@@ -40,62 +120,92 @@ function Gtrack:applyPendingWheel()
     local _, actualY = Nui:windowGetScroll()
     self.lastScrollY = actualY
 end
+
 function Gtrack:Nui()
     local layout = self.layout
     local allTrack = fTrack:track_get_all_track()
-    local allTrackPos = play:get_all_track_pos()
-    local xf = tonumber(self.range.x.from.value)
-    local xt = tonumber(self.range.x.to.value)
-    local wf = tonumber(self.range.w.from.value)
-    local wt = tonumber(self.range.w.to.value)
-    Nui:layoutRow('dynamic', layout.uiH, layout.cols)
-    for i,v in ipairs(allTrack) do
-        local track_name = ChartService:getTrackField(v, 'name')
-        local track_type = ChartService:getTrackField(v, 'type')
-        local x = allTrackPos[v].x
-        local w = allTrackPos[v].w
+    local allTrackPos = play:get_all_track_pos() or {}
 
-        if ((xf and xt) or (wf and wt)) and self.turnOnFilter.value then
-            if xf and xt and not (math.intersect(xf,xt,x,x)) and not (wf and wt)  then
-                goto next
-            elseif wf and wt and not (math.intersect(wf,wt,w,w)) and not (xf and xt) then
-                goto next
-            elseif not (math.intersect(xf,xt,x,x) and math.intersect(wf,wt,w,w)) then
-                goto next
+    Nui:layoutRow('dynamic', 32, {0.45, 0.55})
+    Nui:label(i18n:get('track_filter.current') .. ': ' .. tostring(track.track))
+    if Nui:button(i18n:get('track_filter.edit_current')) then
+        sidebar:to('track edit', track.track)
+        return
+    end
+
+    self:drawFilter()
+
+    Nui:layoutRow('dynamic', layout.uiH, {0.78, 0.22})
+    for _, trackId in ipairs(allTrack) do
+        local name = ChartService:getTrackField(trackId, 'name')
+        local trackType = ChartService:getTrackField(trackId, 'type')
+        local position = allTrackPos[trackId] or {x = 0, w = 0}
+        if self:matches(trackId, position, name) then
+            if Nui:button(trackId .. ' x:' .. tostring(position.x) .. ' w:' ..
+                tostring(position.w) .. ' name:' .. tostring(name or '') ..
+                ' type:' .. tostring(trackType or '')) then
+                track:to(trackId)
+            end
+            if Nui:button(i18n:get('edit')) then
+                sidebar:to('track edit', trackId)
+                break
             end
         end
-
-        if Nui:button(v.." x:"..x..' w:'..w..'name:'..track_name..' type:'..track_type) then
-            track:to(v)
-        end
-        if Nui:button(i18n:get('edit')) then
-            sidebar:to('track edit',v)
-        end
-        ::next::
     end
     self:applyPendingWheel()
 end
 
-function Gtrack:NuiNext() --用于书写筛选条件
+function Gtrack:drawFilter()
     local layout = self.layout.range
-    local opened = Nui:windowBegin(i18n:get('range'), layout.x, layout.y, layout.w, layout.h,'border','movable','title')
-    if opened then
-        local x, y, w, h = Nui:windowGetBounds()
-        self.rangeBounds = {x = x, y = y, w = w, h = h}
-
-        Nui:layoutRow('dynamic', layout.uiH, layout.cols)
-        Nui:checkbox(i18n:get('Filter'), self.turnOnFilter)
-
-        Nui:layoutRow('dynamic', layout.uiH, layout.cols)
-        Nui:label('x')
-        ui:edit('field', self.range.x.from)
-        ui:edit('field', self.range.x.to)
-
-        Nui:label('w')
-        ui:edit('field', self.range.w.from)
-        ui:edit('field', self.range.w.to)
+    self.comboHeaders = {}
+    self.comboPopup = nil
+    Nui:layoutRow('dynamic', layout.uiH, 1)
+    if Nui:button(i18n:get('track_filter.title')) then
+        self.filterExpanded = not self.filterExpanded
     end
-    Nui:windowEnd()
+    if self.filterExpanded then
+        Nui:layoutRow('dynamic', layout.uiH, 1)
+        Nui:checkbox(i18n:get('Filter'), self.turnOnFilter)
+        self:drawCombobox('mode', self.filterMode, {
+            i18n:get('track_filter.position'),
+            i18n:get('track_filter.name'),
+            i18n:get('track_filter.setting'),
+        })
+
+        if self.filterMode.value == 1 then
+            Nui:layoutRow('dynamic', layout.uiH, {0.2, 0.4, 0.4})
+            Nui:label('')
+            Nui:label(i18n:get('track_filter.from'))
+            Nui:label(i18n:get('track_filter.to'))
+            Nui:label('x')
+            ui:edit('field', self.range.x.from)
+            ui:edit('field', self.range.x.to)
+            Nui:label('w')
+            ui:edit('field', self.range.w.from)
+            ui:edit('field', self.range.w.to)
+        elseif self.filterMode.value == 2 then
+            Nui:layoutRow('dynamic', layout.uiH, {0.27, 0.73})
+            Nui:label(i18n:get('track_filter.name'))
+            ui:edit('field', self.nameQuery)
+        else
+            local names = {}
+            for i, field in ipairs(settingFields) do
+                names[i] = i18n:get('track_filter.field.' .. field.key)
+            end
+            Nui:layoutRow('dynamic', layout.uiH, 1)
+            self:drawCombobox('setting', self.settingIndex, names)
+            local field = settingFields[self.settingIndex.value] or settingFields[1]
+            Nui:layoutRow('dynamic', layout.uiH, {0.27, 0.73})
+            Nui:label(i18n:get('track_filter.value'))
+            if field.switch then
+                self:drawCombobox('switch', self.switchValue, {
+                    i18n:get('track_filter.off'), i18n:get('track_filter.on'),
+                })
+            else
+                ui:edit('field', self.settingQuery)
+            end
+        end
+    end
 end
 
 return Gtrack
