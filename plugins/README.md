@@ -241,7 +241,7 @@ ctx.chart:add(Note.new({type = 'note', track = 1, beat = {4, 0, 1}}), 'history.a
 
 批量操作使用 `ctx.chart:push()` 与 `ctx.chart:pop('移动音符')` 配对，一次批量形成一条撤销记录。普通添加和删除也可在 `add(对象, '移动音符')`、`delete(对象, '移动音符')` 的第二个参数填写操作说明。说明由发起操作的代码提供。内置操作的说明已写在 `i18n/zh-CN.lua` 和 `i18n/en.lua`；外部插件可直接传可读文字，或在自己的 `init(ctx)` 中给 `ctx.i18n.language['zh-CN']`、`ctx.i18n.language['en']` 添加自己的翻译键，无需修改编辑器文件。若没有提交说明，会显示「其他操作」。空批量操作不会写入历史。
 
-历史中的节拍范围由改动前后所有 note/event 的起点和终点决定；点击记录可跳到那一步。新操作会清除已经撤销的后续记录，切换谱面会清空历史。需要直接写入快照的插件可调用 `redo:writeRevoke(操作表, nil, '移动音符')`。注意：`ChartService:load()` 会保存谱面，不能把它当作无副作用的初始化工具。
+历史中的节拍范围由改动前后所有 note/event 的起点和终点决定；点击记录可跳到那一步。新操作会清除已经撤销的后续记录，切换谱面会清空历史。需要直接写入快照的插件可调用 `redo:writeRevoke(操作表, nil, '移动音符')`。`ChartService:load()` 只在内存中迁移旧格式并建立索引，不写入文件。保存请显式调用 `ChartService:save()`。查询轨道字段不会创建轨道，缺失字段返回默认值；创建请使用 `ensureTrack()`，修改请使用 `setTrackField()`。
 
 ## 8. 管理与资源
 

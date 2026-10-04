@@ -5,7 +5,13 @@ local labels = {}
 Nui = {
     button = function(_, label) labels[#labels + 1] = label; return false end,
     layoutRow = function() end,
+    label = function() end,
+    checkbox = function() end,
+    widgetBounds = function() return 1400, 100, 150, 30 end,
+    comboboxBegin = function() return false end,
 }
+ui = {edit = function() end}
+track = {track = 1}
 i18n = {get = function(_, key) return key end}
 sidebar = {
     displayed_content = 'track',
@@ -33,7 +39,7 @@ local trackPage = require('src.objects.sidebar.track')
 trackPage:Nui()
 trackPage:wheelmoved(0, -1)
 trackPage:Nui()
-assert(scrollY == trackPage.layout.uiH * 2 and setCalls == 1,
+assert(scrollY == trackPage.layout.uiH and setCalls == 1,
     'wheel down should advance the track list by one track')
 
 -- Nuklear 已经自行滚动时，不叠加第二次滚动。
@@ -44,20 +50,20 @@ assert(scrollY == 150 and setCalls == 1, 'native scroll should not be doubled')
 
 trackPage:wheelmoved(0, 1)
 trackPage:Nui()
-assert(scrollY == 50, 'wheel up should move toward the beginning')
+assert(scrollY == 150 - trackPage.layout.uiH, 'wheel up should move toward the beginning')
 
-trackPage.rangeBounds = {x = 1400, y = 300, w = 150, h = 100}
+trackPage.comboPopup = {x = 1400, y = 300, w = 150, h = 100}
 mouse.x, mouse.y = 1450, 350
 trackPage:wheelmoved(0, -1)
-assert(trackPage.pendingWheel == nil, 'wheel above filter window should not scroll the list')
+assert(trackPage.pendingWheel == nil, 'wheel above filter dropdown should not scroll the list')
 sidebar.displayed_content = 'nil'
 mouse.x, mouse.y = 1450, 400
 trackPage:wheelmoved(0, -1)
 assert(trackPage.pendingWheel == nil, 'inactive track page should ignore wheel')
 
-local ended = 0
-function Nui:windowBegin() return false end
-function Nui:windowEnd() ended = ended + 1 end
-trackPage:NuiNext()
-assert(ended == 1, 'collapsed filter window should still end')
+sidebar.displayed_content = 'track'
+trackPage.comboPopup = nil
+mouse.x, mouse.y = 1450, 110
+trackPage:wheelmoved(0, -1)
+assert(trackPage.pendingWheel == nil, 'wheel above filter header should not scroll the list')
 print('PASS: sidebar order and track-list wheel scrolling')

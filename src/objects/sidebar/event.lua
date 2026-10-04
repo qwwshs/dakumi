@@ -1,3 +1,4 @@
+local safeInput = require("src.utils.safeInput")
 --event界面
 local ChartService = require("src.services.chartService")
 local editState = require("src.utils.editState") -- 插件拖拽状态（核心持有）
@@ -30,7 +31,7 @@ local bezier_file = io.open("defaultBezier.txt", "r")  -- 以只读模式打开�
 if bezier_file then
     local content = bezier_file:read("*a")  -- 读取整个文件内容
     bezier_file:close()  -- 关闭文件
-    Gevent.bezier = loadstring("return "..content)()
+    Gevent.bezier = safeInput.parseBezierPresets(content)
 end
 if type(Gevent.bezier) ~= "table" then
     Gevent.bezier = {}
@@ -231,30 +232,19 @@ function Gevent:NuiNext() --更新信息
         return
     end
 
-    if iskeyboard['return'] then --对from以及to进行计算
-        pcall(function ()
-            self.fromv.value = loadstring(
-            [[
-            local now = {x = 0,w = 0}
-            now.x,now.w = fEvent:get(track.track,beat.nowbeat,true)
-            now.lpos,now.rpos = now.x - now.w / 2,now.x + now.w / 2
-            local r = math.random
-            return
-            ]]..self.fromv.value)()
-            if type(self.fromv.value) ~= "number" then
-                self.fromv.value = 0
-            end
-        end)
-        pcall(function ()
-            self.tov.value = loadstring("return "..self.tov.value)()
-            if type(self.tov.value) ~= "number" then
-                self.tov.value = 0
-            end
-        end)
+    if require('src.utils.input'):getUIKeyboard()['return'] then --对from以及to进行计算
+        local x, w = fEvent:get(track.track, beat.nowbeat, true)
+        local vars = {now = {x = x, w = w, lpos = x - w / 2, rpos = x + w / 2}}
+        local from = safeInput.evaluateExpression(self.fromv.value, vars)
+        local to = safeInput.evaluateExpression(self.tov.value, vars)
+        if from then self.fromv.value = tostring(from) end
+        if to then self.tov.value = tostring(to) end
+
     end
 
-    v:setFrom(tonumber(self.fromv.value) or 0)
-    v:setTo(tonumber(self.tov.value) or 0)
+    local from, to = tonumber(self.fromv.value), tonumber(self.tov.value)
+    if from and from == from and math.abs(from) ~= math.huge then v:setFrom(from) end
+    if to and to == to and math.abs(to) ~= math.huge then v:setTo(to) end
     if self.transType.value == 1 then
         v:setTransType('bezier')
     elseif self.transType.value == 2 then

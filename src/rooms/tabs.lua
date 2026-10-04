@@ -485,33 +485,11 @@ function tabs:update(dt)
         play.layout.demo.w = ly.regionW
     end
 
-    -- 区域窗口（透明边框壳，内容由 love.graphics 绘制）
-    Nui:stylePush(transparentWindow(colors))
-    -- 标签条底板窗口
-    if Nui:windowBegin('tabs', ly.tabBar.x, ly.tabBar.y, ly.tabBar.w, ly.tabBar.h, 'border', 'background') then
-        Nui:windowEnd()
-    end
-    -- 拖动条窗口
-    if Nui:windowBegin('tabs_scroll', ly.scroll.x, ly.scroll.y, ly.scroll.w, ly.scroll.h, 'border', 'background') then
-        Nui:windowEnd()
-    end
-    -- demo 窗口
-    local demoW = self:isSingle() and ly.demoW or ly.regionW
-    if Nui:windowBegin('demo_area', play.layout.demo.x, ly.region.y, demoW, ly.region.h, 'border', 'background') then
-        Nui:windowEnd()
-    end
-    Nui:windowSetBounds('demo_area', play.layout.demo.x, ly.region.y, demoW, ly.region.h)
-    -- edit 窗口（每个标签页一个）
+    -- 空白边框由 draw 绘制，不能用整块 Nuklear 窗口覆盖原生编辑区域。
+    -- 透明窗口也会消费输入，导致谱面进度条和时间滚轮收不到事件。
     for i = 1, #self.list do
-        local name = 'edit_area' .. i
-        local wx = self:windowX(i)
-        self.list[i].editView.x = wx -- 窗口左缘每帧与标签页横坐标保持一致
-        if Nui:windowBegin(name, wx, ly.region.y, ly.tabW, ly.region.h, 'border', 'background') then
-            Nui:windowEnd()
-        end
-        Nui:windowSetBounds(name, wx, ly.region.y, ly.tabW, ly.region.h)
+        self.list[i].editView.x = self:windowX(i)
     end
-    Nui:stylePop()
 
     for i, tab in ipairs(self.list) do
         drawEditInfo(tab, i, self:windowX(i), ly.tabW)
@@ -686,6 +664,22 @@ function tabs:draw()
         end
     end
     self('draw')
+    -- 保留区域边框的主题配色，不创建会消费输入的 UI 壳窗口。
+    local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
+    local lineWidth = love.graphics.getLineWidth()
+    love.graphics.setScissor(play.layout.x, ly.tabBar.y, play.layout.w, WINDOW.h - ly.tabBar.y)
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(ThemeService:color(colors.border))
+    local function border(x, y, w, h)
+        love.graphics.rectangle('line', x + 0.5, y + 0.5, w - 1, h - 1)
+    end
+    border(ly.tabBar.x, ly.tabBar.y, ly.tabBar.w, ly.tabBar.h)
+    border(ly.scroll.x, ly.scroll.y, ly.scroll.w, ly.scroll.h)
+    border(play.layout.demo.x, ly.region.y, self:isSingle() and ly.demoW or ly.regionW, ly.region.h)
+    for i = 1, #self.list do border(self:windowX(i), ly.region.y, ly.tabW, ly.region.h) end
+    love.graphics.setLineWidth(lineWidth)
+    if scissorX then love.graphics.setScissor(scissorX, scissorY, scissorW, scissorH)
+    else love.graphics.setScissor() end
     -- edit 窗口绘制完成：广播给叠加层（ctrl 插件在此画框选标记与粘贴预览）
     eventBus:emit('tabs:edit_content_drawn')
 end

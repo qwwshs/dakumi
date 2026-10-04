@@ -20,6 +20,7 @@ nativefs = {
 }
 
 local input = require('src.utils.input')
+input:init({fs=nativefs, json=dkjson, keyboard=iskeyboard, defaults=meta_key.__index, path='users/key.json'})
 local capture = require('src.services.keyCapture')
 local function run()
     assert(input:getBinding('undo')[2] == 'z', 'default key was not filled')

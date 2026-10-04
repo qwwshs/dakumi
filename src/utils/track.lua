@@ -2,11 +2,16 @@
     模块名: fTrack
     描述: 轨道坐标转换模块，处理谱面坐标 ↔ 屏幕坐标的映射
     作者: qwwshs
-    依赖: object, ChartService, settings, play, track, math
+    依赖: room；谱面访问接口由 init 传入。
+          settings/play/track/math 是遗留运行时状态。
 ]]
 
-local fTrack = object:new('fTrack')
-local ChartService = require("src.services.chartService")
+local fTrack = require('src.utils.room').object:new('fTrack')
+local ChartService
+
+function fTrack:init(dependencies)
+    ChartService = assert(dependencies.chart, 'track requires a chart interface')
+end
 
 --- 获取轨道在 play 区域的水平偏移量
 -- @treturn number 偏移量（像素）

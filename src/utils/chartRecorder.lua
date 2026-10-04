@@ -8,10 +8,10 @@
             Incoming 编辑副本等）的 setter 不会产生记录
     作者: qwwshs
     依赖: eventBus (require)；event_type 为运行时全局（meta 加载）
-          gateway 由 ChartService 在模块尾部注入（事务提交需要读字段现值，见 commit）
+          rollbackHandler 由 ChartService 注入（异常时恢复谱面数据与索引）
 
     事务数据形态: {add={event={},note={}}, del={event={},note={}},
-                   snap={实体=旧值副本}, fields_before={kind/key=...}}
+                   snap={实体=旧值副本}, fields_before={kind/key=...}, journal={结构操作顺序}}
     提交产生的操作记录: {add=..., del=..., fields_before={...}, fields_after={...}}
           与 redo:writeRevoke 的既有格式兼容，另增 fields_before/fields_after
           （{kind=, key=, value=} 列表，kind ∈ offset/info/preference/track/bpm_list）。
@@ -20,6 +20,9 @@
 local eventBus = require("src.utils.eventBus")
 
 local recorder = {}
+
+local rollbackHandler
+local function pack(...) return {n = select("#", ...), ...} end
 
 local txn = nil            -- 当前事务；nil 表示无事务
 local suspendDepth = 0     -- 豁免深度（撤销回放 / 内部定位舞步）
@@ -102,34 +105,47 @@ end
 --- 实体 setter 前调用：图谱面的对象快照旧值并纳入当前事务
 function recorder.beforeEntityChange(e)
     if suspendDepth > 0 or not inChart[e] then return end
-    if not txn then txn = {add = {event = {}, note = {}}, del = {event = {}, note = {}}, snap = {}, fields_before = {}} end
+    if not txn then txn = {add = {event = {}, note = {}}, del = {event = {}, note = {}}, snap = {}, fields_before = {}, journal = {}} end
     txn.snap[e] = txn.snap[e] or e:copy()
 end
 
 --- 事务外的单次 setter 变更：自动包单发事务并立即提交（强制记录的核心）
 function recorder.autoCommit(fn, e, method)
     if suspendDepth > 0 or not inChart[e] then return fn() end
-    local before = eventBus:count('chart:mutated') > 0 and e:copy() or nil
-    if txn then
+    return recorder.protect(function()
+        local before = eventBus:count('chart:mutated') > 0 and e:copy() or nil
+        local had = recorder.hasTxn()
+        recorder.begin()
         recorder.beforeEntityChange(e)
-        local result = fn()
+        local results = pack(fn())
         if before and not before:eq(e) then
             eventBus:emit('chart:mutated', {kind = table.find(event_type, e:getType()) and
                 'event_updated' or 'note_updated', entity = e, method = method,
                 before = before, after = e:copy()})
         end
-        return result
+        if not had then recorder.commit() end
+        return unpack(results, 1, results.n)
+    end)
+end
+
+--- 异常时先关闭事务，再恢复已记录的修改；仍向调用方报告原始错误。
+function recorder.setRollbackHandler(fn) rollbackHandler = fn end
+function recorder.protect(fn)
+    local results = pack(xpcall(fn, function(err)
+        return debug.traceback(tostring(err), 2)
+    end))
+    if not results[1] then
+        local failed = txn
+        txn = nil
+        if failed and rollbackHandler then
+            local ok, err = pcall(rollbackHandler, failed)
+            if not ok then
+                error(results[2] .. '\n事务恢复失败: ' .. tostring(err), 0)
+            end
+        end
+        error(results[2], 0)
     end
-    recorder.begin()
-    recorder.beforeEntityChange(e)
-    local result = fn()
-    if before and not before:eq(e) then
-        eventBus:emit('chart:mutated', {kind = table.find(event_type, e:getType()) and
-            'event_updated' or 'note_updated', entity = e, method = method,
-            before = before, after = e:copy()})
-    end
-    recorder.commit()
-    return result
+    return unpack(results, 2, results.n)
 end
 
 -- ============================================================
@@ -139,7 +155,7 @@ end
 --- 打开事务（已打开则为无操作）
 function recorder.begin()
     if not txn then
-        txn = {add = {event = {}, note = {}}, del = {event = {}, note = {}}, snap = {}, fields_before = {}}
+        txn = {add = {event = {}, note = {}}, del = {event = {}, note = {}}, snap = {}, fields_before = {}, journal = {}}
     end
 end
 
@@ -153,8 +169,20 @@ function recorder.touchField(kind, key, before)
 end
 
 --- 结构变更入账（ChartService 低层增删调用）
-function recorder.trackAdd(e) if txn then table.insert(txn.add[table.find(event_type, e:getType()) and 'event' or 'note'], e) end end
-function recorder.trackDel(e) if txn then table.insert(txn.del[table.find(event_type, e:getType()) and 'event' or 'note'], e) end end
+function recorder.trackAdd(e)
+    if txn then
+        local kind = table.find(event_type, e:getType()) and 'event' or 'note'
+        table.insert(txn.add[kind], e)
+        table.insert(txn.journal, {kind = kind, entity = e, added = true})
+    end
+end
+function recorder.trackDel(e, index)
+    if txn then
+        local kind = table.find(event_type, e:getType()) and 'event' or 'note'
+        table.insert(txn.del[kind], e)
+        table.insert(txn.journal, {kind = kind, entity = e, index = index})
+    end
+end
 
 --- 提交当前事务：构建操作记录并经事件总栈广播 chart:committed（无实际变更则不广播）
 -- actionKey 为手势说明的 i18n 键；fieldsAfter 由 ChartService 传入（读取字段现值），
@@ -162,7 +190,6 @@ function recorder.trackDel(e) if txn then table.insert(txn.del[table.find(event_
 function recorder.commit(actionKey, fieldsAfter)
     local t = txn
     if not t then return false end
-    txn = nil
     local operation = buildOperation(t)
     if fieldsAfter then
         for _, entry in ipairs(fieldsAfter) do
@@ -177,6 +204,7 @@ function recorder.commit(actionKey, fieldsAfter)
             end
         end
     end
+    txn = nil
     if operationEmpty(operation) then return false end
     eventBus:emit('chart:committed', operation, actionKey)
     eventBus:emit('chart:changed', {kind = 'commit', operation = operation, actionKey = actionKey})
@@ -191,9 +219,10 @@ end
 --- 豁免区间（撤销回放 / 内部定位舞步）；fn 的返回值原样透传
 function recorder.suspend(fn)
     suspendDepth = suspendDepth + 1
-    local results = {fn()}
+    local results = pack(pcall(fn))
     suspendDepth = suspendDepth - 1
-    return unpack(results, 1, #results)
+    if not results[1] then error(results[2], 0) end
+    return unpack(results, 2, results.n)
 end
 
 -- ============================================================

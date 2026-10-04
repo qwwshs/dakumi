@@ -1,3 +1,4 @@
+local safeInput = require("src.utils.safeInput")
 local layout         = require 'config.layouts.menu' --菜单布局
 local colors         = require 'config.colors.menu'  --菜单颜色
 local ChartService   = require("src.services.chartService") --谱面数据服务
@@ -335,10 +336,17 @@ function menu:filedropped(file) -- 文件拖入
             content)
     elseif table.find(file_extension.old_chart, isfile_extension) then                          --旧谱面格式
         local json_name = string.sub(flie_name, 1, string.find(flie_name, ".[^.]*$")) .. "json" --更改后缀
+        local imported, parse_error = safeInput.parseTable(content)
+        if not imported then
+            log('Error chart', parse_error)
+            love.window.showMessageBox(i18n:get('Error chart'), i18n:get('Error chart'), 'error')
+            nativefs.unmount(PATH.base)
+            return
+        end
         nativefs.newFile(now_file_path .. json_name)                                            --复制到当前文件夹下
 
         --更新谱面格式
-        ChartService:setChart(loadstring('return ' .. content)())
+        ChartService:setChart(imported)
         ChartService:update()
         log(nativefs.write(now_file_path .. json_name,
             ChartService:encodeJson()))                                              --复制到新的文件夹

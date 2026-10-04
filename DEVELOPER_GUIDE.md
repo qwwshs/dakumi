@@ -18,19 +18,21 @@
 
 ### 整体分层
 
+依赖方向从上到下。这里的层表示职责与依赖边界，和后文启动时的编号加载批次不同。
+
 ```
 ┌─────────────────────────────────────────────────┐
 │                   插件层 (Plugins)                │
 │   equalizer / to_takana / fft / hit / directEventEditing  │
 ├─────────────────────────────────────────────────┤
+│               界面与场景层 (Objects / Rooms)       │
+│   UI 组件、编辑面板、play / menu / editTool / sidebar │
+├─────────────────────────────────────────────────┤
 │                  服务层 (Services)                │
 │      ChartService / CoordinateService / AudioService      │
 ├─────────────────────────────────────────────────┤
-│                 业务逻辑层 (Objects)              │
-│     meta / redo / event / note / track / ctrl    │
-├─────────────────────────────────────────────────┤
-│                 场景层 (Rooms)                    │
-│        play / menu / editTool / demo / sidebar   │
+│                  数据模型层 (Models)              │
+│                    Note / Event                   │
 ├─────────────────────────────────────────────────┤
 │                 基础设施层 (Utils)                │
 │    room / beat / table / input / plugin / window │
@@ -72,7 +74,7 @@ quit              -- 退出
 
 ## 模块加载顺序
 
-模块通过 `isRequire.lua` 按层级加载，避免循环依赖：
+模块通过 `isRequire.lua` 按启动批次加载，避免循环依赖。下表的编号不代表架构依赖层级：
 
 ```
 第1层: 平台/语言内置模块     (utf8, socket, ffi)
@@ -81,15 +83,33 @@ quit              -- 退出
 第4层: 核心系统模块           (file, pass, room, window, meta)
 第5层: 业务逻辑模块           (beat, event, note, log, string, table, save)
 第6层: 数据处理库             (nativefs, dkjson, easings, bezier, math, track, input)
+装配阶段: 数据模型/服务        (Note/Event、ChartService/CoordinateService，注入工具接口)
 第7层: UI 和对象模块          (messageBox, i18n, allImage, ui)
 第8层: 场景模块               (edit, menu, start)
-第9层: 插件管理器             (在 main.lua 中初始化)
+第9层: 插件管理器上下文       (在 main.lua 中初始化，复用已加载的服务)
 运行期: 插件自动发现/注册      (love.load → plugins/init.lua，按 target/layer 挂载)
 ```
 
 **关键约束**：
-- 下层模块不可引用上层模块
+- 下层模块不可引用上层模块，不能用延迟 require 绕过此规则。场景组合业务对象，因此 Rooms 与 Objects 属于同一界面层；它们可以向下调用服务。
 - 同层模块尽量避免相互引用
+- 启动装配入口 `isRequire.lua/main.lua` 可以引用各层，把具体实现传给下层所需的接口。依赖注入允许工具调用接口，不允许工具自己加载上层实现。
+
+`src/utils/event.lua`、`note.lua`、`track.lua` 保留既有路径，但通过 `init` 接收谱面访问、实体创建和坐标接口，加载它们不会加载服务或界面。`ChartService` 使用 `src/models/Note.lua` 和 `Event.lua`，并在服务内部完成谱面及索引排序。`src/objects/Note.lua`、`Event.lua` 仅为旧插件保留向下转发的兼容入口，返回同一份模型实现。
+
+这约束的是模块依赖，而非仅仅启动时不报错。旧编辑工具仍有运行时全局界面状态（如 sidebar、track、play），这些是后续需要改成传入接口的遗留耦合，不应在新模块中继续增加。`tests/layer_dependencies.lua` 验证工具独立加载、模型路径兼容及服务内部排序。
+
+加载顺序中第 5/6 批次定义工具后，装配入口先加载数据模型和服务、调用工具的 `init`，再加载 UI 和场景。单独使用工具时也需要先装配：
+
+```lua
+local chart = require('src.services.chartService')
+local coord = require('src.services.coordinateService')
+local event = require('src.utils.event')
+event:init({chart = chart, event = require('src.models.Event'), coordinates = coord})
+local note = require('src.utils.note')
+note:init({chart = chart, note = require('src.models.Note'), coordinates = coord})
+require('src.utils.track'):init({chart = chart})
+```
 
 ---
 
@@ -182,6 +202,23 @@ extra_chart = {
 ---
 
 ## 服务层 API
+
+### ChartService 文件组织
+
+`require('src.services.chartService')` 保留原来的服务实例与 API，入口文件只转发到 `src/services/chartService/init.lua`。目录内的模块在初始化时装载，全部共用入口创建的私有谱面状态；不能直接取得 chart 或索引表。
+
+| 文件 | 职责 |
+|---|---|
+| `init.lua` | 创建服务实例和唯一私有状态，装载各模块 |
+| `index.lua` | 内部辅助函数、轨道索引维护与列表查询 |
+| `transactions.lua` | 变更事务、成员注册与失败回滚 |
+| `lifecycle.lua` | 加载、格式迁移、保存与 JSON 编码 |
+| `event_groups.lua` | 事件组定义、独立编辑与范围互斥 |
+| `entities.lua` | 音符和事件的增删 |
+| `fields.lua` | offset、谱面信息、偏好、BPM 表和轨道定义 |
+| `timing.lua` | 时间/节拍换算与排序 |
+
+子模块返回安装函数，由入口传入服务、私有状态、内部辅助接口与依赖。新增功能按职责放入对应模块，不创建第二份谱面状态，也不让调用方直接加载子模块代替服务。
 
 ### ChartService (`src/services/chartService.lua`)
 
@@ -489,9 +526,13 @@ daikumi editor/
 │   │   ├── math.lua                -- 数学工具
 │   │   └── bezier.lua              -- 贝塞尔曲线
 │   ├── services/                   -- 服务层
-│   │   ├── chartService.lua        -- 谱面数据服务
+│   │   ├── chartService.lua        -- 谱面服务兼容入口
+│   │   ├── chartService/           -- 按职责拆分的谱面服务（入口 init.lua）
 │   │   ├── coordinateService.lua   -- 坐标转换服务
 │   │   └── audioService.lua        -- 音频服务
+│   ├── models/                     -- 数据实体（服务与界面共享）
+│   │   ├── Note.lua               -- 音符实体、拷贝与序列化
+│   │   └── Event.lua              -- 事件实体、拷贝与序列化
 │   ├── objects/                    -- 业务逻辑
 │   │   ├── meta.lua                -- 数据模型定义
 │   │   ├── messageBox.lua          -- 消息提示框

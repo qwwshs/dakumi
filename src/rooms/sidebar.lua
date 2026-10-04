@@ -57,8 +57,8 @@ function sidebar:update(dt)
         Nui:label(i18n:get("version") .. DAKUMI._VERSION..'  '.."FPS:" .. love.timer.getFPS())
         if self.displayed_content ~= 'nil' then
             local backClicked = ui:imageButton(isImage.isbreak, 8)
-            if Nui:widgetIsHovered() then Nui:tooltip(i18n:get('break')) end
-            if backClicked or (not KeyCapture:isActive() and Nui:windowIsHovered() and iskeyboard['escape'] ) then
+            --if Nui:widgetIsHovered() then Nui:tooltip(i18n:get('break')) end
+            if backClicked or (not KeyCapture:isActive() and Nui:windowIsHovered() and require('src.utils.input'):getUIKeyboard()['escape'] ) then
                 messageBox:add("break")
                 local canLeave = not g.nowBreak or g:nowBreak() ~= false
                 if canLeave then

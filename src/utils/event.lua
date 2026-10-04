@@ -1,8 +1,10 @@
+local safeInput = require("src.utils.safeInput")
 --[[
     模块名: event (fEvent)
     描述: 事件处理模块，负责事件的查询、放置、删除、排序和过渡计算
     作者: qwwshs
-    依赖: object, beat, easings, bezier, ChartService, sidebar, track, denom, transIndex
+    依赖: room/safeInput；谱面、实体工厂与坐标接口由 init 传入。
+          beat/easings/bezier 与 sidebar/track/denom/transIndex 是遗留运行时状态。
 
     核心功能:
     - event:get(): 获取指定轨道在指定 beat 处的事件值（x, w, lpos, rpos）
@@ -13,10 +15,17 @@
     - event:getTrans(): 计算事件的过渡值
 ]]
 
-local event = object:new('event')
-local ChartService = require("src.services.chartService")
-local Event = require("src.objects.Event")
-local CoordinateService = require("src.services.coordinateService")
+local event = require('src.utils.room').object:new('event')
+local ChartService, Event, CoordinateService
+local cachedGroups, cachedRevision = {}, -1
+
+-- 工具只依赖传入的接口，具体服务与实体工厂由启动入口装配。
+function event:init(dependencies)
+    ChartService = assert(dependencies.chart, 'event requires a chart interface')
+    Event = assert(dependencies.event, 'event requires an entity factory')
+    CoordinateService = assert(dependencies.coordinates, 'event requires a coordinate interface')
+    cachedGroups, cachedRevision = {}, -1
+end
 
 -- ============================================================
 -- 贝塞尔曲线预设加载（仅此处加载一次，其他模块通过 fEvent.bezier 访问）
@@ -25,7 +34,7 @@ local bezier_file = io.open("defaultBezier.txt", "r")
 if bezier_file then
     local content = bezier_file:read("*a")
     bezier_file:close()
-    event.bezier = loadstring("return " .. content)()
+    event.bezier = safeInput.parseBezierPresets(content)
 end
 if type(event.bezier) ~= "table" then
     event.bezier = {}
@@ -73,7 +82,6 @@ local function innerTransition(inner, progress)
     return ease and ease(progress) or progress
 end
 
-local cachedGroups, cachedRevision = {}, -1
 local function getCachedGroup(name)
     local revision = ChartService:getEventGroupsRevision()
     if revision ~= cachedRevision then

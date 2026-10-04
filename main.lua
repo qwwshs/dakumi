@@ -78,7 +78,8 @@ FONT.normal:setFilter("linear", "nearest")
 FONT.plus:setFilter("linear", "nearest")
 
 -- 加载所有模块和依赖
-require 'isRequire'
+local app = require 'isRequire'
+local room, input, eventBus = app.root, app.input, app.eventBus
 
 -- 初始化插件管理器和服务层
 PluginManager = require("src.utils.plugin")
@@ -277,8 +278,7 @@ function love.update(dt)
     ui:transOrgin()
     Nui:styleSetFont(FONT.normal)
     local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
-    mouse.x = original_x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
-    mouse.y = original_y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
+    mouse.x, mouse.y = CoordinateService:screenToGame(original_x, original_y)
 
     BpmMeasureService:update()
     room("update", dt)
@@ -294,118 +294,14 @@ function love.draw()
     Nui:draw()
 end
 
-function love.keypressed(key, scancode, isrepeat)
-    if KeyCapture:isActive() then
-        KeyCapture:keypressed(key, isrepeat)
-        return
-    end
-    -- 将键盘事件传递给 Nuklear UI，如果 UI 消费了事件则跳过游戏逻辑
-    local success = pcall(function() Nui:keypressed(key, scancode, isrepeat) end)
-    if not success then return end
-
-    if key == "lctrl" or key == "rctrl" then
-        iskeyboard.ctrl = true
-    end
-    if key == "lalt" or key == "ralt" then
-        iskeyboard.alt = true
-    end
-    if key == "lshift" or key == "rshift" then
-        iskeyboard.shift = true
-    end
-    iskeyboard[key] = true
-    if string.sub(key, 1, 2) == "kp" then
-        key = string.sub(key, 3, 3)
-    end
-
-    room("keypressed", key, scancode, isrepeat)
-end
-
-function love.keyreleased(key, scancode)
-    if KeyCapture:isActive() then
-        KeyCapture:keyreleased(key)
-        iskeyboard[key] = false
-        if key == 'lctrl' or key == 'rctrl' then iskeyboard.ctrl = false end
-        if key == 'lalt' or key == 'ralt' then iskeyboard.alt = false end
-        if key == 'lshift' or key == 'rshift' then iskeyboard.shift = false end
-        return
-    end
-    local success = pcall(function() Nui:keyreleased(key, scancode) end)
-    if not success then return end
-
-    if key == "lctrl" or key == "rctrl" then
-        iskeyboard.ctrl = false
-    end
-    if key == "lalt" or key == "ralt" then
-        iskeyboard.alt = false
-    end
-    if key == "lshift" or key == "rshift" then
-        iskeyboard.shift = false
-    end
-    iskeyboard[key] = false
-
-    room("keyreleased", key, scancode)
-end
-
-function love.wheelmoved(x, y)
-    if KeyCapture:isActive() then return end
-    local success = pcall(function() Nui:wheelmoved(x, y) end)
-    if not success then return end
-
-    room("wheelmoved", x, y)
-end
-
-local rulerToggleMouseDown = false
-
-function love.mousepressed(x, y, button, istouch, presses)
-    local gameX = x / WINDOW.scale - (WINDOW.nowW - WINDOW.w * WINDOW.scale) / 2
-    local gameY = y / WINDOW.scale - (WINDOW.nowH - WINDOW.h * WINDOW.scale) / 2
-    if tabs and tabs.handleRulerToggleClick and tabs:handleRulerToggleClick(gameX, gameY, button) then
-        rulerToggleMouseDown = true
-        mouse.down = true
-        return
-    end
-    local success = pcall(function() Nui:mousepressed(x, y, button, istouch, presses) end)
-    if not success then return end
-
-    mouse.down = true
-    if KeyCapture:isActive() then return end
-    room("mousepressed", gameX, gameY, button, istouch, presses)
-end
-
-function love.mousereleased(x, y, button, istouch, presses)
-    if rulerToggleMouseDown and button == 1 then
-        rulerToggleMouseDown = false
-        mouse.down = false
-        return
-    end
-    local success = pcall(function() Nui:mousereleased(x, y, button, istouch, presses) end)
-    if not success then return end
-
-    x = mouse.x --对缩放进行处理
-    y = mouse.y
-    mouse.down = false
-
-    if KeyCapture:isActive() then return end
-    room("mousereleased", x, y, button, istouch, presses)
-end
-
-function love.mousemoved(x, y, dx, dy, istouch)
-    local success = pcall(function() Nui:mousemoved(x, y, dx, dy, istouch) end)
-    if not success then return end
-
-    x = mouse.x --对缩放进行处理
-    y = mouse.y
-
-    if KeyCapture:isActive() then return end
-    room("mousemoved", x, y, dx, dy, istouch)
-end
-
-function love.textinput(input)
-    if KeyCapture:isActive() then return end
-    local success = pcall(function() Nui:textinput(input) end)
-    if not success then return end
-
-    room("textinput", input)
+-- 原生输入统一经过路由，主入口不再判断具体编辑控件。
+local InputRouter = require('src.services.inputRouter')
+local inputRouter = InputRouter.new({ui = Nui, root = app.root, capture = KeyCapture,
+    keyboard = app.keyboard, uiKeyboard = app.uiKeyboard, mouse = app.mouse, window = app.window, report = log})
+for _, method in ipairs({'keypressed', 'keyreleased', 'wheelmoved', 'mousepressed',
+    'mousereleased', 'mousemoved', 'textinput', 'focus'}) do
+    local event = method
+    love[event] = function(...) return inputRouter:dispatch(event, ...) end
 end
 
 function love.quit()

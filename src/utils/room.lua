@@ -5,12 +5,13 @@
     层号从小到大执行；同层按导入顺序执行。省略层号表示最高层（math.huge）。
     层属于父容器中的挂载关系，同一个对象在不同容器中可以拥有不同层。
 ]]
-object = {}
+local room
+local object = {}
 function object:new(name)
     return setmetatable({__name = type(name) == 'string' and name or '', __type = ''}, object)
 end
 
-container = object:new('')
+local container = object:new('')
 container.__index = container
 container.TOP_LAYER = math.huge
 local function initContainer(value)
@@ -165,7 +166,7 @@ function container:callAllObject(method, ...) self:callChildren(method, 'object'
 function container:callAllGroup(method, ...) self:callChildren(method, 'group', ...) end
 function container:__call(method, ...) self:callChildren(method, nil, ...) end
 
-group = container:new('')
+local group = container:new('')
 group.__index = group
 group.__call = container.__call
 function group:new(name)
@@ -219,3 +220,8 @@ function container:findContainer(path)
     end
     return current
 end
+
+-- 系统内部使用局部引用。仅在兼容边界提供旧别名，外部可直接 require 取依赖。
+local system = {object = object, container = container, group = group, room = room}
+for name, value in pairs(system) do _G[name] = value end
+return system

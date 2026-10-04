@@ -89,11 +89,15 @@ local function run()
     assert(Chart:getBpm(1).bpm == 120)
 
     before = count()
+    local mutationBefore = #mutations
     Chart:getTrackField(3, 'name')
-    last('track_created')
-    assert(count() == before + 1 and mutations[#mutations].kind == 'track_created')
-    Chart:getTrackField(3, 'name')
-    assert(count() == before + 1, 'existing track was announced again')
+    assert(count() == before and #mutations == mutationBefore and not Chart:hasTrackData(3))
+    Chart:setTrackField(3, 'name', 'test')
+    assert(Chart:hasTrackData(3) and count() == before + 1)
+    assert(redo:undo())
+    assert(not Chart:hasTrackData(3), 'undo must remove newly created track')
+    assert(redo:redoOne())
+    assert(Chart:getTrackField(3, 'name') == 'test')
 
     local inner = {type = 'x', beat = {0, 0, 1}, beat2 = {1, 0, 1},
         from = 0, to = 1, trans = {type = 'easings', easings = 1}}
@@ -114,6 +118,17 @@ local function run()
     last('group_edit_begin')
     Chart:getEvent(1):setTo(2)
     last('commit')
+    before = count()
+    local revision = Chart:getEventGroupsRevision()
+    local oldEncoder = dkjson
+    dkjson = {encode = function(snapshot)
+        assert(snapshot.event_groups.B.event[1].to == 2)
+        return 'snapshot'
+    end}
+    assert(Chart:encodeJson() == 'snapshot')
+    dkjson = oldEncoder
+    assert(count() == before and Chart:getEventGroupsRevision() == revision,
+        'export mutated the editing group')
     assert(Chart:syncEventGroupEdit())
     last('group_sync')
     assert(Chart:finishEventGroupEdit())
@@ -126,8 +141,7 @@ local function run()
     Chart:setChart({note = {{type = 'note', beat = {0, 0, 1}}}})
     last('replace')
     assert(count() == before + 1)
-    -- load 在实际应用中会保存，测试只验证通知链；使用内存替身拦截写盘。
-    save = function() end
+    -- 保留禁止写盘的替身，验证加载只修改内存。
     assert(Chart:load())
     last('load')
     assert(type(Chart:getNote(1).getType) == 'function')

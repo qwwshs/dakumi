@@ -8,11 +8,13 @@ easings = require('src.utils.easings')
 require('src.utils.bezier')
 dkjson = require('src.utils.dkjson')
 local savedChart
-save = function(data) savedChart = dkjson.decode(dkjson.encode(data)) end
+save = function(data) savedChart = dkjson.decode(dkjson.encode(data)); return true end
 log = function() end
 fNote = {sort = function() end, holdCleanUp = function() end}
 local ChartService = require('src.services.chartService')
 fEvent = require('src.utils.event')
+fEvent:init({chart = ChartService, event = require('src.models.Event'),
+    coordinates = require('src.services.coordinateService')})
 redo = require('plugins.redo')
 local Event = require('src.objects.Event')
 local groupSidebar = require('src.objects.sidebar.event_groups')

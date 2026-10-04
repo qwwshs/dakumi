@@ -1,0 +1,156 @@
+io.stdout:setvbuf('no')
+function love.errorhandler(message)
+    print(debug.traceback(tostring(message)))
+    return function() return 1 end
+end
+local project = love.filesystem.getWorkingDirectory()
+package.path = project .. '/?.lua;' .. project .. '/?/init.lua;' .. package.path
+local nativefs = require('src.utils.nativefs')
+assert(nativefs.mount(project))
+local rawUnmount = nativefs.unmount
+nativefs.unmount = function(path)
+    if path == nil or path == project then return true end
+    return rawUnmount(path)
+end
+local rawOpen = io.open
+local dummyFile = {write = function() return true end, close = function() return true end}
+io.open = function(path, mode)
+    if mode and (mode:find('w') or mode:find('a')) then return dummyFile end
+    if path:find('users[/\\]') then return nil end
+    return rawOpen(path, mode)
+end
+nativefs.write = function() return true end
+nativefs.createDirectory = function() return true end
+nativefs.remove = function() error('unexpected deletion') end
+local rawRead, rawList = nativefs.read, nativefs.getDirectoryItems
+nativefs.read = function(path, ...)
+    if path:find('users[/\\]') then return nil end
+    return rawRead(path, ...)
+end
+nativefs.getDirectoryItems = function(path)
+    if path:find('users') then return {} end
+    return rawList(path)
+end
+love.filesystem.getSource = function() return project end
+love.filesystem.getSourceBaseDirectory = function() return project end
+love.filesystem.isFused = function() return false end
+love.window.setMode = function() return true end
+love.window.showMessageBox = function() return 1 end
+love.system.openURL = function() return true end
+-- 保持测试主循环，不启用游戏的错误自动保存。
+local run = love.run
+local ok, err = xpcall(assert(loadfile(project .. '/main.lua')), debug.traceback)
+if not ok then
+    print(err)
+    love.event.quit(1)
+    return
+end
+love.run = run
+local gameLoad, gameUpdate, gameDraw = love.load, love.update, love.draw
+local frame = 0
+function love.errorhandler(message)
+    print(debug.traceback(tostring(message)))
+    love.event.quit(1)
+    return function() return 1 end
+end
+
+local slider = require('src.objects.play.slider')
+local ChartService = require('src.services.chartService')
+local results = {}
+function love.load()
+    gameLoad({})
+    ChartService:setChart({bpm_list={{bpm=120,beat={0,0,1},linear_ramp=0}}, event={}, note={}})
+    ChartService:load()
+    music_data = love.sound.newSoundData(882000, 44100, 16, 1)
+    music = love.audio.newSource(music_data, 'static')
+    time.nowtime, time.alltime, beat.nowbeat, beat.allbeat = 3, 20, 6, 40
+    room:to('edit')
+end
+local function point(x, y)
+    love.mouse.setPosition(x, y)
+    love.mousemoved(x, y, 0, 0, false)
+end
+function love.update(dt)
+    frame = frame + 1
+    Nui:frameBegin()
+    gameUpdate(0.016)
+    Nui:frameEnd()
+    if frame == 2 then
+        point(slider.x+10, slider.y+slider.h*0.5)
+        love.mousepressed(mouse.x, mouse.y, 1, false, 1)
+        results.dragStart = slider.down
+        point(500, slider.y+slider.h*0.25)
+    elseif frame == 3 then
+        results.dragTime = time.nowtime
+        love.mousereleased(mouse.x, mouse.y, 1, false, 1)
+    elseif frame == 4 then
+        results.dragStopped = not slider.down
+        point(1050, 500)
+        results.singleBefore = beat.nowbeat
+        love.wheelmoved(0, 1)
+        results.singleAfter = beat.nowbeat
+        tabs:addTab()
+    elseif frame == 6 then
+        point(1050, 500)
+        results.tabsBefore = beat.nowbeat
+        love.wheelmoved(0, 1)
+        results.tabsAfter = beat.nowbeat
+    elseif frame == 7 then
+        sidebar:to('track')
+        point(1500, 500)
+        local before = beat.nowbeat
+        love.wheelmoved(0, -1)
+        results.sidebarNoSeek = beat.nowbeat == before
+    elseif frame == 8 then
+        for key, value in pairs(results) do print(key .. '=' .. tostring(value)) end
+        assert(results.dragStart, 'progress drag did not start')
+        assert(math.abs(results.dragTime - 15) < 0.001, 'progress drag did not follow the mouse')
+        assert(results.dragStopped, 'progress drag remained active after release')
+        assert(results.singleAfter > results.singleBefore, 'single edit wheel was blocked')
+        assert(results.tabsAfter > results.tabsBefore, 'tabbed edit wheel was blocked')
+        assert(results.sidebarNoSeek, 'sidebar wheel leaked into chart time')
+        tabs:closeTab(2)
+        local Event = require('src.models.Event')
+        ChartService:add(Event.new({type='x', track=1, beat={10,0,1}, beat2={20,0,1},
+            from=40, to=60, trans={type='easings', easings=1, trans={0,0,1,1}}}))
+        sidebar:to('event', 1)
+        directEventEditing.open = true
+    elseif frame == 10 then
+        point(slider.x+10, slider.y+slider.h*0.5)
+        love.mousepressed(mouse.x, mouse.y, 1, false, 1)
+        assert(slider.down, 'direct event editing host blocked the progress drag')
+        point(500, slider.y+slider.h*0.25)
+    elseif frame == 11 then
+        assert(math.abs(time.nowtime - 15) < 0.001)
+        love.mousereleased(mouse.x, mouse.y, 1, false, 1)
+    elseif frame == 12 then
+        point(500, 500)
+        local before = beat.nowbeat
+        love.wheelmoved(0, 1)
+        assert(beat.nowbeat > before, 'direct event editing host blocked the time wheel')
+    elseif frame == 13 then
+        point(500, 500)
+        love.mousepressed(mouse.x, mouse.y, 2, false, 1)
+        assert(not slider.down, 'right click unexpectedly started progress dragging')
+    elseif frame == 14 then
+        love.mousereleased(mouse.x, mouse.y, 2, false, 1)
+    elseif frame == 15 then
+        assert(directEventEditing._menuOpen, 'context menu did not open on right click')
+    elseif frame == 16 then
+        point(520, 515)
+        love.mousepressed(mouse.x, mouse.y, 1, false, 1)
+    elseif frame == 18 then
+        love.mousereleased(mouse.x, mouse.y, 1, false, 1)
+        assert(ChartService:getEvent(1):getTransType() == 'bezier', 'context menu item did not respond')
+    elseif frame == 20 then
+        assert(not directEventEditing._menuOpen, 'context menu remained open after choosing an item')
+        point(1050, 500)
+        local before = beat.nowbeat
+        love.wheelmoved(0, 1)
+        assert(beat.nowbeat > before, 'time wheel remained blocked after closing the context menu')
+        print('PASS: progress drag, release, single/tabbed edit wheel, sidebar isolation and direct event context menu')
+        love.event.quit(0)
+    end
+end
+function love.draw() gameDraw() end
+function love.quit() end

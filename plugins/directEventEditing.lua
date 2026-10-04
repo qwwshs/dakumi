@@ -158,10 +158,15 @@ function directEventEditing:update(dt)
         return
     end
 
-    if not self.open then return end
-    if tabs and not tabs:isSingle() then return end --多标签页时 demo 区域不可交互
+    if not self.open or (tabs and not tabs:isSingle()) then
+        self._menuOpen = false
+        return
+    end
     local isevent = getCurrentEvent()
-    if not isevent then return end
+    if not isevent then
+        self._menuOpen = false
+        return
+    end
 
     local c_x, c_y, c_x2, c_y2 = getEventScreenPos(isevent)
 
@@ -207,11 +212,11 @@ function directEventEditing:update(dt)
         sidebar:to('event', sidebar.incoming[1])
     end
 
-    -- 右键菜单（Nuklear 上下文菜单：触发区 = demo 区域，右键任意处弹出，菜单自动出现在鼠标处）
-    -- nk_contextual_begin 要求当前帧必须存在一个「激活中的窗口」作为宿主（ctx->current == ctx->active），
-    -- 而本插件 update 在编辑场景中第一个执行，因此先包一个全透明壳窗口（区域同 demo）提供宿主
+    -- 上下文菜单只需要激活宿主；把空宿主放到屏幕外，避免透明窗口吞掉谱面输入。
+    -- 菜单触发区仍是 demo，弹出的菜单仍由 Nuklear 处理。
     local demo = play.layout.demo
     local region = tabs.layout.region
+    self._menuOpen = false
     Nui:stylePush({
         ['window'] = {
             ['background'] = '#00000000',
@@ -220,12 +225,13 @@ function directEventEditing:update(dt)
             ['padding'] = { x = 0, y = 0 },
         },
     })
-    local menu_host = Nui:windowBegin('directEventEditing', demo.x, region.y, demo.w, region.h, 'border')
+    local menu_host = Nui:windowBegin('directEventEditing', -1000, -1000, 1, 1)
     Nui:stylePop()
     if menu_host then
         -- 保证壳窗口是当前激活窗口（nk_contextual_begin 的 ctx->current == ctx->active 条件）
         Nui:windowSetFocus('directEventEditing')
         if Nui:contextualBegin(MENU_W, MENU_H, demo.x, region.y, demo.w, region.h) then
+            self._menuOpen = true
             -- 必须显式设置行布局：nk_contextual_item_text 依赖 row.columns/row.height 分配空间，
             -- 未设置时布局 columns=0，所有 item 宽度为 NaN 而完全不可见（菜单只剩黑色背景）
             Nui:layoutRow('dynamic', MENU_ITEM_H, 1)
@@ -302,8 +308,8 @@ function directEventEditing:update(dt)
             Nui:contextualEnd()
             sidebar:to('event', sidebar.incoming[1])
         end
-        Nui:windowEnd()
     end
+    Nui:windowEnd()
 end
 
 --- 鼠标按下：检测控制点点击

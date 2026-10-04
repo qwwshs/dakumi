@@ -1,3 +1,4 @@
+local safeInput = require("src.utils.safeInput")
 i18n = object:new('i18n')
 i18n.language = {} --语言表
 i18n.languageName = {}
@@ -8,8 +9,13 @@ local files = nativefs.getDirectoryItems('i18n')
 for i,v in ipairs(files) do
     if v:sub(-4) == '.lua' then
         local name = v:sub(1,-5)
-        i18n.language[name] = loadstring(nativefs.read(PATH.i18n..v))()
-        table.insert(i18n.languageName,name)
+        local language, err = safeInput.parseTable(nativefs.read(PATH.i18n..v))
+        if language then
+            i18n.language[name] = language
+            table.insert(i18n.languageName, name)
+        else
+            print("Invalid language file: " .. v, err)
+        end
     end
 end
 

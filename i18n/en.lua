@@ -312,6 +312,11 @@ return {
     -- Common/System Keys - Used across multiple interfaces  
     ['save'] = 'save',  
     ['save completed'] = 'save completed',  
+    ['chart_save_failed_title'] = 'Chart save failed',
+    ['chart_save_failed_prompt'] = 'The chart was not saved. Copy its contents to the clipboard?\n\nError: %s',
+    ['chart_save_copy'] = 'Copy chart',
+    ['chart_save_cancel'] = 'Cancel',
+    ['chart_save_copy_failed'] = 'Could not copy to the clipboard. The chart is still available in the editor.',
     ['saving'] = 'saving',  
     ['do'] = 'do',  
     ['play'] = 'play',  

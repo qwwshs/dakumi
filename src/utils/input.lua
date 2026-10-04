@@ -2,13 +2,21 @@
     模块名: input
     描述: 快捷键管理模块，处理快捷键的注册和检测
     作者: qwwshs
-    依赖: nativefs, dkjson, meta_key, iskeyboard, table, PATH
+    依赖: init 显式传入文件系统、JSON、默认键位和按键状态
 ]]
 
 local input = {}
 setmetatable(input, input)
 local bindings = {}
 local storedKeys
+local dependencies
+local keyboard
+local function copy(value)
+    if type(value) ~= "table" then return value end
+    local result = {}
+    for k, v in pairs(value) do result[k] = copy(v) end
+    return result
+end
 
 local modifierAlias = {
     lctrl = 'ctrl', rctrl = 'ctrl', lalt = 'alt', ralt = 'alt',
@@ -39,7 +47,7 @@ function input:new(name, key)
     if type(key) == 'string' then
         keys = { key }
     elseif type(key) == 'table' then
-        keys = table.copy(key)
+        keys = copy(key)
     end
     if not validKeys(keys) then return false end
     bindings[name] = keys
@@ -55,20 +63,25 @@ function input:getBindingNames()
 end
 
 function input:getBinding(name)
-    return bindings[name] and table.copy(bindings[name]) or nil
+    return bindings[name] and copy(bindings[name]) or nil
+end
+
+-- UI 独立读取原生按键，不让文本输入的按键进入编辑快捷键状态。
+function input:getUIKeyboard()
+    return dependencies and dependencies.uiKeyboard or {}
 end
 
 -- 写盘成功后才替换运行中的映射，确认后立即生效。
 function input:setBinding(name, keys)
     if not bindings[name] or not validKeys(keys) then return false, 'invalid binding' end
-    local nextKeys = table.copy(storedKeys)
-    nextKeys[name] = table.copy(keys)
-    local called, ok, err = pcall(nativefs.write, PATH.usersPath.key .. 'key.json',
-        dkjson.encode(nextKeys, {indent = true}))
+    local nextKeys = copy(storedKeys)
+    nextKeys[name] = copy(keys)
+    local called, ok, err = pcall(dependencies.fs.write, dependencies.path,
+        dependencies.json.encode(nextKeys, {indent = true}))
     if not called then return false, ok end
     if not ok then return false, err end
     storedKeys = nextKeys
-    bindings[name] = table.copy(keys)
+    bindings[name] = copy(keys)
     self[name] = {name = name, keys = bindings[name]}
     return true
 end
@@ -79,18 +92,16 @@ end
 function input:__call(name)
     local keys = bindings[name]
     if not keys then
-        log('input')
-        log(name)
-        log('not found')
+        if dependencies and dependencies.log then dependencies.log('input not found', name) end
         return false
     end
     for _, key in ipairs(keys) do
-        if not iskeyboard[key] then
+        if not keyboard[key] then
             return false
         end
     end
     --防止同时触发多个快捷键
-    for pressed, down in pairs(iskeyboard) do
+    for pressed, down in pairs(keyboard) do
         local alias = modifierAlias[pressed]
         local covered = includes(keys, pressed) or (alias and includes(keys, alias))
         if pressed == 'ctrl' or pressed == 'alt' or pressed == 'shift' then
@@ -106,22 +117,22 @@ function input:__call(name)
 end
 
 
---快捷键相关
-nativefs.mount(PATH.base)
-
-local key_file = nativefs.read(PATH.usersPath.key .. 'key.json') or ''
-local key
-pcall(function() key = dkjson.decode(key_file) or meta_key.__index end)
-if type(key) ~= 'table' then
-    key = meta_key.__index
+-- require 只加载代码；启动方提供状态、默认键位和存储接口。
+function input:init(options)
+    assert(options and options.fs and options.json and options.keyboard and options.defaults,
+        'input:init requires fs, json, keyboard and defaults')
+    dependencies, keyboard = options, options.keyboard
+    for name in pairs(bindings) do self[name] = nil end
+    bindings = {}
+    local ok, keys = pcall(options.json.decode, options.fs.read(options.path) or '')
+    if not ok or type(keys) ~= 'table' then keys = {} end
+    local defaults = options.defaults
+    for name, value in pairs(defaults) do
+        if not validKeys(keys[name]) then keys[name] = copy(value) end
+    end
+    storedKeys = copy(keys)
+    for name, value in pairs(keys) do self:new(name, value) end
+    return self
 end
-table.fill(key, meta_key.__index)
-storedKeys = table.copy(key)
-save(dkjson.encode(key, { indent = true }), PATH.usersPath.key .. 'key.json')
-for i, v in pairs(key) do
-    input:new(i, v)
-end
-nativefs.unmount(PATH.base)
-
 
 return input

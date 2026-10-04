@@ -108,8 +108,7 @@ ChartService:change('history.edit_track', function()
 end)
 assert(#redo.revoke == depth + 1, '同事务内多次字段修改合并为一条记录')
 assert(#lastAction().fields_before == 1, '同一轨道合并为一份定义快照')
-assert(lastAction().fields_before[1].value.name == '' and
-    lastAction().fields_before[1].value.parent == 0, '快照应取修改前的轨道定义')
+assert(lastAction().fields_before[1].value == nil, '快照应保留轨道尚未创建的状态')
 assert(lastAction().fields_after[1].value.name == 'test track' and
     lastAction().fields_after[1].value.parent == 1, '回放值应为修改后的轨道定义')
 assert(redo:undo())

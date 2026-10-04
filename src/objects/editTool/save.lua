@@ -9,14 +9,12 @@ buttonSave.img = isImage.save
 function buttonSave:click(isAutoSave)
     if isAutoSave then
         if not ChartService:save("chart.json.auto") then
-            messageBox:add('event_group.invalid')
             return false
         end
         messageBox:add("auto save")
 
     else
         if not ChartService:save("chart.json") then
-            messageBox:add('event_group.invalid')
             return false
         end
         messageBox:add("save")

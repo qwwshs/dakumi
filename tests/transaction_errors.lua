@@ -1,0 +1,71 @@
+-- 复用隔离环境；save 为桩函数，不写入真实谱面。
+dofile('tests/enforce_undo.lua')
+local chart = require('src.services.chartService')
+local recorder = require('src.utils.chartRecorder')
+local Event = require('src.objects.Event')
+local Note = require('src.objects.Note')
+local bus = require('src.utils.eventBus')
+chart:setChart({preference = {x_offset = 10, event_scale = 100}})
+chart:load()
+local function event(n)
+    return Event.new({type = 'x', track = 1, beat = {n,0,1}, beat2 = {n+1,0,1}, from = 0, to = 100})
+end
+local a, b = event(1), event(3)
+chart:addEvent(a)
+chart:addEvent(b)
+local depth, offset = #redo.revoke, chart:getOffset()
+local rolledBack = 0
+local off = bus:on('chart:changed', function(c)
+    if c.kind == 'rollback' then rolledBack = rolledBack + 1 end
+end)
+local ok, err = pcall(function()
+    chart:change('history.failed', function()
+        a:setFrom(70)
+        chart:deleteEvent(b)
+        chart:addNote(Note.new({track = 1, beat = {1,0,1}}))
+        chart:setOffset(99)
+        chart:change(nil, function() error('injected failure') end)
+    end)
+end)
+assert(not ok and err:find('injected failure', 1, true))
+assert(not recorder.hasTxn() and not recorder.suspended())
+assert(a:getFrom() == 0 and chart:getOffset() == offset)
+assert(chart:getEventCount() == 2 and rawequal(chart:getEvent(2), b))
+assert(chart:getNoteCount() == 0 and chart:getTrackEventCount(1, 'x') == 2)
+assert(#redo.revoke == depth and rolledBack == 1)
+-- 下次修改独立入账，失败事务不会混入撤销记录。
+a:setTo(80)
+assert(#redo.revoke == depth + 1)
+assert(redo:undo() and chart:getEvent(1):getTo() == 100)
+a = chart:getEvent(1)
+-- 单个 setter 在改完数据后报错，同样恢复旧值。
+depth = #redo.revoke
+ok = pcall(function()
+    recorder.autoCommit(function() a._data.from = 88; error('setter failure') end, a, 'test')
+end)
+assert(not ok and a:getFrom() == 0 and not recorder.hasTxn())
+assert(#redo.revoke == depth)
+-- 手动打开的批量事务也会在内部操作异常时结束。
+chart:beginChange()
+a:setFrom(10)
+ok = pcall(function() chart:change(nil, function() error('manual failure') end) end)
+assert(not ok and a:getFrom() == 0 and not recorder.hasTxn())
+-- 嵌套免记录区报错后，不会永久禁用撤销记录。
+ok = pcall(function()
+    chart:suspend(function() chart:suspend(function() error('replay failure') end) end)
+end)
+assert(not ok and not recorder.suspended())
+a:setFrom(12)
+assert(#redo.revoke == depth + 1)
+-- 返回值含 nil 时仍保持数量与位置。
+local function check(...) assert(select('#', ...) == 3); local x,y,z = ...; assert(x == 1 and y == nil and z == 3) end
+check(chart:change(nil, function() return 1, nil, 3 end))
+check(chart:suspend(function() return 1, nil, 3 end))
+-- 索引构建报错时，已经加入主列表的对象也要回退。
+local count = chart:getEventCount()
+local broken = event(5)
+broken._data.track = nil -- 注入索引写入错误
+ok = pcall(function() chart:addEvent(broken) end)
+assert(not ok and chart:getEventCount() == count and not recorder.hasTxn())
+off()
+print('PASS: transaction errors (rollback/indices/history/setters/manual/nested/suspend/returns)')

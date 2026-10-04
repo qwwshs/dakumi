@@ -1,40 +1,114 @@
-function save(tab, name)         --谱与设置保存
-    if name == "chart.json" then --特殊保存
-        if not menu.chartInfo.chart_name[menu.selectChartPos].path then log(name..' save error: not path') return end
+local function reportChartSaveFailure(content, reason)
+    log('chart save error: ' .. tostring(reason))
 
-        local s,result =  pcall(function()
-            nativefs.mount(PATH.base)
-            nativefs.write(menu.chartInfo.chart_name[menu.selectChartPos].path, dkjson.encode(tab, { indent = true }))
-            nativefs.unmount()
-        end)
-        if not s then
-            log(name..' save error:' .. tostring(result))
-        end
-        if s then
-            log("chart saved:",menu.chartInfo.chart_name[menu.selectChartPos].path)
-        end
-        return
-    elseif name == "chart.json.auto" then --自动保存
-        if not menu.chartInfo.chart_name[menu.selectChartPos].path then log(name..'auto save warn: not path') end
-        local s,result = pcall(function()
-            nativefs.mount(PATH.base)
-            nativefs.write(
-            PATH.usersPath.auto_save .. os.date("%Y %m %d %H %M %S") .. tab.info.song_name ..
-            "-" .. tab.info.chart_name .. '.json', dkjson.encode(tab, { indent = true }))
-            nativefs.unmount()
-        end)
-        if not s then
-            log(name..' save error:' .. tostring(result))
-        end
+    -- 自动保存不打断编辑；手动保存失败时，给玩家保留谱面内容的机会。
+    if type(content) ~= 'string' or not love or not love.window or not love.window.showMessageBox then
         return
     end
-    local file = io.open(name, "w")
-    if file then
-        if type(tab) == "table" then
-            file:write(tableToString(tab))
-        elseif type(tab) == "string" then
-            file:write(tab)
-        end
-        file:close()
+
+    local title = i18n:get('chart_save_failed_title')
+    local prompt = string.format(i18n:get('chart_save_failed_prompt'), tostring(reason))
+    local choice = love.window.showMessageBox(title, prompt, {
+        i18n:get('chart_save_copy'),
+        i18n:get('chart_save_cancel'),
+        enterbutton = 1,
+        escapebutton = 2,
+    }, 'warning', true)
+
+    if choice ~= 1 then return end
+
+    local ok, err = pcall(love.system.setClipboardText, content)
+    if not ok then
+        log('chart clipboard copy error: ' .. tostring(err))
+        love.window.showMessageBox(title, i18n:get('chart_save_copy_failed'), 'error', true)
     end
+end
+
+local function encodeChart(tab)
+    local ok, content, err = pcall(dkjson.encode, tab, { indent = true })
+    if not ok then return nil, content end
+    if type(content) ~= 'string' then return nil, err or 'JSON encoding returned no content' end
+    return content
+end
+
+local function writeNative(path, content)
+    local mountedOk, mounted = pcall(nativefs.mount, PATH.base)
+    if not mountedOk then return false, mounted end
+
+    local writeCallOk, wrote, writeErr = pcall(nativefs.write, path, content)
+    if mounted then
+        local unmountOk, unmounted, unmountErr = pcall(nativefs.unmount, PATH.base)
+        if not unmountOk or not unmounted then
+            local err = unmountOk and unmountErr or unmounted
+            log('chart save unmount warning: ' .. tostring(err))
+        end
+    end
+
+    if not writeCallOk then return false, wrote end
+    if not wrote then return false, writeErr or 'Could not write file' end
+    return true
+end
+
+function save(tab, name) -- 谱面与设置保存
+    if name == 'chart.json' then -- 手动保存当前谱面
+        local selected = menu and menu.chartInfo and menu.chartInfo.chart_name
+            and menu.chartInfo.chart_name[menu.selectChartPos]
+        local content, encodeErr = encodeChart(tab)
+        if not content then
+            reportChartSaveFailure(nil, encodeErr)
+            return false, encodeErr
+        end
+        if not selected or not selected.path then
+            reportChartSaveFailure(content, 'chart path is unavailable')
+            return false, 'chart path is unavailable'
+        end
+
+        local ok, err = writeNative(selected.path, content)
+        if not ok then
+            reportChartSaveFailure(content, err)
+            return false, err
+        end
+
+        log('chart saved:', selected.path)
+        return true
+    elseif name == 'chart.json.auto' then -- 自动保存
+        local ok, content, encodeErr = pcall(function()
+            local encoded, err = encodeChart(tab)
+            if not encoded then error(err) end
+            local info = tab and tab.info or {}
+            local path = PATH.usersPath.auto_save .. os.date('%Y %m %d %H %M %S')
+                .. tostring(info.song_name or '') .. '-' .. tostring(info.chart_name or '') .. '.json'
+            return writeNative(path, encoded)
+        end)
+        if not ok then
+            log(name .. ' save error: ' .. tostring(content))
+            return false, content
+        end
+        if not content then
+            log(name .. ' save error: ' .. tostring(encodeErr))
+            return false, encodeErr
+        end
+        return true
+    end
+
+    local content
+    if type(tab) == 'table' then
+        local ok, serialized = pcall(tableToString, tab)
+        if not ok then return false, serialized end
+        content = serialized
+    elseif type(tab) == 'string' then
+        content = tab
+    else
+        return false, 'unsupported save data type: ' .. type(tab)
+    end
+
+    local file, openErr = io.open(name, 'w')
+    if not file then return false, openErr or 'Could not open file for writing' end
+
+    local writeOk, writeErr = pcall(file.write, file, content)
+    local closeOk, closeResult, closeErr = pcall(file.close, file)
+    if not writeOk then return false, writeErr end
+    if closeOk and closeResult == nil then return false, closeErr or 'Could not close file' end
+    if not closeOk then return false, closeResult end
+    return true
 end

@@ -1,3 +1,4 @@
+local safeInput = require("src.utils.safeInput")
 --events界面
 local ChartService = require("src.services.chartService")
 local eventBus = require("src.utils.eventBus")
@@ -32,7 +33,7 @@ local bezier_file = io.open("defaultBezier.txt", "r")  -- 以只读模式打开�
 if bezier_file then
     local content = bezier_file:read("*a")  -- 读取整个文件内容
     bezier_file:close()  -- 关闭文件
-    Gevents.bezier = loadstring("return "..content)()
+    Gevents.bezier = safeInput.parseBezierPresets(content)
 end
 if type(Gevents.bezier) ~= "table" then
     Gevents.bezier = {}
@@ -42,68 +43,71 @@ setmetatable(Gevents.bezier,meta_Gevents_bezier)
 
 
 function Gevents:transDo() --写出表达式
-    local temp_string = ''
-    if self.trans_expression.value:find("easing") then
-        temp_string = self.trans_expression.value:gsub('easing','')
-        temp_string = temp_string:gsub(' ','')
-        if string.match(temp_string, "%d") then --有数字用数字确定easings
-            self.expression = loadstring ('x = ... return easings['..temp_string..'](x)')
+    local text = self.trans_expression.value
+    local kind, body = text:match("^%s*(%a+)%s*(.-)%s*$")
+    local fn, err
+    if kind == "easing" then
+        local key = tonumber(body) or body
+        local easing = easings[key]
+        if type(easing) == "function" then fn = easing end
+    elseif kind == "bezier" then
+        local points
+        if body:find(",", 1, true) then
+            points = safeInput.parseTable("{" .. body .. "}")
         else
-            self.expression = loadstring ('x = ... return easings.'..temp_string..'(x)')
+            points = self.bezier[tonumber(body) or 1]
         end
-        return
-    elseif self.trans_expression.value:find("bezier") then
-        if not self.trans_expression.value:find(",") then --单个数字
-            temp_string = self.trans_expression.value:gsub('bezier','')
-            temp_string = tonumber(temp_string) or 1
-            if not Gevents.bezier[temp_string] then temp_string = 1 end
-
-            self.expression = loadstring ('x = ... return bezier(0,1,0,1,'..tableToString(Gevents.bezier[temp_string]) ..',x)')
-
-            return 
-        end 
-
-        temp_string = '{'..self.trans_expression.value:gsub('bezier','') .. '}'
-        temp_string = temp_string:gsub(' ','')
-        self.expression = loadstring ('x = ... return bezier(0,1,0,1,'..temp_string..',x)')
-        return
-    elseif self.trans_expression.value:find("function") then
-        temp_string = self.trans_expression.value:gsub('function','')
-        temp_string = temp_string:gsub(' ','')
-        self.expression = loadstring ('x = ... return '..temp_string)
-        return
+        if type(points) == "table" and #points == 4 then
+            local valid = true
+            for i = 1, 4 do
+                local n = points[i]
+                if type(n) ~= "number" or n ~= n or math.abs(n) == math.huge then valid = false end
+            end
+            if valid then fn = function(x) return bezier(0, 1, 0, 1, points, x) end end
+        end
+    elseif kind == "function" then
+        local compiled
+        compiled, err = safeInput.compileExpression(body)
+        if compiled then fn = function(x) return compiled({x = x}) end end
     end
+    self.expression_valid = fn ~= nil
+    self.expression = fn or function(x) return x end
+    if err then log('expression error:', err) end
 end
-function Gevents:eventsDo() --执行
-    local copy_table = clipboard:get()
-    -- 一个 do 的全部修改归入同一事务：旧值快照与撤销记录由 chartRecorder 自动处理
-    ChartService:change('history.batch_edit_events', function()
-    for i = 1,#copy_table.event do
-        for k = 1, ChartService:getEventCount() do
-            if copy_table.event[i] == ChartService:getEvent(k) then
-                local ok,err = pcall(function() local a = self.expression(1) end)
-                if not ok then --处理错误的表达式
-                    self.expression = function(x) return x end
-                    log('expression error:',err)
-                end
-                local ce = copy_table.event[i]
-                local from_to_random = math.random(-self.perturbation,self.perturbation)
-                local new_from = ce:getFrom() + from_to_random + self.from +
-                ((self.to - self.from) *
-                self.expression(((ce:getBeatValue() - copy_table.event[1]:getBeatValue())/
-                (copy_table.event[#copy_table.event]:getBeat2Value() - copy_table.event[1]:getBeatValue()) )) )--一起修改 保证copy_tab与chart的event一致
 
-                local new_to = ce:getTo() + from_to_random + self.from +
-                ((self.to - self.from) *
-                self.expression(((ce:getBeat2Value() - copy_table.event[1]:getBeatValue())/
-                (copy_table.event[#copy_table.event]:getBeat2Value() - copy_table.event[1]:getBeatValue()) )) )
-                ce:setFrom(new_from)
-                ce:setTo(new_to)
-                ChartService:getEvent(k):setFrom(new_from)
-                ChartService:getEvent(k):setTo(new_to)
+function Gevents:eventsDo() --执行
+    if self.expression_valid == false then return end
+    local copy_table = clipboard:get()
+    if #copy_table.event == 0 then return end
+    local proposals = {}
+    local first = copy_table.event[1]:getBeatValue()
+    local duration = copy_table.event[#copy_table.event]:getBeat2Value() - first
+    -- 先验证所有结果，避免算式出错时只修改了一部分事件。
+    local ok, err = pcall(function()
+        for _, ce in ipairs(copy_table.event) do
+            local random = math.random(-self.perturbation, self.perturbation)
+            local function value(time, original)
+                local progress = duration == 0 and 0 or (time - first) / duration
+                local n = original + random + self.from + (self.to - self.from) * self.expression(progress)
+                assert(type(n) == "number" and n == n and math.abs(n) ~= math.huge, "Invalid expression result")
+                return n
+            end
+            proposals[#proposals + 1] = {event = ce,
+                from = value(ce:getBeatValue(), ce:getFrom()),
+                to = value(ce:getBeat2Value(), ce:getTo())}
+        end
+    end)
+    if not ok then log('expression error:', err); return end
+    ChartService:change('history.batch_edit_events', function()
+        for _, proposal in ipairs(proposals) do
+            for k = 1, ChartService:getEventCount() do
+                if proposal.event == ChartService:getEvent(k) then
+                    proposal.event:setFrom(proposal.from)
+                    proposal.event:setTo(proposal.to)
+                    break
+                end
             end
         end
-    end
     end)
 end
 

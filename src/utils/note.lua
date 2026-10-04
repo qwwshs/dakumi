@@ -2,13 +2,19 @@
     模块名: note
     描述: note（音符）操作模块，处理音符的点击、删除、放置、排序
     作者: qwwshs
-    依赖: object, meta_note, beat, track, ChartService, denom, messageBox
+    依赖: room；谱面、实体工厂与坐标接口由 init 传入。
+          meta_note/beat/track/denom/messageBox 是遗留运行时状态。
 ]]
 
-local note = object:new('note')
-local Note = require("src.objects.Note")
-local ChartService = require("src.services.chartService")
-local CoordinateService = require("src.services.coordinateService")
+local note = require('src.utils.room').object:new('note')
+local Note, ChartService, CoordinateService
+
+-- 具体服务由启动入口传入，加载本模块不会向上加载服务或界面对象。
+function note:init(dependencies)
+    Note = assert(dependencies.note, 'note requires an entity factory')
+    ChartService = assert(dependencies.chart, 'note requires a chart interface')
+    CoordinateService = assert(dependencies.coordinates, 'note requires a coordinate interface')
+end
 
 note.local_hold = {} -- hold 音符临时数据（放置过程中）
 note.hold_type = 0   -- hold 放置状态: 0=未放置, 1=已放头, 2=已放尾

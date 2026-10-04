@@ -9,10 +9,10 @@
     3. 序列化/工具库 (serpent, yaml, timer, moonshine, cursor)
     4. 核心系统模块 (file, pass, eventBus, room, window, meta)
     5. 业务逻辑模块 (beat, event, note, clipboard, editState, log, string, table, save)
-    6. 数据处理库 (nativefs, dkjson, easings, bezier, math, track, input)
+    6. 数据处理库 (nativefs, dkjson, easings, bezier, math, track, input)，随后装配模型/服务接口
     7. UI 和对象模块 (messageBox, i18n, allImage, ui)
     8. 场景模块 (edit, menu, start)
-    9. 插件系统 (plugin, services)
+    9. 插件管理器上下文初始化 (main.lua)
     10. 内置插件注册
 ]]
 
@@ -44,7 +44,7 @@ require('src.utils.file')    -- 文件工具函数（getFileExtension）
 require('src.utils.pass')    -- 空函数占位符
 eventBus = require('src.utils.eventBus')  -- 事件总栈（全局发布/订阅，模块间解耦）
 
-require("src.utils.room")    -- 房间/场景管理系统（object, container, group, room）
+local sceneSystem = require("src.utils.room") -- 返回显式场景接口，旧模块使用兼容别名
 require("src.utils.window")  -- 窗口坐标变换管理
 require('src/objects/meta')  -- 元数据定义（meta_chart, meta_event, meta_note, meta_bpm, meta_track 等）
 
@@ -74,6 +74,16 @@ require("src.utils.math")    -- 数学工具函数（分数运算、区间判断
 
 fTrack = require("src.utils.track")  -- 轨道管理模块
 input = require("src.utils.input")   -- 快捷键输入管理
+local uiKeyboard = {}
+input:init({fs = nativefs, json = dkjson, keyboard = iskeyboard, uiKeyboard = uiKeyboard,
+    defaults = meta_key.__index, path = PATH.usersPath.key .. 'key.json', log = log})
+
+-- 启动入口负责装配具体实现；utils 工具自身不向上 require 服务和对象。
+local chartAccess = require('src.services.chartService')
+local coordinates = require('src.services.coordinateService')
+fEvent:init({chart = chartAccess, event = require('src.models.Event'), coordinates = coordinates})
+fNote:init({chart = chartAccess, note = require('src.models.Note'), coordinates = coordinates})
+fTrack:init({chart = chartAccess})
 
 -- ============================================================
 -- 第7层: UI 和对象模块
@@ -93,5 +103,9 @@ require("src.rooms.start")  -- 启动场景
 -- ============================================================
 -- 第9层: 插件系统（在 main.lua 中初始化）
 -- ============================================================
--- PluginManager 和服务层在 main.lua 中加载和初始化
+-- 服务已在工具装配阶段加载；main.lua 初始化 PluginManager 并提供这些服务。
 -- 插件统一在 love.load 中由 plugins/init.lua 自动发现、注册并按层挂载
+
+-- 新入口使用显式上下文；旧场景的全局别名暂时保留，便于分批迁移。
+return {root = sceneSystem.room, input = input, eventBus = eventBus, keyboard = iskeyboard, uiKeyboard = uiKeyboard,
+    mouse = mouse, window = WINDOW, paths = PATH, uiFactory = nuklear}

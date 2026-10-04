@@ -182,7 +182,6 @@ function play:keypressed(key)
         return
     end
     if tabs and tabs:isRenaming() then --重命名时按键只交给标签页
-        tabs:keypressed(key)
         return
     end
     self('keypressed', key)

@@ -312,6 +312,11 @@ return {
     -- Common/System Keys - Used across multiple interfaces
     ['save'] = '保存',
     ['save completed'] = '保存完毕',
+    ['chart_save_failed_title'] = '谱面保存失败',
+    ['chart_save_failed_prompt'] = '谱面没有成功保存。是否将谱面内容复制到剪贴板？\n\n错误信息：%s',
+    ['chart_save_copy'] = '复制谱面',
+    ['chart_save_cancel'] = '取消',
+    ['chart_save_copy_failed'] = '复制到剪贴板失败。谱面内容仍保留在当前编辑器中。',
     ['saving'] = '正在保存',
     ['do'] = '做',
     ['play'] = '播放',

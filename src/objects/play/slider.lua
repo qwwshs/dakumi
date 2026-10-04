@@ -23,7 +23,9 @@ function slider:draw()
 end
 
 function slider:update(dt)
-    self.now_y = -(time.nowtime / time.alltime * self.h) + self.y + self.h
+    if not mouse.down then self.down = false end
+    local progress = time.alltime > 0 and time.nowtime / time.alltime or 0
+    self.now_y = -(progress * self.h) + self.y + self.h
     local y1 = mouse.y
     if y1 < self.y then y1 = self.y end   ---限制范围
     if y1 > self.y + self.h then y1 = self.y + self.h end
@@ -37,17 +39,19 @@ function slider:update(dt)
         end
         Nui:windowEnd()
     end
-    if not mouse.down then
-        self.down = false
-    end
 end
 
-function slider:mousepressed(x1, y1)
+function slider:mousepressed(x1, y1, button)
+    if button ~= 1 then return end
     if not (math.intersect(y1, y1, self.y - 10, self.y + self.h + 10) and math.intersect(x1, x1, self.x - 10, self.x + self.w + 10)) then --加减10是为了更好抓取
         return
     end
     slider.down = true
     music_play = false
+end
+
+function slider:mousereleased(_, _, button)
+    if button == 1 then self.down = false end
 end
 
 return slider

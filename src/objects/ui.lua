@@ -49,10 +49,11 @@ function ui:transOrgin()
 end
 
 function ui:edit(istype,vtable)
-    if iskeyboard['return'] then
+    local keyboard = require('src.utils.input'):getUIKeyboard()
+    if keyboard['return'] then
         Nui:editUnfocus()
     end
-    if iskeyboard['ctrl'] and iskeyboard['a'] then
+    if keyboard['ctrl'] and keyboard['a'] then
         Nui:editSetSelection(0, utf8.len(vtable.value))
     end
     return Nui:edit(istype,vtable)

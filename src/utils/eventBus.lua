@@ -18,7 +18,7 @@
       chart:group_edit_end   (operation, actionKey) 退出事件组编辑（订阅方恢复状态并处理记录）
       chart:changed          (change)               谱面内容或当前编辑上下文变化后的统一通知；
                                                     change={kind, operation?, actionKey?, group?}
-                                                    kind: commit/undo/redo/replace/load/
+                                                    kind: commit/undo/redo/rollback/replace/load/
                                                     group_edit_begin/group_sync/group_edit_end/
                                                     group_definitions
       chart:mutated          (change)               每次实际写入后的即时通知；批量编辑中也会触发。

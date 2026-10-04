@@ -10,6 +10,13 @@
 
 local CoordinateService = {}
 
+-- 先减去屏幕留白，再缩放；鼠标事件与每帧位置使用相同的变换。
+function CoordinateService:screenToGame(x, y, window)
+    window = window or WINDOW
+    return (x - (window.nowW - window.w * window.scale) / 2) / window.scale,
+        (y - (window.nowH - window.h * window.scale) / 2) / window.scale
+end
+
 --- 将屏幕 Y 坐标转换为 beat 值
 -- @tparam number pos 屏幕 Y 坐标
 -- @treturn number beat 值
