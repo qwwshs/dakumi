@@ -141,6 +141,7 @@ edit:deleteGroup(panel)
 | `i18n` | 国际化对象 |
 | `ui` | Nuklear 实例 Nui |
 | `input` | 快捷键查询对象 |
+| `eventBus` | 谱面和音频变化的发布 / 订阅接口 |
 | `WINDOW` / `PATH` | 窗口与路径配置 |
 
 这些字段在插件开始注册时已就绪。谱面此时可能尚未加载，不要在 `init` 中假设存在音符、事件或音乐。
@@ -210,7 +211,7 @@ hooks = {
 
 数据钩子独立于场景是否可见，并按插件的层号、监听注册顺序执行。可以用 `PluginManager:emit('自定义事件', ...)` 广播自定义钩子。不要在增删钩子中无条件再次执行同一种增删操作，以免递归触发。
 
-当前上述四种钩子由普通 `ChartService:add/delete` 触发。`push/pop` 批量操作、撤销重做、直接 `addNote/deleteNote/addEvent/deleteEvent`、对象字段 setter、整谱加载不会触发这些钩子。它们还不是“所有谱面变化通知”。
+当前上述四种钩子由普通 `ChartService:add/delete` 触发。批量操作中若逐项调用 `add/delete`，仍会逐项触发；`push/pop` 自身没有整批钩子。撤销重做、直接 `addNote/deleteNote/addEvent/deleteEvent`、对象字段 setter、整谱加载不会触发这些钩子。它们还不是“所有谱面变化通知”。
 
 要跟踪所有谱面变化，请订阅全局 `eventBus` 的 `chart:changed`。插件上下文提供 `ctx.eventBus`；`init` 中订阅、`destroy` 中退订。回调在谱面更新后同步运行，此时可用 `ctx.chart` 读取最新数据。一次批量编辑在提交时通知一次；无实际变化的提交不通知。事件组编辑会在切换上下文和同步组定义时通知。
 
@@ -230,7 +231,7 @@ return {
 }
 ```
 
-`change.kind` 可为 `commit`（新增、删除、修改和批量提交）、`undo`、`redo`、`replace`（换谱）、`load`（换谱后的对象和索引就绪）、`group_edit_begin`、`group_sync`、`group_edit_end`、`group_definitions`、`track_created`。有操作记录时提供 `change.operation` 和 `change.actionKey`；事件组相关变化带 `change.group`。`replace` 会先于 `load`，需要读取 Note/Event 对象时以 `load` 为准。回调参数用于读取，不要修改操作记录；需要编辑谱面时使用 `ctx.chart` 的方法。
+`change.kind` 可为 `commit`（新增、删除、修改和批量提交）、`undo`、`redo`、`replace`（换谱）、`load`（换谱后的对象和索引就绪）、`group_edit_begin`、`group_sync`、`group_edit_end`、`group_definitions`、`rollback`（失败事务恢复）。有操作记录时提供 `change.operation` 和 `change.actionKey`；事件组相关变化带 `change.group`。`replace` 会先于 `load`，需要读取 Note/Event 对象时以 `load` 为准。回调参数用于读取，不要修改操作记录；需要编辑谱面时使用 `ctx.chart` 的方法。
 
 如果插件要在拖拽中逐次响应，则订阅 `chart:mutated`。它在每次实际写入后触发，`kind` 为 `note_added/deleted/updated`、`event_added/deleted/updated`、`field_updated`、`group_updated/deleted`、`group_definitions_updated` 或 `track_created`；根据情况提供 `entity`、`field`、`key`、`method`、`before`、`after`、`group`。这时一组批量操作可能仍在进行，适合刷新实时预览；需要完整、稳定的最终结果时订阅 `chart:changed`。撤销和重做只发一次 `chart:changed`，不会逐项重放 `chart:mutated`。同样要在插件卸载时退订。
 
@@ -239,13 +240,13 @@ return {
 添加数据请创建 Note/Event 对象并调用服务：
 
 ```lua
-local Note = require('src.objects.Note')
+local Note = require('src.models.Note')
 ctx.chart:add(Note.new({type = 'note', track = 1, beat = {4, 0, 1}}), 'history.add_note')
 ```
 
-批量操作使用 `ctx.chart:push()` 与 `ctx.chart:pop('移动音符')` 配对，一次批量形成一条撤销记录。普通添加和删除也可在 `add(对象, '移动音符')`、`delete(对象, '移动音符')` 的第二个参数填写操作说明。说明由发起操作的代码提供。内置操作的说明已写在 `i18n/zh-CN.lua` 和 `i18n/en.lua`；外部插件可直接传可读文字，或在自己的 `init(ctx)` 中给 `ctx.i18n.language['zh-CN']`、`ctx.i18n.language['en']` 添加自己的翻译键，无需修改编辑器文件。若没有提交说明，会显示「其他操作」。空批量操作不会写入历史。
+批量操作优先使用 `ctx.chart:change('移动音符', function() ... end)`，异常会回滚已登记写入；也可使用 `push()` / `pop('移动音符')` 配对。跨帧拖拽用 `beginChange()` / `commitChange('移动音符')`。已登记实体的 setter 和谱面字段修改同样记录历史，一次事务形成一条记录。`abortChange()` 只清除记录，不会恢复数据。普通添加和删除也可在 `add(对象, '移动音符')`、`delete(对象, '移动音符')` 的第二个参数填写操作说明。说明由发起操作的代码提供。内置操作的说明已写在 `i18n/zh-CN.lua` 和 `i18n/en.lua`；外部插件可直接传可读文字，或在自己的 `init(ctx)` 中给 `ctx.i18n.language['zh-CN']`、`ctx.i18n.language['en']` 添加自己的翻译键，无需修改编辑器文件。若没有提交说明，会显示「其他操作」。空批量操作不会写入历史。
 
-历史中的节拍范围由改动前后所有 note/event 的起点和终点决定；点击记录可跳到那一步。新操作会清除已经撤销的后续记录，切换谱面会清空历史。需要直接写入快照的插件可调用 `redo:writeRevoke(操作表, nil, '移动音符')`。`ChartService:load()` 只在内存中迁移旧格式并建立索引，不写入文件。保存请显式调用 `ChartService:save()`。查询轨道字段不会创建轨道，缺失字段返回默认值；创建请使用 `ensureTrack()`，修改请使用 `setTrackField()`。
+历史中的节拍范围由改动前后所有 note/event 的起点和终点决定；点击记录可跳到那一步。撤销后创建新操作会保留原来的历史分支；操作历史的“所有分支”可查看树杈图并跳转。切换谱面会清空历史，历史不写入谱面文件。需要直接写入快照的插件可调用 `redo:writeRevoke(操作表, nil, '移动音符')`。`ChartService:load()` 只在内存中迁移旧格式并建立索引，不写入文件。保存请显式调用 `ChartService:save()`。查询轨道字段不会创建轨道，缺失字段返回默认值；创建请使用 `ensureTrack()`，修改请使用 `setTrackField()`。
 
 ## 8. 管理与资源
 
@@ -266,4 +267,4 @@ PluginManager:unregister('my_tool')         -- 移除挂载、钩子并调用 de
 
 ## 9. 回归验证
 
-项目根目录运行 `luajit tests/plugin_system.lua`，验证层顺序、嵌套容器、动态增删、插件注册/卸载、钩子及自动发现。测试使用内存文件系统替身，不读写用户谱面。完整 LÖVE 启动和渲染验证入口位于本地 `.zcode/pluginverify/`，该临时目录不入库。
+项目根目录运行 `luajit tests/plugin_system.lua`，验证层顺序、嵌套容器、动态增删、插件注册/卸载、钩子及自动发现。测试使用内存文件系统替身，不读写用户谱面。真实编辑器输入与界面验证运行 `love tests/editor_input_love`，谱面通知运行 `love tests/chart_change_love`，音频资源验证运行 `love tests/audio_service_love`。`.zcode/` 中的探针是本地临时文件，不作为干净检出中的测试入口。

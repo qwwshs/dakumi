@@ -1,107 +1,65 @@
-# dakumi
+# Dakumi Editor
+
 ![dakumi](icon.ico)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qwwshs/dakumi)
 ![Love2D](https://img.shields.io/badge/Love2D-11.4-E06C75.svg)
-![Windows Badge](https://img.shields.io/badge/Platform-Windows-blue.svg)
-![Linux Badge](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=000&style=flat)
-![macOS Badge](https://img.shields.io/badge/macOS-000?logo=macos&logoColor=fff&style=flat)
 
-## 概述
+Dakumi 是 qwwshs 使用 LÖVE 制作的 TAKUMI³ 饭制谱面编辑器。支持音符与轨道事件编辑、多标签页、事件组、波形与声纹图、操作历史、主题和外部插件。
 
-dakumi是由qwwshs用`love2d`所制造的TAKUMI³谱面饭制器
+## 下载与使用
 
-dakumi文档请于[dakumi](http://dakumi.qwwshs.top)中访问
+从 [GitHub Releases](https://github.com/qwwshs/dakumi/releases) 下载并完整解压发行包，Windows 下运行 `dakumi.exe`。保留同目录的运行库与资源文件。拖入 `wav`、`mp3` 或 `ogg` 音乐会创建歌曲和空谱面；选择歌曲后可拖入 `json` / `d3` 谱面及背景图片。
 
-这是qwwshs的个人群(QQ):`865149292` 若对该项目感兴趣或有什么疑问可以添加群聊(需要回答问题)
+用户数据在程序基础目录的 `users/` 中。更新程序前请备份整个目录，以及外部 `plugins/`、`defaultBezier.txt`。QQ 交流与反馈群：`865149292`。
 
-## 构建
+## 文档入口
 
-* 平台要求：Windows Mac Linux
+文档按当前源码整理；发行包若较旧，可能没有部分功能。
 
-首先 请前往[love2d](https://love2d.org)中下载love2d的源文件
+| 内容 | 文档 |
+| --- | --- |
+| 使用、导入、保存与恢复 | [文档首页](readme/README.md) |
+| 编辑器操作和默认快捷键 | [编辑手册](readme/edit_manual.md) |
+| 事件组的制作与放置 | [事件组](readme/event_groups.md) |
+| 主题、图片与九宫格 | [主题自定义](readme/theme.md) |
+| 声纹图设置与频率尺 | [声纹图](readme/spectrogram_manual.md) |
+| 开发环境与回归检查 | [开发入门](DEVELOPMENT.md) |
+| 分层、谱面格式、服务与通知 | [开发者指南](DEVELOPER_GUIDE.md) |
+| 外部插件、执行层和示例 | [插件开发](plugins/README.md) |
 
-> [!TAP]
-> dakumi所使用的love2d版本为11.4 
-> 为了支持中文输入法 dakumi所使用的SDL2.dll是经过修改的
-> 为了支持部分功能 dakumi所使用的nuklear是经过修改的
+在线指南：[dakumi.qwwshs.top](https://dakumi.qwwshs.top)。
 
-然后将dakumi打包成以下结构的zip:
+## 从源码运行与打包
 
+项目使用 **LÖVE 11.4 + LuaJIT（Lua 5.1）**。在项目根目录运行 `love .`。除 LÖVE 自带运行库外，还需要与系统及位数匹配的 `nuklear` 动态库。本项目的 Nuklear 绑定及 Windows 中文输入相关 SDL2 库有定制改动，普通发行库可能不包含这些能力；优先使用项目发行包配套的版本。其他平台需要自行提供相应的原生库。
+
+打包时将以下内容放在 ZIP **根目录**，再改名为 `dakumi.love`：
+
+```text
+assets/
+config/
+i18n/
+plugins/
+src/
+main.lua
+conf.lua
+isRequire.lua
+icon.ico
 ```
-dakumi.zip/
-│
-├── 📁 assets/          
-├── 📁 config/          
-├── 📁 src/            
-│
-├── 📄 icon.ico        
-├── 📄 main.lua        
-├── 📄 conf.lua        
-└── 📄 isRequire.lua        
-```
 
-之后将其改名为`dakumi.love`
+不要打包 `users/`、`.git/`、`.zcode/` 和测试输出。发行包可另外附上 `defaultBezier.txt`；外部插件放在程序旁的 `plugins/` 中。
 
-1.Windows
-
-将`dakumi.love`与`love.exe`放入同一文件夹 在命令行中输入以下命令：
+Windows 融合程序的命令：
 
 ```bat
 copy /b love.exe+dakumi.love dakumi.exe
 ```
 
-构建完毕
+融合后仍须随包提供 LÖVE 和 Nuklear 所需动态库。macOS / Linux 可用 LÖVE 打开 `.love` 文件，但也需要适配的 Nuklear 库。
 
-dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
+## 依赖与许可
 
-2. Mac Linux
+主要依赖：[LÖVE](https://github.com/love2d/love)、[LÖVE-Nuklear](https://github.com/keharriso/love-nuklear)、[LXGW Neo XiHei](https://github.com/lxgw/LxgwNeoXiHei)、[dkjson](https://github.com/LuaDist/dkjson)、[serpent](https://github.com/pkulchenko/serpent)、[lua-yaml](https://github.com/exosite/lua-yaml)、[moonshine](https://github.com/vrld/moonshine)、[hump](https://github.com/vrld/hump)、[lovefft](https://github.com/Gennadiyev/lovefft)、[fileselect](https://github.com/bili-fule/fileselect)。单次 BPM / offset 测量参考 [qwwshs/bpm](https://github.com/qwwshs/bpm)。
 
-Mac与Linux构建较为麻烦，请直接将dakumi.love使用love2d打开即可
-
-dakumi需要nuklear的动态运行库，放在dakumi的同级目录之下
-
-- 对于Mac，需要给予love2d权限
-
-## 插件开发
-
-插件可以放入 `plugins/` 自动加载，并指定目标 room/group 和执行层。示例和 API 见 [插件开发文档](plugins/README.md)。
-
-## 自定义主题
-
-在游戏目录的 `users/ui/theme.yml` 中可分别配置日间、夜间配色、UI 图片颜色、demo 判定线颜色，以及 note、wipe、hold 图片的九宫格缩放。字段、图片切线示意和完整示例见 [主题自定义说明](readme/theme.md)。修改文件后重新启动游戏生效。
-
-## 依赖
-
-- [LxgwNeoXiHei](https://github.com/lxgw/LxgwNeoXiHei)
-
-- [love2d](https://github.com/love2d/love)
-
-- [dkjson](https://github.com/LuaDist/dkjson)
-
-- [fileselect](https://github.com/bili-fule/fileselect)
-
-- [serpent](https://github.com/pkulchenko/serpent)
-
-- [LÖVE-Nuklear](https://github.com/keharriso/love-nuklear)
-
-- [yaml](https://github.com/exosite/lua-yaml)
-
-- [moonshine](https://github.com/vrld/moonshine)
-
-- [hump](https://github.com/vrld/hump)
-
-- [lovefft](https://github.com/Gennadiyev/lovefft)
-
-## 开源许可
-
-dakumi遵循宽松的MIT协议
-```LICENSE
-Copyright <2025> <qwwshs>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
+项目使用 [MIT 许可](LICENSE)。第三方依赖遵循各自的许可。

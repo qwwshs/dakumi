@@ -1,626 +1,237 @@
-# Daikumi Editor 开发者文档
+# Dakumi Editor 开发者指南
 
-## 目录
-
-1. [项目架构](#项目架构)
-2. [模块加载顺序](#模块加载顺序)
-3. [核心数据结构](#核心数据结构)
-4. [服务层 API](#服务层-api)
-5. [插件开发指南](#插件开发指南)
-6. [场景系统](#场景系统)
-7. [色彩系统](#色彩系统)
-8. [快捷键系统](#快捷键系统)
-9. [目录结构](#目录结构)
-
----
+本文按当前源码整理。运行环境与检查入口见 [开发入门](DEVELOPMENT.md)，完整插件说明见 [插件开发](plugins/README.md)。
 
 ## 项目架构
 
-### 整体分层
+依赖从界面 / 插件向下流动：
 
-依赖方向从上到下。这里的层表示职责与依赖边界，和后文启动时的编号加载批次不同。
-
-```
-┌─────────────────────────────────────────────────┐
-│                   插件层 (Plugins)                │
-│   equalizer / to_takana / fft / hit / directEventEditing  │
-├─────────────────────────────────────────────────┤
-│               界面与场景层 (Objects / Rooms)       │
-│   UI 组件、编辑面板、play / menu / editTool / sidebar │
-├─────────────────────────────────────────────────┤
-│                  服务层 (Services)                │
-│      ChartService / CoordinateService / AudioService      │
-├─────────────────────────────────────────────────┤
-│                  数据模型层 (Models)              │
-│                    Note / Event                   │
-├─────────────────────────────────────────────────┤
-│                 基础设施层 (Utils)                │
-│    room / beat / table / input / plugin / window │
-├─────────────────────────────────────────────────┤
-│                 第三方库 (不可修改)                │
-│   nuklear / moonshine / dkjson / serpent  │
-│   nativefs / lua-yaml / luafft / lovefft / easings │
-└─────────────────────────────────────────────────┘
+```text
+界面、场景与插件：src/objects、src/rooms、plugins
+                         ↓
+服务：src/services（谱面、音频、坐标、主题等）
+                         ↓
+数据实体：src/models（Note、Event）
+                         ↓
+基础工具与第三方库：src/utils
 ```
 
-### 四层对象架构
+**分层规则：下层模块不可引用上层模块，也不能以延迟 require 绕过。** 需要向上访问业务能力时，通过装配入口传入接口。依赖层次与 room/group 的绘制层是两回事。
 
-编辑器使用自定义的四层对象系统（定义在 `src/utils/room.lua`）：
+`isRequire.lua` 加载工具、模型和服务，注入 event/note/track 所需的谱面与坐标接口，再创建界面和场景；`main.lua` 初始化 UI、主题及插件上下文，`love.load` 自动发现插件。`src/utils/event.lua`、`note.lua`、`track.lua` 不直接 require ChartService。服务使用 `src/models/Note.lua` / `Event.lua`；`src/objects/` 的同名文件只向下转发，兼容旧路径。
 
-| 层级 | 名称 | 说明 |
-|------|------|------|
-| 1 | `object` | 基础对象，所有实体的基类 |
-| 2 | `container` | 容器，可包含子对象（objects）和子组（groups） |
-| 3 | `group` | 容器变体，用于组合多个对象，不支持嵌套房间 |
-| 4 | `room` | 场景管理器，支持多场景切换和生命周期调度 |
+旧界面仍有 `settings`、`play`、`sidebar`、`track` 等运行时单例；新模块不要继续增加全局耦合。谱面、索引、播放时钟和音频资源已有私有服务状态。
 
-**生命周期方法**（由 room 调度）：
+## 谱面格式
+
+磁盘文件是 JSON。下面用 Lua 表展示字段，便于加中文注释，不能直接当作 JSON 保存。
 
 ```lua
-load              -- 加载
-update(dt)        -- 每帧更新
-draw              -- 绘制
-keypressed(key)   -- 键盘按下
-keyreleased(key)  -- 键盘释放
-mousepressed(x, y, button, istouch, presses)  -- 鼠标按下
-mousereleased(x, y, button, istouch, presses)  -- 鼠标释放
-wheelmoved(x, y)  -- 鼠标滚轮
-textinput(text)   -- 文本输入
-resize(w, h)      -- 窗口大小变化
-quit              -- 退出
+{
+    version = 1,                         -- 谱面格式版本，不是软件版本
+    info = {song_name = '', chart_name = '', chartor = '', artist = ''},
+    offset = 0,                          -- 毫秒；音频位置 = 谱面秒数 - offset / 1000
+    preference = {x_offset = 0, event_scale = 100}, -- 默认坐标以 100 为一整份
+    bpm_list = {{beat = {0, 0, 1}, bpm = 120, linear_ramp = 0}},
+    note = {},                           -- note / wipe / hold
+    event = {},                          -- x / w / lpos / rpos / event_group
+    event_groups = {},                   -- 名称 -> {name, event = {...}}
+    track = {},                          -- 轨道定义，键为字符串编号，如 '1'
+    effect = {},                         -- 演示效果
+}
 ```
 
----
+节拍格式为 `{整数, 分子, 分母}`，分母须大于 0。`{2, 1, 4}` 表示 2.25 拍。BPM 列表按节拍排序，`linear_ramp = 1` 表示向下一项线性变速。
 
-## 模块加载顺序
+音符具有 `type/track/beat`；hold 另有 `beat2/note_head/wipe_head`，`fake` 为 0 或 1。普通事件具有 `type/track/beat/beat2/from/to/trans`，终点晚于起点。
 
-模块通过 `isRequire.lua` 按启动批次加载，避免循环依赖。下表的编号不代表架构依赖层级：
-
-```
-第1层: 平台/语言内置模块     (utf8, socket, ffi)
-第2层: GUI 框架              (nuklear)
-第3层: 序列化/工具库          (serpent, yaml, timer, moonshine, cursor)
-第4层: 核心系统模块           (file, pass, room, window, meta)
-第5层: 业务逻辑模块           (beat, event, note, log, string, table, save)
-第6层: 数据处理库             (nativefs, dkjson, easings, bezier, math, track, input)
-装配阶段: 数据模型/服务        (Note/Event、ChartService/CoordinateService/AudioService，注入工具与音频后端接口)
-第7层: UI 和对象模块          (messageBox, i18n, allImage, ui)
-第8层: 场景模块               (edit, menu, start)
-第9层: 插件管理器上下文       (在 main.lua 中初始化，复用已加载的服务)
-运行期: 插件自动发现/注册      (love.load → plugins/init.lua，按 target/layer 挂载)
+```lua
+trans = {
+    type = 'bezier',             -- 或 'easings'
+    trans = {0.25, 0.1, 0.25, 1}, -- 两个内部控制点的 x、y；端点固定为 (0,0)、(1,1)
+    easings = 1,                  -- 缓动函数索引，使用 easings 时生效
+}
 ```
 
-**关键约束**：
-- 下层模块不可引用上层模块，不能用延迟 require 绕过此规则。场景组合业务对象，因此 Rooms 与 Objects 属于同一界面层；它们可以向下调用服务。
-- 同层模块尽量避免相互引用
-- 启动装配入口 `isRequire.lua/main.lua` 可以引用各层，把具体实现传给下层所需的接口。依赖注入允许工具调用接口，不允许工具自己加载上层实现。
+轨道字段包括 `name/w0thenShow/parent/scale_with_parent/zindex/boundary_type/left_boundary/right_boundary/left_reference/right_reference`。边界模式为 `'nil'`、`'pos'` 或 `'track'`；`pos` 填坐标，`track` 填轨道编号并选参考属性。是否启用看模式，坐标 0 本身是合法边界。
 
-`src/utils/event.lua`、`note.lua`、`track.lua` 保留既有路径，但通过 `init` 接收谱面访问、实体创建和坐标接口，加载它们不会加载服务或界面。`ChartService` 使用 `src/models/Note.lua` 和 `Event.lua`，并在服务内部完成谱面及索引排序。`src/objects/Note.lua`、`Event.lua` 仅为旧插件保留向下转发的兼容入口，返回同一份模型实现。
+`extra_chart` 是服务私有的按轨道索引，包含 note、x、w、lpos、rpos 和 event_group 列表。使用服务查询，不直接取内部表。
 
-这约束的是模块依赖，而非仅仅启动时不报错。旧编辑工具仍有运行时全局界面状态（如 sidebar、track、play），这些是后续需要改成传入接口的遗留耦合，不应在新模块中继续增加。`tests/layer_dependencies.lua` 验证工具独立加载、模型路径兼容及服务内部排序。
+### 事件组格式与计算
 
-加载顺序中第 5/6 批次定义工具后，装配入口先加载数据模型和服务、调用工具的 `init`，再加载 UI 和场景。单独使用工具时也需要先装配：
+```lua
+event_groups = {
+    move = {
+        name = 'move',           -- 与字典键相同
+        event = {
+            {type = 'x', beat = {0,0,1}, beat2 = {4,0,1}, from = 0, to = 100,
+             trans = {type = 'easings', easings = 1}},
+            {type = 'w', beat = {0,0,1}, beat2 = {4,0,1}, from = 20, to = 20,
+             trans = {type = 'easings', easings = 1}},
+        },                       -- 组内不保存轨道号，不支持嵌套组
+    },
+}
+-- 引用放在普通 event 列表中：
+event = {
+    {type = 'event_group', track = 1, beat = {10,0,1}, beat2 = {18,0,1},
+     event_group = 'move', from = 0, to = 100,
+     flip_horizontally = 0, flip_vertically = 0},
+}
+```
+
+实例时间进度 `p = clamp((拍 - 实例起点) / 实例时长, 0, 1)`。有效组取内部所有事件的最早起点 `g0` 和最晚终点 `g1`，时间翻转时 `p = 1 - p`，读取 `g0 + p * (g1 - g0)` 处的事件值。
+
+位置类值归一化为 `(值 - x_offset) / event_scale`；w 为 `值 / event_scale`。水平翻转对 w 之外的结果取 `1 - 归一化值`，并交换 lpos/rpos 的目标属性。最后映射为 `from + (to - from) * 归一化值`。范围不强制截到 0～1，所以越界值仍可表达超出实例范围的动作。缺失或空组退化为 x 的线性变化，走替代分支时不应用组内翻转。
+
+实例与同轨道其他普通事件 / 事件组的时间区间不能重叠，边界相接允许。通过 `canPlaceEvent` 和正常写入接口检查；不要绕过接口直接塞进内部列表。普通事件之间原有的放置检查仍由编辑工具负责。
+
+组名为 1～128 字节的非空字符串，禁止纯空白、控制字符、斜杠及保留的元表键；不是可执行代码。组内事件要有有限数值、有效节拍和缓动配置。
+
+## ChartService
+
+兼容入口 `src/services/chartService.lua` 返回 `chartService/init.lua` 装配的同一个服务。所有子模块共享私有状态，不是多个独立谱面。
+
+| 文件 | 职责 |
+| --- | --- |
+| `init.lua` | 状态与依赖装配 |
+| `index.lua` | 轨道索引与实体登记 |
+| `transactions.lua` | 事务、提交及失败回滚 |
+| `lifecycle.lua` | 替换、迁移、加载、编码与保存 |
+| `event_groups.lua` | 组定义、独立编辑和范围检查 |
+| `entities.lua` | 音符与事件增删、排序 |
+| `fields.lua` | 信息、偏好、轨道与 BPM 字段 |
+| `timing.lua` | BPM 与拍 / 秒换算 |
 
 ```lua
 local chart = require('src.services.chartService')
-local coord = require('src.services.coordinateService')
-local event = require('src.utils.event')
-event:init({chart = chart, event = require('src.models.Event'), coordinates = coord})
-local note = require('src.utils.note')
-note:init({chart = chart, note = require('src.models.Note'), coordinates = coord})
-require('src.utils.track'):init({chart = chart})
+chart:setChart(data)                      -- 深拷贝并补默认字段，替换谱面
+chart:load()                              -- 内存迁移、模型转换与索引构建；不写盘
+local ok, err = chart:save('chart.json')   -- 保存当前选中谱面；检查返回值
+chart:save('chart.json.auto')             -- 自动保存副本
+chart:encodeJson()                        -- 当前谱面 JSON
+chart:getNoteCount(); chart:getNote(i)     -- Note 实体
+chart:getEventCount(); chart:getEvent(i)   -- Event 实体
+chart:getBpmCount(); chart:getBpm(i)        -- BPM 项
+chart:hasTrack(trackId)
+chart:getTrackEventCount(trackId, kind)
+chart:getTrackEvent(trackId, kind, i)
+chart:getOffset(); chart:setOffset(ms)
+chart:getInfoField(field); chart:setInfoField(field, value)
+chart:getPreferenceField(field); chart:setPreferenceField(field, value)
+chart:getTrackField(id, field); chart:setTrackField(id, field, value)
+chart:ensureTrack(id)                     -- 显式创建；读取缺失字段不会创建轨道
+chart:setBpmList(list); chart:sortBpmList()
+chart:toBeat(seconds); chart:toTime(beatValue)
 ```
 
----
+`getNote/getEvent` 返回已登记实体，修改要用 setter。其内部数据不是公开写入接口；读取快照用 `copy/toTable`。缺失索引与轨道定义是不同概念，定义存在性可用 `hasTrackData`。
 
-## 核心数据结构
-
-### Beat 格式
+### 事务、撤销与失败
 
 ```lua
-{整数, 分子, 分母}
--- 例如: {2, 1, 4} 表示 2又1/4拍 = 2.25
+local Note = require('src.models.Note')
+chart:change('history.add_note', function()
+    chart:add(Note.new({type = 'note', track = 1, beat = {4,0,1}}))
+end)
+-- 修改已有实体也自动登记，不只记录增删：
+chart:change('移动音符', function()
+    chart:getNote(1):setBeat({8,0,1})
+end)
 ```
 
-通过 `beat:get({2, 1, 4})` 转换为数值 `2.25`。
+`change(actionKey, fn)` 把本次写入合成一条操作，已有事务时归入外层。无实际变化不提交历史；执行异常会恢复记录过的实体、字段与索引，并继续抛出错误。
 
-### 谱面数据 (chart)
+跨帧拖拽使用 `beginChange()` 与 `commitChange(actionKey)` 配对；批量增删可用 `push()` 与 `pop(actionKey)`，期间数据即时生效。`abortChange()` 只丢弃记录，不负责恢复数据，不能当作回滚按钮。`suspend(fn)` 仅用于内部恢复等豁免场景；正常插件编辑不要用它跳过记录。提交说明由发起方传入 i18n 键或可读文字，内置说明在 `i18n/zh-CN.lua`、`i18n/en.lua`。
 
-`chart` 已不是全局变量，而是 ChartService 的私有状态。以下是其内部数据结构（理解数据格式用，
-代码中必须通过 ChartService 的接口访问）：
+`plugins/redo.lua` 维护历史树；撤销后创建新操作会保留原分支。操作历史可在“当前分支”和“所有分支”间切换，跳转通过撤销 / 重做恢复到目标节点。涉及对象的时间范围取修改前后所有起点 / 终点的最小与最大值。切换谱面清空；事件组编辑使用独立历史，退出后恢复主谱面历史并记录组变更。
+
+手动保存失败返回 `false, error`；已经成功编码 JSON 时，系统弹窗提供复制到剪贴板的补救选项。自动保存失败仅记日志。调用方只有保存成功才显示成功消息或播放提示音。
+
+### 事件组接口
 
 ```lua
-chart = {
-    bpm_list = {                    -- BPM 列表
-        { beat = {0, 0, 1}, bpm = 120, linear_ramp = 0 },
-        -- linear_ramp: 0=突变, 1=线性渐变
-    },
-    note = {                        -- 音符列表
-        {
-            type = "note",          -- "note" | "hold" | "wipe"
-            track = 1,              -- 轨道编号
-            beat = {1, 0, 1},       -- 位置
-            beat2 = {2, 0, 1},      -- hold 结束位置（仅 hold）
-            fake = 0,               -- 0=正常, 1=假音符
-            note_head = 0,          -- hold 头部类型
-            wipe_head = 0,          -- 是否为 wipe 头
-        },
-    },
-    event = {                       -- 事件列表
-        {
-            type = "x",             -- "x" | "w" | "lpos" | "rpos"
-            track = 1,              -- 轨道编号
-            beat = {0, 0, 1},       -- 起始位置
-            beat2 = {4, 0, 1},      -- 结束位置
-            from = 0,               -- 起始值
-            to = 1,                 -- 结束值
-            trans = {               -- 过渡方式
-                type = "bezier",    -- "bezier" | "easings"
-                trans = {0.5, 0},   -- 贝塞尔控制点 或 缓动索引
-                easings = 1,
-            },
-        },
-    },
-    effect = {},                    -- 效果列表
-    track = {},                     -- 轨道定义（键为字符串 "1", "2", ...）
-    offset = 0,                     -- 音频偏移量（毫秒）
-    info = {                        -- 谱面信息
-        song_name = "",
-        chart_name = "",
-        chartor = "",
-        artist = "",
-    },
-    preference = {                  -- 偏好设置
-        x_offset = 0,
-        event_scale = 1,
-    },
-}
+chart:getEventGroupNames()                    -- 排序后的名称列表
+chart:getEventGroup(name)                     -- 独立快照
+chart:putEventGroup(name, definition, oldName, actionKey) -- 新建 / 更新 / 改名
+chart:deleteEventGroup(name)
+chart:beginEventGroupEdit(name)
+chart:isEditingEventGroup()                   -- 当前名称或 nil
+chart:syncEventGroupEdit()                    -- 保存前同步
+chart:finishEventGroupEdit()
+chart:canPlaceEvent(candidate, ignored)
 ```
 
-### extra_chart 索引数据
+独立编辑暂时切换服务的当前谱面与索引，原谱面保留。不要在插件里缓存跨换谱、跨撤销的实体引用而不更新。
 
-`extra_chart` 是 `chart` 的按轨道分类索引，是 ChartService 的私有状态（**不存在全局变量**）。
-外部只能通过 `hasTrack` / `getTrackEventCount` / `getTrackEvent` 查询，无法拿到索引内部表。
+## 事件通知
+
+`src/utils/eventBus.lua` 提供同步通知：`on(name, fn)` 返回退订函数，`off/emit/count` 用于管理与发送。单个订阅回调错误被隔离并记录，不阻断其余回调。总栈发布顺序按订阅顺序，不按插件绘制层重排。
+
+插件通常订阅 `ctx.eventBus`：
+
+| 通知 | 用途 |
+| --- | --- |
+| `chart:changed` | 提交、撤销 / 重做、换谱、加载及事件组上下文变更后的完整读取 |
+| `chart:mutated` | 实际写入后的实时预览；事务可能尚未完成 |
+| `chart:committed` | 操作记录及说明，供撤销插件接收 |
+| `chart:replaced` | 换谱时清理缓存与历史 |
+| `chart:group_edit_begin/end` | 挂起 / 恢复事件组相关状态 |
+| `audio:loaded/decoded` | 换歌 / 分析数据就绪 |
+| `audio:playing_changed/error` | 播放状态 / 加载或解码错误 |
+
+`chart:changed` 的参数含 `kind`，有操作时含 `operation/actionKey`，组变更可能含 `group`。`replace` 在 `load` 之前，需要实体和索引时等待 `load`。失败回滚会发 `kind='rollback'`。`chart:mutated` 按具体写入发送，撤销 / 重做不逐项重放它；完整变化种类和订阅示例见 [插件文档](plugins/README.md#7-数据钩子与谱面操作)。
+
+旧 `onNoteAdd/onNoteDelete/onEventAdd/onEventDelete` 是插件管理器钩子，只覆盖普通 `add/delete`，不能替代所有谱面修改通知。卸载插件必须退订，回调中无条件再次改同一数据可能造成循环。
+
+## AudioService 与坐标
+
+AudioService 私有持有 Source、SoundData、时间、播放状态、速度、音量、效果与解码任务，不代理旧全局。应用入口注入谱面、事件总栈与 LÖVE 后端；`AudioService.new(options)` 可创建隔离测试实例。
 
 ```lua
-extra_chart = {
-    track = {
-        [1] = {                     -- 轨道 1
-            x = { ... },            -- x 类型事件列表
-            w = { ... },            -- w 类型事件列表
-            lpos = { ... },         -- lpos 类型事件列表
-            rpos = { ... },         -- rpos 类型事件列表
-            note = { ... },         -- 音符列表
-        },
-        [2] = { ... },              -- 轨道 2
-    }
-}
+local audio = require('src.services.audioService')
+audio:load(path, {preview = true})           -- 菜单预览并后台解码
+audio:prepareEditor()                       -- 准备分析数据、暂停并定位到谱面起点
+audio:pause(); audio:resume(); audio:stop()  -- stop 同时将位置归零
+audio:seek(seconds, {pause = true})
+audio:setCurrentBeat(beatValue)
+audio:setRate(1); audio:setVolume(0.5)
+audio:setEffect(name, parameters)           -- false 关闭效果
+audio:getCurrentTime(); audio:getAudioTime()
+audio:getCurrentBeat(); audio:getAllBeat()
+audio:getDuration(); audio:getRawDuration()
+audio:getSoundData(); audio:isLoading(); audio:isPlaying()
+audio:unload()
 ```
 
-模板定义在 `meta_extra_chart_track`（`src/objects/meta.lua`）。
+`getCurrentTime` 是谱面秒数；音频秒数由 offset 换算，当前 / 总节拍由 BPM 表推导。`update(dt)` 每帧只由应用推进一次。原生 `getSource()` 供兼容读取，控制播放仍通过服务。`music/music_data/music_play/time` 及 `beat.nowbeat/allbeat` 已移除。详细时间边界、异步数据和资源释放见 [音频服务](readme/音频服务.md)。
 
----
+CoordinateService 提供 `toY/yToBeat`、`trackToScreen/screenToTrackX`、`getEventValue` 等转换。每拍像素随 `denom.scale * 100` 变化，当前拍来自音频服务；offset 单位是毫秒，其他音频时间是秒。
 
-## 服务层 API
+## 输入、容器与执行顺序
 
-### ChartService 文件组织
+`src/services/inputRouter.lua` 统一缩放 / 黑边坐标、按下与释放、UI 捕获和改键弹窗输入；窗口失焦清理状态。空透明 Nuklear 窗口也可能抢滚轮，不要用整片窗口包住编辑区。进度条与普通编辑滚轮由场景处理，侧栏滚动仅在对应区域补偿。详见 [输入与依赖](readme/输入与依赖.md)。
 
-`require('src.services.chartService')` 保留原来的服务实例与 API，入口文件只转发到 `src/services/chartService/init.lua`。目录内的模块在初始化时装载，全部共用入口创建的私有谱面状态；不能直接取得 chart 或索引表。
+`object/container/group/room` 在 `src/utils/room.lua`。`addObject/addGroup/addRoom(child, layer)` 统一排序：数字从小到大，同层按导入顺序，省略层号为 `math.huge`；非活动 room 不执行。`setLayer/getLayer` 修改或查询挂载层，每个容器独立排序。
 
-| 文件 | 职责 |
-|---|---|
-| `init.lua` | 创建服务实例和唯一私有状态，装载各模块 |
-| `index.lua` | 内部辅助函数、轨道索引维护与列表查询 |
-| `transactions.lua` | 变更事务、成员注册与失败回滚 |
-| `lifecycle.lua` | 加载、格式迁移、保存与 JSON 编码 |
-| `event_groups.lua` | 事件组定义、独立编辑与范围互斥 |
-| `entities.lua` | 音符和事件的增删 |
-| `fields.lua` | offset、谱面信息、偏好、BPM 表和轨道定义 |
-| `timing.lua` | 时间/节拍换算与排序 |
+自定义方法通过 `self('update', dt)` 等转发子内容，转发位置决定执行时机；未定义的方法自动下传。一次分发用快照，新对象下次执行，删除的对象立即跳过，改层下次生效。容器层不能拆分父方法自身的绘制，也不能让插件越过全局最后绘制的 Nuklear。
 
-子模块返回安装函数，由入口传入服务、私有状态、内部辅助接口与依赖。新增功能按职责放入对应模块，不创建第二份谱面状态，也不让调用方直接加载子模块代替服务。
+当前编辑场景为 play 10、demo 20、editTool 30、tabs 40、sidebar 50。希望高于标签页绘制的插件可挂 `target='edit', layer=45`。任意路径查找用 `root:findContainer('edit/sidebar/event')`；完整挂载规则见 [插件文档](plugins/README.md#4-层与执行顺序)。
 
-### ChartService (`src/services/chartService.lua`)
+## 主题、键位与安全输入
 
-`chart` 与 `extra_chart` 是 ChartService 的**私有状态**（module-local），不再是全局变量。
-**不提供任何返回内部表引用的接口**：读取走 计数+下标+字段访问器（Note/Event 对象按实体返回，
-其字段修改走对象方法）；所有写入必须通过本服务的方法。修改 chart 时自动同步 extra_chart 索引。
+ThemeService 读取 `users/ui/theme.yml`，分别应用 dark / light 配色、图标颜色、判定线与音符九宫格。默认颜色位于 `config/colors/`，UI 布局位于 `config/layouts/`。主题配置用英文键，说明和行尾注释用中文；完整可复制例子见 [主题说明](readme/theme.md)。
 
-#### 谱面替换与生命周期
-
-```lua
-ChartService:setChart(data)       -- 替换整张谱面（深拷贝 + 补默认字段，菜单选谱/导入用）
-ChartService:update()             -- 版本迁移和字段填充
-ChartService:load()               -- 加载谱面（构建 extra_chart 索引）
-ChartService:save(name)           -- 序列化保存（"chart.json" / "chart.json.auto" / 其它路径）
-ChartService:encodeJson()         -- 编码为 JSON 字符串（旧格式导入重写文件用）
-```
-
-#### 列表读取（计数 + 下标，不返回内部表）
-
-```lua
-ChartService:getNoteCount() / getNote(i)      -- 音符数量 / 第 i 个 Note 对象
-ChartService:getEventCount() / getEvent(i)    -- 事件数量 / 第 i 个 Event 对象
-ChartService:getBpmCount()  / getBpm(i)       -- BPM 数量 / 第 i 个 BPM 条目
-ChartService:getEffectCount() / getEffect(i)  -- 效果数量 / 第 i 个效果条目
-```
-
-#### 索引查询（extra_chart，只读）
-
-```lua
-ChartService:hasTrack(trackId)                           -- 轨道是否存在于索引
-ChartService:getTrackEventCount(trackId, eventType)      -- 指定轨道指定类型的事件数
-ChartService:getTrackEvent(trackId, eventType, i)        -- 第 i 个事件对象
-```
-
-#### 标量字段与轨道定义
-
-```lua
-ChartService:getOffset() / setOffset(v)                  -- 音频偏移量（毫秒）
-ChartService:getInfoField(f) / setInfoField(f, v)        -- song_name / chart_name / chartor / artist
-ChartService:getPreferenceField(f) / setPreferenceField(f, v)  -- x_offset / event_scale
-ChartService:setBpmList(list)                            -- 整体替换 BPM 列表（chart_info 保存用）
-ChartService:ensureTrack(trackId)                        -- 懒创建轨道定义
-ChartService:getTrackField(trackId, f) / setTrackField(trackId, f, v)  -- name/w0thenShow/type/parent/scale_with_parent
-```
-
-#### beat 桥接（内部使用 chart.bpm_list）
-
-```lua
-ChartService:toBeat(t)            -- 时间(秒) → beat 值
-ChartService:toTime(b)            -- beat 值 → 时间(秒)
-```
-
-#### 数据写入（自动同步 extra_chart）
-
-```lua
-ChartService:add(noteOrEvent)     -- 添加 note/event（含批量缓冲、撤销记录、排序、插件钩子）
-ChartService:delete(noteOrEvent)  -- 删除 note/event
-ChartService:push() / pop()       -- 批量操作（push 与 pop 之间的增删被缓冲，pop 统一提交）
-ChartService:addNote(note) / deleteNote(note)   -- 直接增删音符（内部用）
-ChartService:addEvent(event) / deleteEvent(event)
-ChartService:sortEvents() / sortNotes() / sortBpmList()  -- 排序（同步 chart 与 extra_chart）
-```
-
-### CoordinateService (`src/services/coordinateService.lua`)
-
-封装坐标转换。
-
-```lua
--- beat ↔ 屏幕坐标
-CoordinateService:beatToScreenY(isbeat)    -- beat → 屏幕 Y
-CoordinateService:screenYToBeat(y)         -- 屏幕 Y → beat
-CoordinateService:beatToNumber(beatTable)  -- beat 表 → 数值
-CoordinateService:addBeat(b1, b2)          -- beat 相加
-CoordinateService:subBeat(b1, b2)          -- beat 相减
-CoordinateService:snapToBeat(isbeat)       -- 对齐到最近 beat
-
--- 时间 ↔ beat
-CoordinateService:timeToBeat(bpmList, time)
-CoordinateService:beatToTime(bpmList, isbeat)
-
--- 轨道 ↔ 屏幕
-CoordinateService:trackToScreen(x, w)      -- 谱面坐标 → 屏幕坐标
-CoordinateService:trackToScreenX(x)        -- 谱面 x → 屏幕 x
-CoordinateService:screenToTrackX(x)        -- 屏幕 x → 谱面 x
-CoordinateService:getAllTrackPos()         -- 所有轨道位置
-CoordinateService:getAllTrackIds()         -- 所有轨道 ID
-CoordinateService:getNearFence()           -- 最近栅栏
-```
-
-### AudioService (`src/services/audioService.lua`)
-
-音频源、分析数据、播放状态和播放时钟由服务私有持有，`isRequire.lua` 注入 LÖVE 后端、谱面时间接口和事件总栈。服务统一管理加载/释放、后台解码、播放/暂停、定位、变速、音量和效果；工具栏与插件只发命令。`main.lua` 每帧更新服务一次。
-
-`getCurrentTime()` 返回谱面秒数，音频位置是谱面秒数减去 `offset/1000`。当前节拍和总节拍根据时间与 BPM 表推导，不另存可写的 `beat.nowbeat/allbeat`。相同播放位置的换算结果会缓存，谱面变更通知会使缓存失效。
-
-```lua
-AudioService:load(path, {preview = true}) -- 加载歌曲并在菜单预览，后台解码分析数据
-AudioService:prepareEditor()             -- 保证分析数据可用，暂停并定位到谱面起点
-AudioService:pause() / resume() / stop()  -- 立即控制音频源；stop 将谱面位置归零
-AudioService:seek(seconds, {pause = true}) -- 定位、限制范围，并同步音频源
-AudioService:setCurrentBeat(value)       -- 按当前 BPM 表将节拍换成秒再定位
-AudioService:setRate(1)                  -- 播放速度（正数）
-AudioService:setVolume(0.5)              -- 音量（0 到 1）
-AudioService:setEffect(name, parameters) -- 设置效果；parameters=false 时关闭
-AudioService:getSoundData()              -- 波形/声纹图/分析插件只读使用
-AudioService:getCurrentTime() / getAudioTime() -- 谱面秒数 / 音频秒数
-AudioService:getDuration() / getRawDuration()  -- 含 offset 的谱面时长 / 原音频时长
-AudioService:getCurrentBeat() / getAllBeat()   -- 当前节拍 / 总节拍
-AudioService:isPlaying() / isLoading()   -- 播放与后台解码状态
-AudioService:unload()                    -- 停止、释放源并清空数据和解码任务引用
-```
-
-旧的 `music/music_data/music_play/time` 全局已移除，`beat` 只保留节拍计算工具。详细的资源归属、注入方式、音频事件和插件迁移见 [音频服务](readme/音频服务.md)。
-
----
-
-## 插件开发指南
-
-完整文档位于 [plugins/README.md](plugins/README.md)。
-
-插件入口支持 `plugins/name.lua` 和 `plugins/name/init.lua`。每个入口返回描述表，自动加载器在场景、服务和 Nui 初始化后统一注册，无需修改游戏内文件。以下划线开头的文件/目录不加载。
-
-```lua
-return {
-    name = 'example',
-    target = 'edit/play',
-    layer = 85,
-    update = function(ctx, dt)
-        -- ctx.chart / ctx.coord / ctx.audio / ctx.settings / ctx.ui
-    end,
-}
-```
-
-目标可以是任意嵌套 room/group 路径或对象引用；省略目标时挂载根容器。层从小到大执行，默认最高层，同层按导入顺序执行。描述表回调的第一个参数为 `ctx`；`object` 模式保留对象的 `self`。
-
-管理器提供 `register`、`unregister`、`getPluginNames`、`getPlugin`、`setLayer`、`on`、`emit`。正常的更新、绘制和输入已经由目标容器调用，不能再使用 `callAll` 重复广播这些生命周期。
-
-内置插件：fft（menu/30）、redo（edit/play/90）、alt（100）、ctrl（110）、directEventEditing（130）。它们的注册信息均在各自插件文件中。
-
-普通谱面增删钩子仍仅覆盖 `ChartService:add/delete`；批量操作、撤销重做和直接字段修改不触发，详细限制见完整文档。
-
----
-
-## 场景系统
-
-### 容器分层
-
-`addObject(obj, layer)`、`addGroup(group, layer)`、`addRoom(room, layer)` 把子内容加入指定层。所有类型统一排序，非活动 room 不执行。省略层号时使用 `container.TOP_LAYER`（`math.huge`），同层按导入顺序执行。
-
-每个容器拥有独立的 `layers` 表；用 `getLayer(child)` / `setLayer(child, layer)` 查询和修改，不直接改内部表。嵌套容器各自排序。`self('update', dt)` 等调用在自定义方法中显式转发；未定义该方法的容器自动向子内容转发。
-
-通过 `room:findContainer('edit/sidebar/event')` 可定位任意嵌套容器。增删操作必须使用容器接口，以保持对象列表和层索引一致。
-
-### 场景列表
-
-| 场景 | 文件 | 说明 |
-|------|------|------|
-| play | `src/rooms/play.lua` | 编辑/游玩区域 |
-| menu | `src/rooms/menu.lua` | 菜单选择界面 |
-| editTool | `src/rooms/editTool.lua` | 编辑工具栏 |
-| demo | `src/rooms/demo.lua` | 演示/预览模式 |
-| sidebar | `src/rooms/sidebar.lua` | 侧边栏面板 |
-| start | `src/rooms/start.lua` | 启动画面 |
-
-### 子场景/组件
-
-| 组件 | 文件 | 说明 |
-|------|------|------|
-| denomPlay | `src/objects/play/denomPlay.lua` | 分度线渲染 |
-| demoInEdit | `src/objects/play/demoInEdit.lua` | 编辑区演示渲染 |
-| demoPlay | `src/objects/play/demoPlay.lua` | 游玩区渲染 |
-| ctrl | `src/objects/play/ctrl.lua` | 编辑控制逻辑 |
-| redo | `src/objects/play/redo.lua` | 撤销/重做 |
-| slider | `src/objects/play/slider.lua` | 进度条 |
-| select_music | `src/objects/menu/select_music.lua` | 歌曲选择 |
-| select_chart | `src/objects/menu/select_chart.lua` | 谱面选择 |
-
----
-
-## 色彩系统
-
-### 基色定义 (`config/colors/base.lua`)
-
-```lua
-local base = {
-    white  = {1, 1, 1},         -- 白色
-    cyan   = {0, 1, 1},         -- 青色
-    dcyan  = {0, 0.7, 0.7},     -- 暗青色
-    black  = {0, 0, 0},         -- 黑色
-    red    = {1, 0, 0},         -- 红色
-    lred   = {1, 0.5, 0.5},     -- 浅红色
-    dgray  = {0.18, 0.18, 0.18}, -- 深灰色
-}
-
--- 辅助函数
-local function rgba(rgb, alpha)
-    return {rgb[1], rgb[2], rgb[3], alpha}
-end
-```
-
-### 颜色分级
-
-| 级别 | 命名规则 | alpha | 用途 |
-|------|---------|-------|------|
-| 纯色 | `white`, `cyan`, `black`, `red` | 1.0 | 主要元素 |
-| 半透明 | `*_half` | 0.5 | 次要元素、选中态 |
-| 淡色 | `*_fade` | 0.4 | 背景、填充 |
-| 极淡 | `*_dim` | 0.2 | 弱化元素 |
-
-### 颜色配置文件
-
-| 文件 | 说明 |
-|------|------|
-| `config/colors/base.lua` | 共享基色定义 |
-| `config/colors/play.lua` | 编辑/游玩区域颜色 |
-| `config/colors/menu.lua` | 菜单界面颜色 |
-| `config/colors/editTool.lua` | 编辑工具栏颜色 |
-| `config/colors/demo.lua` | 演示模式颜色 |
-
-### 使用方式
-
-```lua
--- 在场景中加载
-play.colors = require 'config.colors.play'
-
--- 使用颜色
-love.graphics.setColor(play.colors.white_half)
-love.graphics.setColor(play.colors.eventInDemo[eventType])  -- 动态 key
-```
-
----
-
-## 快捷键系统
-
-### 定义快捷键 (`src/objects/meta.lua`)
-
-```lua
-meta_key = {
-    __index = {
-        play = {'space'},           -- 播放/暂停
-        undo = {'ctrl','z'},        -- 撤销
-        redoing = {'ctrl','y'},     -- 重做
-        copy = {'ctrl','c'},        -- 复制
-        paste = {'ctrl','v'},       -- 粘贴
-        delete = {'delete'},        -- 删除
-        -- ...
-    }
-}
-```
-
-### 使用快捷键
-
-```lua
-local input = require("src.utils.input")
-
--- 检测快捷键是否按下
-if input('undo') then
-    -- 执行撤销
-end
-```
-
-### 自定义快捷键
-
-用户配置文件：`users/key.json`
+默认快捷键在 `src/objects/meta.lua` 的 `meta_key`，用户覆盖在 `users/key.json`。动作名必须使用实际字段，例如：
 
 ```json
 {
-    "play_pause": ["space"],
-    "undo": ["lctrl", "z"],
-    "redo": ["lctrl", "y"]
+  "play": ["space"],
+  "undo": ["ctrl", "z"],
+  "redoing": ["ctrl", "y"],
+  "placeEventGroup": ["t"]
 }
 ```
 
----
+设置中的改键入口录制组合键，松开后确认并保存。业务通过 `input('undo')` 等查询，不绕过弹窗输入捕获。
 
-## 目录结构
-
-```
-daikumi editor/
-├── main.lua                        -- 入口文件，全局变量初始化
-├── isRequire.lua                   -- 模块加载器
-├── conf.lua                        -- LOVE2D 配置
-├── config/
-│   ├── colors/                     -- 颜色配置
-│   │   ├── base.lua                -- 共享基色
-│   │   ├── play.lua                -- 编辑区颜色
-│   │   ├── menu.lua                -- 菜单颜色
-│   │   ├── editTool.lua            -- 工具栏颜色
-│   │   └── demo.lua                -- 演示颜色
-│   └── layouts/                    -- 布局配置
-│       ├── play.lua
-│       └── menu.lua
-├── src/
-│   ├── utils/                      -- 基础工具
-│   │   ├── room.lua                -- 对象/容器/组/房间系统
-│   │   ├── beat.lua                -- 节拍计算
-│   │   ├── event.lua               -- 事件处理
-│   │   ├── note.lua                -- 音符处理
-│   │   ├── track.lua               -- 轨道坐标转换
-│   │   ├── table.lua               -- 表工具函数
-│   │   ├── input.lua               -- 快捷键管理
-│   │   ├── plugin.lua              -- 插件管理器
-│   │   ├── window.lua              -- 窗口管理
-│   │   ├── save.lua                -- 保存功能
-│   │   ├── log.lua                 -- 日志系统
-│   │   ├── file.lua                -- 文件工具
-│   │   ├── pass.lua                -- 空函数占位
-│   │   ├── string.lua              -- 字符串工具
-│   │   ├── math.lua                -- 数学工具
-│   │   └── bezier.lua              -- 贝塞尔曲线
-│   ├── services/                   -- 服务层
-│   │   ├── chartService.lua        -- 谱面服务兼容入口
-│   │   ├── chartService/           -- 按职责拆分的谱面服务（入口 init.lua）
-│   │   ├── coordinateService.lua   -- 坐标转换服务
-│   │   └── audioService.lua        -- 音频服务
-│   ├── models/                     -- 数据实体（服务与界面共享）
-│   │   ├── Note.lua               -- 音符实体、拷贝与序列化
-│   │   └── Event.lua              -- 事件实体、拷贝与序列化
-│   ├── objects/                    -- 业务逻辑
-│   │   ├── meta.lua                -- 数据模型定义
-│   │   ├── messageBox.lua          -- 消息提示框
-│   │   ├── i18n.lua                -- 国际化
-│   │   ├── allImage.lua            -- 图片资源
-│   │   ├── ui.lua                  -- UI 工具
-│   │   ├── play/                   -- 编辑区组件
-│   │   │   ├── ctrl.lua            -- 编辑控制
-│   │   │   ├── redo.lua            -- 撤销/重做
-│   │   │   ├── denomPlay.lua       -- 分度线
-│   │   │   ├── demoInEdit.lua      -- 编辑区演示
-│   │   │   ├── demoPlay.lua        -- 游玩区渲染
-│   │   │   └── slider.lua          -- 进度条
-│   │   ├── menu/                   -- 菜单组件
-│   │   │   ├── select_music.lua    -- 歌曲选择
-│   │   │   ├── select_chart.lua    -- 谱面选择
-│   │   │   └── FFT.lua             -- FFT 频谱
-│   │   └── sidebar/                -- 侧边栏组件
-│   │       └── settings.lua        -- 设置面板
-│   ├── plugins/                    -- 插件
-│   │   ├── init.lua                -- 插件加载器
-│   │   ├── equalizer.lua           -- 均衡器
-│   │   ├── to_takana.lua           -- Takana 转谱
-│   │   ├── fft.lua                 -- FFT 频谱
-│   │   ├── hit.lua                 -- 打击效果
-│   │   └── directEventEditing.lua  -- 直观事件编辑
-│   └── rooms/                      -- 场景
-│       ├── play.lua                -- 编辑/游玩场景
-│       ├── menu.lua                -- 菜单场景
-│       ├── editTool.lua            -- 编辑工具栏
-│       ├── demo.lua                -- 演示场景
-│       ├── sidebar.lua             -- 侧边栏
-│       └── start.lua               -- 启动画面
-├── assets/                         -- 资源文件
-│   ├── sound/                      -- 音效
-│   └── image/                      -- 图片
-├── i18n/                           -- 国际化文件
-├── users/                          -- 用户数据（运行时生成）
-│   ├── settings.json               -- 用户设置
-│   ├── key.json                    -- 快捷键配置
-│   ├── chart/                      -- 谱面文件
-│   ├── log/                        -- 日志
-│   ├── export/                     -- 导出文件
-│   ├── auto_save/                  -- 自动保存
-│   └── ui/                         -- 自定义 UI
-├── USER_GUIDE.md                   -- 用户指南
-└── DEVELOPER_GUIDE.md              -- 开发者文档（本文件）
-```
-
----
-
-## 常见开发任务
-
-### 添加新的音符类型
-
-1. 在 `src/objects/meta.lua` 的 `isNoteType()` 中添加类型判断
-2. 在 `src/utils/note.lua` 的 `note:place()` 中添加放置逻辑
-3. 在 `src/objects/play/demoInEdit.lua` 中添加渲染逻辑
-4. 在 `src/objects/play/demoPlay.lua` 中添加游玩区渲染
-5. 更新 `src/objects/play/redo.lua` 的撤销/重做支持
-
-### 添加新的事件类型
-
-1. 在 `src/objects/meta.lua` 的 `event_type` 表中添加类型
-2. 在 `src/objects/meta.lua` 的 `trackSequence` 表中添加位置映射
-3. 在 `src/utils/event.lua` 的 `event:get()` 中添加值计算
-4. 在 `src/rooms/play.lua` 的 event 渲染循环中添加显示
-5. 在 `src/objects/sidebar/` 中添加编辑 UI
-
-### 添加新的场景
-
-1. 在 `src/rooms/` 下创建新文件
-2. 使用 `room:new()` 或 `group:new()` 创建场景对象
-3. 实现生命周期方法（load, update, draw, keypressed 等）
-4. 在 `isRequire.lua` 的第 8 层添加 require
-5. 在主场景中添加切换逻辑
-
-### 添加新的服务
-
-1. 在 `src/services/` 下创建新文件
-2. 定义服务表和方法
-3. 在 `main.lua` 中 require 并添加到 PluginManager 的 ctx 中
-4. 插件可通过 `ctx.服务名` 访问
-
----
-
-*本文档最后更新：2026-08-19*
+`safeInput` 解析受限算式和数据表，不执行任意 Lua。用户公式可用基本算术、常用数学函数、当前轨道值与 `r()`；`function x^2` 是批量变换的算式前缀。旧 d3、语言及贝塞尔预设仅接受数据，不能指导用户写系统命令或可执行 Lua。
