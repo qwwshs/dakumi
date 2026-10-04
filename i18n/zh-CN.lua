@@ -1,4 +1,5 @@
 return {
+    ['import_failed'] = '导入失败',
     ['jump_mode'] = 'Jump 计算方式',
     ['jump_mode_current'] = '当前值',
     ['jump_mode_cumulative'] = '累计（只使用终值）',

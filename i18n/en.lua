@@ -1,4 +1,5 @@
 return {
+    ['import_failed'] = 'Import failed',
     ['jump_mode'] = 'Jump calculation',
     ['jump_mode_current'] = 'Current value',
     ['jump_mode_cumulative'] = 'Cumulative (to only)',

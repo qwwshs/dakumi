@@ -87,7 +87,7 @@ function menu:select_music()
         menu.chartInfo = { song_name = nil, bg = nil, chart_name = {} } --谱面的信息
         --输出选择到的谱面的谱面信息
         nativefs.mount(PATH.base)
-        local now_file_path = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/"
+        local now_file_path = PATH.usersPath.chart .. (menu.chartTab[menu.selectMusicPos] or "") .. "/"
         local file_tab = love.filesystem.getDirectoryItems(PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos]) --得到谱面文件夹下的谱面
         for i, v in ipairs(file_tab) do
             local v_extemsion = getFileExtension(v)
@@ -287,6 +287,30 @@ function menu:resize(w, h)
     effect.resize(w, h)
 end
 
+-- 内部调用与拖入未知格式共用导入插件；返回三个可选资源的原始结果。
+function menu:importFile(input)
+    local importer=require('src.services.importService')
+    local result,err,request=importer:convert(input,'menu')
+    if not result then return nil,err end
+    nativefs.mount(PATH.base)
+    local folder,reason,paths=importer:saveToMenu(result,request,self.chartTab[self.selectMusicPos])
+    nativefs.unmount()
+    if not folder then return nil,reason end
+    self:flushed()
+    for index,name in ipairs(self.chartTab) do if name==folder then self.selectMusicPos=index; break end end
+    self:select_music()
+    if paths.chart then
+        for index,item in ipairs(self.chartInfo.chart_name) do
+            if item.path==paths.chart then self.selectChartPos=index; self.path=item.path; break end
+        end
+    end
+    local applied,applyError=importer:apply(result,{preview=true})
+    if not applied then return nil,applyError end
+    if paths.audio then self.musicPath=paths.audio end
+    if paths.background then self.bgPath=paths.background end
+    return result
+end
+
 function menu:filedropped(file) -- 文件拖入
     menu('filedropped', file)
     file:open("r")
@@ -299,11 +323,12 @@ function menu:filedropped(file) -- 文件拖入
         lastSlashIndex = 0
     end
     local content = file:read()
+    file:close()
     local flie_name = string.sub(flie_name, lastSlashIndex + 1)
     local isfile_extension = getFileExtension(flie_name)
 
     nativefs.mount(PATH.base)
-    local now_file_path = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/"
+    local now_file_path = PATH.usersPath.chart .. (menu.chartTab[menu.selectMusicPos] or "") .. "/"
     if table.find(file_extension.bg, isfile_extension) then --bg
         nativefs.newFile(now_file_path .. flie_name)        --复制到当前文件夹下
         nativefs.write(now_file_path .. flie_name,
@@ -348,6 +373,15 @@ function menu:filedropped(file) -- 文件拖入
         local tab = {}
         table.fill(tab, meta_chart.__index)
         nativefs.write(PATH.usersPath.chart .. path_name .. "/" .. 'chart.json', dkjson.encode(tab)) --复制到新的文件夹
+    else
+        local result,reason=self:importFile({path=file:getFilename(),name=flie_name,data=content})
+        if not result then
+            love.window.showMessageBox(i18n:get('import_failed'),tostring(reason),'error')
+            nativefs.unmount()
+            return
+        end
+        nativefs.unmount()
+        return -- 插件导入入口已刷新并选中导入结果。
     end
     nativefs.unmount()
     menu:flushed() --重新加载

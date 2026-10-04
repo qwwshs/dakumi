@@ -96,6 +96,7 @@ PluginManager:init({
     eventBus = eventBus,       -- 谱面变更等全局事件
     coord = CoordinateService, -- 坐标转换服务
     audio = AudioService,      -- 音频服务
+    importer = require('src.services.importService'), -- 插件审核与统一导入
     beat = beat,               -- 节拍计算模块
     settings = settings,       -- 用户设置（场景模块已完成加载）
     i18n = i18n,               -- 国际化

@@ -272,3 +272,60 @@ PluginManager:unregister('my_tool')         -- 移除挂载、钩子并调用 de
 ### 内置插件 UI 上下文
 
 `directEventEditing`、`equalizer`、`takana` 和 `operationHistory` 均通过初始化收到的 `ctx.ui` 绘制，并通过 `ctx.i18n` 取得界面文字。对象式插件在 `.plugin.init(ctx)` 保存上下文，卸载时释放引用；声明 `function panel:Nui()` 仍是容器生命周期方法名，不代表读取全局 UI。辅助计算与其他历史业务依赖按现有接口使用。
+
+## 导入类插件
+
+导入类使用 `type = 'import'`，不需要 `target`，不会挂载 update / draw。入口仍放在 `plugins/` 中，自动发现和卸载规则与其他插件相同。
+
+```lua
+local json = require('src.utils.dkjson')
+return {
+    name = 'custom_chart_import',
+    type = 'import',
+    layer = 100,
+    review = function(ctx, request)
+        -- 审核只能返回 true 才会接收；这里示范一种自定义后缀。
+        return request.extension == 'dkchart'
+    end,
+    import = function(ctx, request)
+        local chart, _, err = json.decode(request.data)
+        assert(type(chart) == 'table', err or '不是有效的谱面数据')
+        return {chart = chart}
+    end,
+}
+```
+
+`review(ctx, request)` 通过后调用同一个插件的 `import(ctx, request)`。多个导入插件按 `layer` 从小到大审核，同层按注册顺序；第一个通过的负责处理。审核拒绝或异常会继续尝试下一插件；已经接收后的转换失败会报错，不当成成功，也不会再交给另一插件。
+
+`request` 的字段：`path` 是来源路径，`name` 是文件名，`extension` 是小写后缀（不含点），`data` 是完整文件字节，`origin` 是 `menu` 或 `internal`。优先根据后缀、文件头或内容结构审核，不要把不支持的文件接收下来。
+
+返回表支持以下三个字段，任意一个、两个或三个都可以，不能全部为空：
+
+| 字段 | 内容 |
+|---|---|
+| `chart` | 已转换成 Dakumi 格式的谱面表，不是 JSON 字符串 |
+| `audio` | 已解码的 LÖVE `SoundData`（推荐），内部导入也可传 `Source` 或 `{source=Source, data=SoundData}` |
+| `background` | 已加载的 LÖVE `ImageData` 或 `Image` |
+
+没有返回的资源不替换。谱面类型、媒体类型和基本节拍数据会检查；非法返回值会报告失败。请直接返回音频／图像对象，不要返回其路径代替已加载资源。
+
+menu 拖入内置类型未识别的文件时会调用导入插件，并把返回的谱面／音频／背景保存为 JSON／WAV／PNG，以便下次打开。音频需要 `SoundData` 才能写出 WAV；已经创建 `Source` 时请同时提供 `data`。有音乐时建立独立歌曲文件夹，只有谱面或背景时优先放在当前歌曲文件夹；同名输出自动改名，不覆盖原文件。写入失败会报告原因并清理本次新建文件。
+
+内部导入调用同一个审核流程，不受内置文件后缀限制：
+
+```lua
+local result, err = ctx.importer:import('D:/charts/source.custom')
+-- 也可直接传文件内容；成功后可选资源已应用到当前编辑器。
+local result, err = ctx.importer:import({name='source.custom', data=content})
+```
+
+只需要转换、不希望立即替换当前资源时，使用 `ctx.importer:convert(input)`；它同样先审核，再返回转换结果。`menu:importFile(input)` 则执行菜单导入及保存。上述 `input` 还可以传拖入时的 LÖVE File 对象。
+
+
+### Malody 导入
+
+内置 `plugins/malody/` 导入插件支持 `.mc` 与 `.mcz`（ZIP），目前仅支持 key 模式。把文件拖入菜单即可；内部也可以调用 `ctx.importer:import(文件路径)`。
+
+MCZ 包含多张 key 谱面时弹出选择窗口，每次导入一张。读取被选谱面引用的音乐和背景，不读取 `.mc_` 备份。单独 MC 会读取同目录的相对路径资源；缺失媒体时仍可导入谱面。音乐记录、BPM、普通键和长条分别转换为 Dakumi 的 offset、BPM、note 和 hold，每列对应一条等宽轨道。
+
+全局 scroll 和 jump 复制到所有按键轨道。scroll 保留原数值，jump 从 MC 的毫秒距离转换为对应 BPM 下的拍数，谱面偏好设为累计模式。音乐偏移单位仍为毫秒。ZIP 只临时挂载读取，成功或失败都会卸载；禁止资源路径引用上级目录。其他模式及多段背景音乐会提示不支持。

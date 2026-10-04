@@ -50,8 +50,12 @@ function PluginManager:register(plugin)
     if plugin.object ~= nil and type(plugin.object) ~= 'table' then return fail('invalid object: ' .. plugin.name) end
     if plugin.hooks ~= nil and type(plugin.hooks) ~= 'table' then return fail('invalid hooks: ' .. plugin.name) end
     if plugin.export ~= nil and type(plugin.export) ~= 'string' then return fail('invalid export: ' .. plugin.name) end
-    local target = self:resolveTarget(plugin.target)
-    if not target then return fail('target not found for ' .. plugin.name .. ': ' .. tostring(plugin.target)) end
+    local importing=plugin.type=='import'
+    if importing and (type(plugin.review)~='function' or type(plugin.import)~='function') then
+        return fail('import plugin requires review and import: '..plugin.name)
+    end
+    local target = not importing and self:resolveTarget(plugin.target) or nil
+    if not importing and not target then return fail('target not found for ' .. plugin.name .. ': ' .. tostring(plugin.target)) end
 
     self.sequence = self.sequence + 1
     local record = {plugin = plugin, target = target, order = self.sequence, active = true}
@@ -70,7 +74,7 @@ function PluginManager:register(plugin)
         end
     end})
     record.proxy = proxy
-    target:addObject(proxy, plugin.layer)
+    if target then target:addObject(proxy, plugin.layer) end
     self.plugins[plugin.name], self.records[plugin.name] = plugin, record
     if plugin.export then
         record.previousExport = _G[plugin.export]
@@ -93,7 +97,7 @@ function PluginManager:unregister(name)
     if not record then return false end
     local plugin = record.plugin
     record.active = false
-    record.target:deleteObject(record.proxy)
+    if record.target then record.target:deleteObject(record.proxy) end
     self.plugins[name], self.records[name] = nil, nil
     for _, listeners in pairs(self.hooks) do
         for i = #listeners, 1, -1 do
@@ -117,7 +121,7 @@ function PluginManager:setLayer(name, layer)
     local record = self.records[name]
     if not record or not validLayer(layer) then return false end
     record.plugin.layer = layer
-    return record.target:setLayer(record.proxy, layer)
+    return not record.target or record.target:setLayer(record.proxy, layer)
 end
 
 function PluginManager:on(eventName, callback, pluginName)
@@ -167,5 +171,33 @@ function PluginManager:getPluginNames()
     table.sort(names)
     return names
 end
+-- 按层和注册顺序审核；拒绝或审核异常时继续，已接收后的处理异常明确报错。
+function PluginManager:dispatchImport(request)
+    local records={}
+    for _, record in pairs(self.records) do
+        if record.active and record.plugin.type=='import' then records[#records+1]=record end
+    end
+    table.sort(records,function(a,b)
+        local al,bl=a.plugin.layer or math.huge,b.plugin.layer or math.huge
+        return al<bl or (al==bl and a.order<b.order)
+    end)
+    for _, record in ipairs(records) do
+        local plugin=record.plugin
+        local owner=plugin.object or self.ctx
+        local reviewed,accepted=pcall(plugin.review,owner,request)
+        if not reviewed then report(plugin.name..'.review: '..tostring(accepted)) end
+        if reviewed and accepted==true and record.active then
+            local ok,result=pcall(plugin.import,owner,request)
+            if not ok then
+                report(plugin.name..'.import: '..tostring(result))
+                return nil,plugin.name..': '..tostring(result)
+            end
+            if type(result)~='table' then return nil,plugin.name..': import must return a table' end
+            return result,nil,plugin.name
+        end
+    end
+    return nil,'no import plugin accepted this file'
+end
+
 function PluginManager:getPlugin(name) return self.plugins[name] end
 return PluginManager

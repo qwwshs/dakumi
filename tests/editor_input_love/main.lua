@@ -263,6 +263,7 @@ function love.update(dt)
         sidebar:to('preference')
         assert(sidebar:getGroup('preference').jumpMode.value==2)
         print('PASS: real preference panel jump mode save, serialization, undo/redo and reopen')
+        require('tests.editor_input_love.import_plugins')()
         love.event.quit(0)
     end
 end
