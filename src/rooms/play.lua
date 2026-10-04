@@ -14,6 +14,7 @@ function play:get_all_track_pos()
 end
 
 function play:get_effect(trackId)
+    if not demo.open then return EffectService:defaults() end
     return self.effect[trackId] or EffectService:defaults()
 end
 
@@ -45,7 +46,7 @@ function play:update(dt)
     self('update', dt)
     play.now_all_track_pos = {}
     local all_track = fTrack:track_get_all_track()
-    play.effect = EffectService:calculate(all_track, AudioService:getCurrentBeat())
+    play.effect = demo.open and EffectService:calculate(all_track, AudioService:getCurrentBeat()) or {}
     for i = 1, #all_track do
         local x, w = fEvent:get(all_track[i], AudioService:getCurrentBeat())
         local track_x, track_w = fTrack:to_play_track(x, w)

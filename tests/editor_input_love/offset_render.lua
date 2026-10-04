@@ -104,12 +104,21 @@ return function()
     assert(seenDemo('note', normal), 'forward playback lost a demo note')
     drawDemo(4.4)
     assert(seenDemo('note', normal), 'backward seek lost a demo note')
+    local wasDemoOpen=demo.open
+    -- 编辑预览不启用 effect，即使已有上一帧的效果表。
+    demo.open=false
+    play.effect={[1]={note_alpha=0}}
+    assert(play:get_effect(1).note_alpha==100)
     -- 实际 demo 绘制也必须使用积分和当前 jump，而不是仅增加配置字段。
     Chart:setChart({bpm_list={{bpm=120,beat={0,0,1},linear_ramp=0}}, note={}, event={},
         effect={{track=1,type='scroll',beat={0,0,1},beat2={0,0,1},from=2,to=2},
             {track=1,type='jump',beat={9,9,10},beat2={9,9,10},from=0.1,to=0.1}}})
     Chart:load()
     Chart:addNote(Note.new({beat={10,0,1}}))
+    drawDemo(4.9)
+    assert(seenDemo('note',Chart:getNote(1)), 'effects were active outside demo mode')
+    demo.open=true
+    play.effect={}
     drawDemo(4.9)
     local expectedY=(settings.judge_line_y-0.4*denom.scale*100)*demoView.sh
         - settings.note_height*demoView.sh
@@ -119,6 +128,58 @@ return function()
     end
     assert(found, 'demo ignored scroll integration or current jump')
     print('PASS: actual demo note position uses scroll and jump')
+    -- 巨大的 Malody 累计毫秒 jump 后，demo 仍实际绘制即将到达的 note。
+    Chart:setChart({bpm_list={{bpm=120,beat={0,0,1},linear_ramp=0}}, note={}, event={},
+        preference={motion_mode='malody',jump_mode='cumulative'},
+        effect={{track=1,type='scroll',beat={0,0,1},beat2={0,0,1},from=1,to=1},
+            {track=1,type='jump',beat={2,0,1},beat2={2,0,1},from=1000000000,to=1000000000}}})
+    Chart:load()
+    Chart:addNote(Note.new({beat={10,0,1}}))
+    drawDemo(4.9)
+    expectedY=(settings.judge_line_y-0.2*denom.scale*100)*demoView.sh
+        - settings.note_height*demoView.sh
+    found=false
+    for _, entry in ipairs(drawn) do
+        if entry.kind=='note' and math.abs(entry.y-expectedY)<0.00001 then found=true end
+    end
+    assert(found, 'Malody cumulative jump hid notes in the actual demo renderer')
+    print('PASS: actual demo renders notes after huge cumulative millisecond jumps')
+
+    -- 在判定前的真实帧验证 Regain 的巨大 jump + 极小 scroll 组合。
+    Chart:setChart({bpm_list={{bpm=140,beat={0,0,1}}},
+        preference={motion_mode='malody',jump_mode='cumulative'},
+        note={{track=1,type='note',beat={133,0,1}}},
+        effect={{track=1,type='scroll',beat={132,0,1},beat2={132,0,1},from=0.00001,to=0.00001},
+            {track=1,type='jump',beat={132,399,400},beat2={132,399,400},
+                from=10714178.571428573,to=10714178.571428573}}})
+    Chart:load()
+    local getCurrentBeat=Audio.getCurrentBeat
+    Audio.getCurrentBeat=function() return 132.5 end
+    drawDemo(1)
+    Audio.getCurrentBeat=getCurrentBeat
+    expectedY=(settings.judge_line_y-0.2500025*denom.scale*100)*demoView.sh-settings.note_height*demoView.sh
+    found=false
+    for _, entry in ipairs(drawn) do
+        if entry.kind=='note' and math.abs(entry.y-expectedY)<0.00001 then found=true end
+    end
+    assert(found, 'tiny-scroll Malody jump hid a future note before judgement')
+    print('PASS: actual future note is visible during the tiny-scroll jump interval')
+    -- 反向 scroll 将未判定 note 放到判定线下，仍应绘制；判定后才隐藏。
+    Chart:setChart({bpm_list={{bpm=120,beat={0,0,1}}},
+        effect={{track=1,type='scroll',beat={0,0,1},beat2={0,0,1},from=-1,to=-1}},
+        note={{track=1,type='note',beat={10,0,1}}}})
+    Chart:load()
+    drawDemo(4.95)
+    expectedY=(settings.judge_line_y+0.1*denom.scale*100)*demoView.sh-settings.note_height*demoView.sh
+    found=false
+    for _, entry in ipairs(drawn) do
+        if entry.kind=='note' and math.abs(entry.y-expectedY)<0.00001 then found=true end
+    end
+    assert(found, 'unjudged note below judgement line was hidden')
+    drawDemo(5.05)
+    for _, entry in ipairs(drawn) do assert(entry.kind~='note', 'judged note remained visible') end
+    print('PASS: effects are demo-only; unjudged notes render below the judgement line')
+    demo.open=wasDemoOpen
     play.get_all_track_pos = savedPositions
     Skin.draw = original
     print('PASS: demo visibility is independent of other notes offsets and array order')

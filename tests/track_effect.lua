@@ -109,3 +109,64 @@ Chart:setChart({effect={item(1,'jump',25,30,100,3),item(1,'jump',25,35,200,2)},
     preference={jump_mode='cumulative'},bpm_list={{beat={0,0,1},bpm=120,linear_ramp=0}}})
 near(Effects:createMotion({1}):distance(1,25,30),0)
 near(Effects:calculate({1},25)[1].jump,5)
+
+
+-- 密集 scroll 只编译一次；帧内查询和多个预览不重复读取整份效果。
+local dense={}
+for i=1,3000 do
+    dense[#dense+1]=item(1,'scroll',i/10,i/10,2,2)
+end
+Chart:setChart({effect=dense})
+local reads=0
+local getEffect=Chart.getEffect
+Chart.getEffect=function(self,index) reads=reads+1; return getEffect(self,index) end
+motion=Effects:createMotion({1})
+near(motion:distance(1,10,20),20)
+assert(reads==3000)
+for frame=1,60 do
+    local current=Effects:createMotion({1})
+    near(current:distance(1,10,20),20)
+    near(Effects:calculate({1},frame)[1].scroll,2)
+end
+assert(reads==3000, '逐帧查询重复读取效果列表')
+Chart:setPreferenceField('jump_mode','cumulative')
+Effects:createMotion({1})
+assert(reads==6000, '修改后没有重建缓存')
+Chart.getEffect=getEffect
+-- 瞬时相同起点由最后写入的效果覆盖；累计 jump 同起点均计入。
+Chart:setChart({effect={item(1,'scroll',0,0,2,2),item(1,'scroll',0,0,3,3)}})
+near(Effects:createMotion({1}):distance(1,0,10),30)
+print('PASS: dense effect compilation is shared across frames and invalidated on chart writes')
+
+
+-- Malody 使用毫秒 jump 与音频秒轴，两端共用累计坐标。
+Chart:setChart({preference={motion_mode='malody',jump_mode='cumulative'},
+    bpm_list={{beat={0,0,1},bpm=120},{beat={10,0,1},bpm=240}},
+    effect={item(1,'scroll',0,0,2,2),item(1,'jump',5,5,1000000000,1000000000),
+        item(1,'jump',12,12,500,500)}})
+motion=Effects:createMotion({1})
+-- 巨大 jump 已发生后，未来音符仍在正确的相对位置，不消失。
+near(motion:distance(1,6,7),2)
+near(motion:distance(1,13,14),1)
+near(motion:distance(1,13,13),0)
+-- 跨 jump 的位移单位为毫秒，与 scroll 乘数独立；跨 BPM 按秒积分。
+near(motion:distance(1,11,13),4)
+near(motion:distance(1,13,11),-4)
+near(motion:distance(1,6,7),2)
+print('PASS: Malody millisecond jumps, note anchors, backward seek and time-domain scroll across BPM changes')
+
+
+-- Regain 133–204 段：极小 scroll 配合巨大毫秒 jump，按触发点速度换算位移。
+Chart:setChart({preference={motion_mode='malody',jump_mode='cumulative'},
+    bpm_list={{beat={0,0,1},bpm=140}}, effect={
+        item(1,'scroll',132,132,0.00001,0.00001),
+        item(1,'jump',132.9975,132.9975,10714178.571428573,10714178.571428573),
+        item(1,'scroll',134,134,2,2),item(1,'jump',135,135,500,500),
+        item(1,'scroll',136,136,0,0),item(1,'jump',137,137,999999999,999999999)}})
+motion=Effects:createMotion({1})
+near(motion:distance(1,132.5,133),0.2499975+0.000005)
+-- 后续 scroll 改变不会把此前 jump 按新速度重新缩放。
+near(motion:distance(1,134,135),2+500*2*140/60000)
+near(motion:distance(1,136,138),0)
+near(motion:distance(1,133,132.5),-(0.2499975+0.000005))
+print('PASS: tiny-scroll Malody jumps, trigger-time weighting and zero-speed jumps')

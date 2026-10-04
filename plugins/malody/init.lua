@@ -74,7 +74,7 @@ function M.convert(mc)
 
     local chart = {version=1, note={}, event={}, effect={}, track={}, event_groups={}, offset=0,
 
-        preference={jump_mode='cumulative', event_scale=100, x_offset=0},
+        preference={jump_mode='cumulative', motion_mode='malody', event_scale=100, x_offset=0},
 
         info={song_name=song.title or '', artist=song.artist or '',
 
@@ -172,24 +172,7 @@ function M.convert(mc)
 
                 local n=e[kind]
 
-                -- MC jump 使用毫秒距离；换算为触发点 BPM 下的拍数。
-
-                if kind=='jump' then
-
-                    local bpm=chart.bpm_list[1].bpm
-
-                    for _, t in ipairs(chart.bpm_list) do
-
-                        if value(t.beat)>value(b) then break end
-
-                        bpm=t.bpm
-
-                    end
-
-                    n=n*bpm/60000
-
-                end
-
+                -- MC jump 保留毫秒；音符与播放位置使用同一份累计位移坐标。
                 for t=1,columns do
 
                     chart.effect[#chart.effect+1]={track=t,type=kind,beat=beat(b),beat2=beat(b),

@@ -193,10 +193,10 @@ function demoPlay:draw()
 
     -- 按谱面列表顺序收集可见音符；每个音符的偏移仅影响自身的可见性。
     local note_layers = {}
-    local motion = EffectService:createMotion(all_track)
+    local motion = demo.open and EffectService:createMotion(all_track) or nil
     local nowBeat = AudioService:getCurrentBeat()
     local function noteY(trackId, target)
-        return settings.judge_line_y - motion:distance(trackId,nowBeat,target)*denom.scale*100
+        return settings.judge_line_y - (motion and motion:distance(trackId,nowBeat,target) or target-nowBeat)*denom.scale*100
     end
     for i = 1, ChartService:getNoteCount() do
         isnote = ChartService:getNote(i)
@@ -211,7 +211,12 @@ function demoPlay:draw()
         end
         y = y * sh
         y2 = y2 * sh
-        if math.intersect(0, judgePos, y, y2) and not (y > judgePos and isnote:isFakeNote()) then
+        -- 判定依据真实时间，不能用 scroll/jump 改变后的坐标提前隐藏音符。
+        -- 长条直到尾部判定才移除；反向下落也按整个 demo 高度判断可见性。
+        if isnote:isHold() and noteBeat <= nowBeat and noteBeat2 >= nowBeat then y=judgePos end
+        local top=math.min(y,y2)-note_h
+        local bottom=math.max(y,y2)+ (isnote:isHold() and note_h or 0)
+        if noteBeat2 >= nowBeat and math.intersect(0, layout.h*sh, top, bottom) then
             local zindex = track_zindex[trackId] or 0
             if not note_layers[zindex] then
                 note_layers[zindex] = {}
@@ -263,11 +268,9 @@ function demoPlay:draw()
         end
     end
 
-    --遮挡板
+    -- 判定线下方也允许绘制尚未判定的音符，不再添加遮挡板。
     local start_x = fTrack:to_play_track(-x_offset, 0) * sw
     local end_x = fTrack:to_play_track(-x_offset + event_scale, 0) * sw
-    love.graphics.setColor(play.colors.black)
-    love.graphics.rectangle("fill", start_x, judgePos, end_x - start_x, WINDOW.h - judgePos)
 
     --进度条
     local progress_bar = fTrack:to_play_track(-x_offset + event_scale * 0.2, 0) * sw

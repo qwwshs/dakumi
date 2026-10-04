@@ -328,4 +328,4 @@ local result, err = ctx.importer:import({name='source.custom', data=content})
 
 MCZ 包含多张 key 谱面时弹出选择窗口，每次导入一张。读取被选谱面引用的音乐和背景，不读取 `.mc_` 备份。单独 MC 会读取同目录的相对路径资源；缺失媒体时仍可导入谱面。音乐记录、BPM、普通键和长条分别转换为 Dakumi 的 offset、BPM、note 和 hold，每列对应一条等宽轨道。
 
-全局 scroll 和 jump 复制到所有按键轨道。scroll 保留原数值，jump 从 MC 的毫秒距离转换为对应 BPM 下的拍数，谱面偏好设为累计模式。音乐偏移单位仍为毫秒。ZIP 只临时挂载读取，成功或失败都会卸载；禁止资源路径引用上级目录。其他模式及多段背景音乐会提示不支持。
+全局 scroll 和 jump 复制到所有按键轨道。scroll 保留原数值，jump 保留 MC 的毫秒数值，谱面偏好设为累计模式，并设置 `motion_mode: malody`。该模式按音频时间积分 scroll，音符与当前显示位置共用包含累计 jump 的位移坐标；每条 jump 按触发时的 scroll 换算为位移，后续 scroll 不会重新缩放之前的 jump。音乐偏移单位仍为毫秒。ZIP 只临时挂载读取，成功或失败都会卸载；禁止资源路径引用上级目录。其他模式及多段背景音乐会提示不支持。
