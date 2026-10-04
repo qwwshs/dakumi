@@ -220,7 +220,7 @@ function Gevent:Nui()
     end
 end
 
-function Gevent:NuiNext() --更新信息
+function Gevent:applyFields() --更新信息
     local v = ChartService:getEvent(sidebar.incoming[1])
     if not v then return end
     self.timeOffsetV:apply(v, ChartService)
@@ -272,8 +272,14 @@ function Gevent:NuiNext() --更新信息
     end
 end
 
+function Gevent:NuiNext()
+    if ChartService:isEditingEffect() then
+        ChartService:changeEffectFields(function() self:applyFields() end)
+    else self:applyFields() end
+end
+
 function Gevent:leave()
-    local actionKey = self.historyAction or 'history.edit_event'
+    local actionKey = self.historyAction or (ChartService:isEditingEffect() and 'history.edit_effect' or 'history.edit_event')
     self.historyAction = nil
     -- directEventEditing 拖拽期间每帧 sidebar:to 会刷新本页面：
     -- 刷新时不提交（页面事务继续，离开页面时统一合并为一条记录）

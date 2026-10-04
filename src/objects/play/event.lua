@@ -6,7 +6,7 @@ function eventEdit:keypressed(key)
         return
     end
     local isEdit = input('placeEvent')
-    local isGroup = not ChartService:isEditingEventGroup() and input('placeEventGroup')
+    local isGroup = not ChartService:isEditingEventGroup() and not ChartService:isEditingEffect() and input('placeEventGroup')
     local isDelete = input('delete')
 
     if tabs and not tabs:isSingle() then

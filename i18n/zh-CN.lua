@@ -1,4 +1,15 @@
 return {
+    ['jump_mode'] = 'Jump 计算方式',
+    ['jump_mode_current'] = '当前值',
+    ['jump_mode_cumulative'] = '累计（只使用终值）',
+
+    ['effect_editor.title'] = '效果编辑',
+    ['effect_editor.enter'] = '编辑效果',
+    ['effect_editor.exit'] = '退出编辑',
+    ['history.add_effect'] = '添加效果',
+    ['history.delete_effect'] = '删除效果',
+    ['history.edit_effect'] = '修改效果',
+
     ['time_offset'] = '偏移时值（ms）',
     ['time_offset_invalid'] = '偏移时值须为正数；留空取消偏移',
     ['time_offset_overlap'] = '偏移后与事件组范围重叠',

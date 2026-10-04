@@ -117,8 +117,8 @@ end
 -- @treturn table 轨道编号数组（已排序）
 function fTrack:track_get_all_track()
     local temp_track = {}
-    for i = 1, ChartService:getEventCount() do
-        temp_track[ChartService:getEvent(i):getTrack()] = 1
+    for i = 1, ChartService:getChartEventCount() do
+        temp_track[ChartService:getChartEvent(i):getTrack()] = 1
     end
     for i = 1, ChartService:getNoteCount() do
         temp_track[ChartService:getNote(i):getTrack()] = 1

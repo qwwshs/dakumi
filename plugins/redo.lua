@@ -104,6 +104,23 @@ local function getBeatRange(operation)
             for _, item in ipairs(change[kind] or {}) do include(item) end
         end
     end
+    -- effect 使用独立字段快照，只计入此次增加、删除或修改的条目。
+    local effectsBefore,effectsAfter={},{}
+    for _, entry in ipairs(operation.fields_before or {}) do
+        if entry.kind=='effect' then effectsBefore=entry.value or {} end
+    end
+    for _, entry in ipairs(operation.fields_after or {}) do
+        if entry.kind=='effect' then effectsAfter=entry.value or {} end
+    end
+    local function changedEffects(list,other)
+        for _, item in ipairs(list) do
+            local same=false
+            for _, candidate in ipairs(other) do if table.eq(item,candidate) then same=true; break end end
+            if not same then include(item) end
+        end
+    end
+    changedEffects(effectsBefore,effectsAfter)
+    changedEffects(effectsAfter,effectsBefore)
     local before, after = operation.groups_before or {}, operation.groups_after or {}
     local names = {}
     for name in pairs(before) do names[name] = true end

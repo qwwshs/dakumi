@@ -342,7 +342,7 @@ function demoInEdit:drawEditContent(pos, istrack)
 
     local y = 0
     local y2 = 0
-    for i = index_start, ChartService:getNoteCount() do
+    for i = index_start, (ChartService:isEditingEffect() and 0 or ChartService:getNoteCount()) do
         local n = ChartService:getNote(i)
         if n:getTrack() == istrack then
             local y = CoordinateService:toY(n:getBeatValue())
@@ -416,7 +416,7 @@ function demoInEdit:drawEditContent(pos, istrack)
 
     for i = index_start_event, ChartService:getEventCount() do
         local e = ChartService:getEvent(i)
-        if e:getTrack() == istrack then
+        if e:getTrack() == istrack and (trackleft[e:getType()] or e:getType()=='event_group') then
             love.graphics.setColor(1, 1, 1)
             local y = CoordinateService:toY(e:getBeatValue())
             local y2 = CoordinateService:toY(e:getBeat2Value())

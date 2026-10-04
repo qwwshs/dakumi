@@ -83,7 +83,9 @@ function alt:keypressed(key)
             for i = 0, steps do
                 local sampleBeat = math.min(baseEnd, baseStart + i / (denom.denom * 2))
                 local x, w = fEvent:get(isevent:getTrack(), TimeOffset.shiftBeat(sampleBeat, offset))
-                temp_event_int[i] = temp_event:getType() == 'w' and w or x
+                temp_event_int[i] = ChartService:isEditingEffect() and
+                    ChartService:getEffectInitialValue(isevent:getTrack(),isevent:getType(),TimeOffset.shiftBeat(sampleBeat,offset))
+                    or (temp_event:getType() == 'w' and w or x)
             end
 
             ChartService:push()

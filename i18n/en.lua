@@ -1,4 +1,15 @@
 return {
+    ['jump_mode'] = 'Jump calculation',
+    ['jump_mode_current'] = 'Current value',
+    ['jump_mode_cumulative'] = 'Cumulative (to only)',
+
+    ['effect_editor.title'] = 'Effect editor',
+    ['effect_editor.enter'] = 'Edit effects',
+    ['effect_editor.exit'] = 'Exit editing',
+    ['history.add_effect'] = 'Add effect',
+    ['history.delete_effect'] = 'Delete effect',
+    ['history.edit_effect'] = 'Edit effect',
+
     ['time_offset'] = 'Time offset (ms)',
     ['time_offset_invalid'] = 'Enter a positive number; leave blank to disable',
     ['time_offset_overlap'] = 'Offset overlaps an event group',

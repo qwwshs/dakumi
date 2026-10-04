@@ -582,6 +582,7 @@ end
 -- @tparam number min_y_beat 最小 beat 值
 -- @tparam number max_y_beat 最大 beat 值
 local function selectInNoteTrack(min_y_beat, max_y_beat)
+    if ChartService:isEditingEffect() then return end
     for i = 1, ChartService:getNoteCount() do
         local n = ChartService:getNote(i)
         local isbeat = n:getBeatValue()
@@ -604,8 +605,11 @@ end
 local function selectInEventTrack(x, start_x, min_y_beat, max_y_beat)
     for i = 1, ChartService:getEventCount() do
         local e = ChartService:getEvent(i)
-        local event_x_min, event_x_max = trackSequence:getRange(e:getType())
-        if math.intersect(x, start_x, event_x_min, event_x_max) then
+        local event_x_min,event_x_max
+        if trackSequence[e:getType()] or e:getType()=='event_group' then
+            event_x_min,event_x_max=trackSequence:getRange(e:getType())
+        end
+        if event_x_min and math.intersect(x, start_x, event_x_min, event_x_max) then
             local isbeat = e:getBeatValue()
             local isbeat2 = e:getBeat2Value()
             if math.intersect(min_y_beat, max_y_beat, isbeat, isbeat2) and track.track == e:getTrack() then
@@ -681,7 +685,7 @@ function ctrl:mousereleased(x, y)
     local edit_start = play.layout.edit.x
     local edit_end = play.layout.edit.x + play.layout.edit.interval * 5
     local note_track_end = play.layout.edit.x + play.layout.edit.interval
-    local event_track_start = play.layout.edit.x + play.layout.edit.interval
+    local event_track_start = play.layout.edit.x + (ChartService:isEditingEffect() and 0 or play.layout.edit.interval)
 
     if tabs and not tabs:isSingle() then
         -- 多标签页：跨标签页框选，demo 区域不可交互
@@ -696,7 +700,7 @@ function ctrl:mousereleased(x, y)
 
     if not math.intersect(x, clipboard.mouse_start_pos.x, edit_start, edit_end) then
         -- 在 play 区域框选
-        selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
+        if not ChartService:isEditingEffect() then selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat) end
         return
     end
 
@@ -764,7 +768,7 @@ local function handleDelete()
     end
 
     -- 删除选中的 event（仅在非 play 模式或全部删除时）
-    if clipboard.tab.pos ~= 'play' or all then
+    if ChartService:isEditingEffect() or clipboard.tab.pos ~= 'play' or all then
         for _, event in ipairs(clipboard.tab.event) do
             ChartService:delete(event)
         end
@@ -787,7 +791,7 @@ local function handlePaste()
     end
 
     sidebar:to("nil")
-    local includeEvents = clipboard.tab.pos ~= 'play' or all
+    local includeEvents = ChartService:isEditingEffect() or clipboard.tab.pos ~= 'play' or all
     if includeEvents then
         local ignored = {}
         if clipboard.tab.type ~= 'copy' then

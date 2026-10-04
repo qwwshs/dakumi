@@ -5,35 +5,20 @@ local CoordinateService = require("src.services.coordinateService")
 local ThemeService = require("src.services.themeService")
 local editState = require("src.utils.editState") -- 插件接管交互的状态（核心持有）
 play.now_all_track_pos = {} --现在所有轨道的属性
-play.effect = {
-    note_alpha = 100,
-    track_alpha = 100,
-    track_line_alpha = 100,
-    note_rotate = 0,
-} --影响效果
-local effect_ed = {
-    note_alpha = false,
-    track_alpha = false,
-    track_line_alpha = false,
-    note_rotate = false,
-} --影响效果已经计算
+local EffectService = require('src.services.effectService')
+play.effect = {} -- 按轨道编号保存当前效果
 play.layout = require 'config.layouts.play'
 play.colors = require 'config.colors.play'
 function play:get_all_track_pos()
     return play.now_all_track_pos
 end
 
-function play:get_effect()
-    return play.effect
+function play:get_effect(trackId)
+    return self.effect[trackId] or EffectService:defaults()
 end
 
 function play:get_init_effect()
-    return {
-        note_alpha = 100,
-        track_alpha = 100,
-        track_line_alpha = 100,
-        note_rotate = 0,
-    } --影响效果
+    return EffectService:defaults()
 end
 
 function play:load()
@@ -58,30 +43,9 @@ end
 function play:update(dt)
 
     self('update', dt)
-    effect_ed = {
-        note_alpha = false,
-        track_alpha = false,
-        track_line_alpha = false,
-        note_rotate = false,
-    }
-    for i = ChartService:getEffectCount(), 1, -1 do              --倒着减小计算量
-        if not table.find(effect_ed, false) then --计算完成
-            break
-        end
-        local iseffect = ChartService:getEffect(i)
-        local beat1 = iseffect.beat
-        local beat2 = iseffect.beat2
-        if iseffect then
-            if ((beat:get(beat) <= AudioService:getCurrentBeat() and beat:get(beat2) > AudioService:getCurrentBeat()) or (beat:get(beat2) <= AudioService:getCurrentBeat())) and not effect_ed[iseffect.type] then
-                play.effect[iseffect.type] = iseffect.from +
-                    (iseffect.to - iseffect.from) * self:getTrans(iseffect, (AudioService:getCurrentBeat() - beat1) / (beat2 - beat1))
-                effect_ed[iseffect.type] = true
-            end
-        end
-    end
-
     play.now_all_track_pos = {}
     local all_track = fTrack:track_get_all_track()
+    play.effect = EffectService:calculate(all_track, AudioService:getCurrentBeat())
     for i = 1, #all_track do
         local x, w = fEvent:get(all_track[i], AudioService:getCurrentBeat())
         local track_x, track_w = fTrack:to_play_track(x, w)
@@ -133,6 +97,7 @@ function play:draw()
     local str = 'note: ' .. ChartService:getNoteCount() .. '  event: ' .. ChartService:getEventCount()
     love.graphics.printf(str, self.layout.demo.x, settings.judge_line_y + 60, self.layout.demo.w, "center")
 
+    if ChartService:isEditingEffect() then return end
     --event渲染 于demo侧
     for _, eventType in pairs(event_property_type) do
         love.graphics.setColor(self.colors.eventInDemo[eventType])

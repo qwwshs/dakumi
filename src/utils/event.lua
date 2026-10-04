@@ -231,8 +231,8 @@ end
 -- @treturn table {值, beat, type}
 local function getValueFromChart(istrack, istype, isbeat)
     local result = {0, beat = 0, type = istype}
-    for i = ChartService:getEventCount(), 1, -1 do
-        local isevent = ChartService:getEvent(i)
+    for i = ChartService:getChartEventCount(), 1, -1 do
+        local isevent = ChartService:getChartEvent(i)
         if isevent:getTrack() == istrack and isevent:getType() == istype then
             local beat1 = isevent:getBeatValue()
             local beat2 = isevent:getBeat2Value() or beat1
@@ -484,7 +484,7 @@ end
 -- @tparam number|nil trackId 指定轨道（默认 track.track）
 -- @treturn boolean|nil 是否放置成功
 function event:place(eventType, pos, trackId)
-    if not table.find(event_type, eventType) then
+    if not table.find(event_type, eventType) and not (ChartService:isEditingEffect() and ChartService:isEffectType(eventType)) then
         log('event type is note')
         return
     end
@@ -520,7 +520,7 @@ function event:place(eventType, pos, trackId)
         event.hold_type = 1
 
         -- 起点位于已有事件组内部时立即拒绝。
-        for i = 1, ChartService:getTrackEventCount(event.local_event:getTrack(), 'event_group') do
+        for i = 1, (ChartService:isEditingEffect() and 0 or ChartService:getTrackEventCount(event.local_event:getTrack(), 'event_group')) do
             local existing = ChartService:getTrackEvent(event.local_event:getTrack(), 'event_group', i)
             if existing:getBeatValue() <= event.local_event:getBeatValue() and
                 event.local_event:getBeatValue() < existing:getBeat2Value() then
@@ -530,6 +530,11 @@ function event:place(eventType, pos, trackId)
             end
         end
 
+        if ChartService:isEditingEffect() then
+            local initial=ChartService:getEffectInitialValue(event.local_event:getTrack(),eventType,event.local_event:getBeatValue())
+            event.local_event:setFrom(initial)
+            event.local_event:setTo(initial)
+        end
         -- 将初始值设为当前位置的事件值
         local x, w = event:get(event.local_event:getTrack(), event.local_event:getBeatValue(), true)
         if eventType == "x" then

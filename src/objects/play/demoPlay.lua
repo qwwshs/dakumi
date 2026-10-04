@@ -1,8 +1,8 @@
 local AudioService = require('src.services.audioService')
 --轨道渲染
 local ChartService = require("src.services.chartService")
-local CoordinateService = require("src.services.coordinateService")
 local NoteSkin = require("src.services.noteSkin")
+local EffectService = require('src.services.effectService')
 local ThemeService = require("src.services.themeService")
 local demoPlay = object:new("demoPlay")
 local layout = require 'config.layouts.play'.demo
@@ -73,7 +73,6 @@ function demoPlay:draw()
     local ey = self.ey
 
     local judgePos = settings.judge_line_y * sh
-    local effect = play:get_init_effect()
     local all_track_pos = play:get_all_track_pos()
 
     local all_track = fTrack:track_get_all_track()
@@ -87,9 +86,10 @@ function demoPlay:draw()
     love.graphics.translate(ex, ey)
 
 
-    love.graphics.setColor(0, 0, 0, 0.5 * effect.track_alpha / 100) --底板
 
     for i = 1, #all_track do                                      --轨道底板绘制
+        local effect = play:get_effect(all_track[i])
+        love.graphics.setColor(0, 0, 0, 0.5 * effect.track_alpha / 100)
         local x, w = all_track_pos[all_track[i]].track_x, all_track_pos[all_track[i]].track_w
         x = x * sw
         w = w * sw
@@ -99,6 +99,7 @@ function demoPlay:draw()
     end
 
     for i = 1, #all_track do --轨道侧线绘制
+        local effect = play:get_effect(all_track[i])
         local track_w0thenShow = ChartService:getTrackField(all_track[i], 'w0thenShow')
         local track_name = ChartService:getTrackField(all_track[i], 'name')
 
@@ -181,7 +182,6 @@ function demoPlay:draw()
     end
 
     local note_h = settings.note_height * sh                 --25 * denom.scale
-    love.graphics.setColor(1, 1, 1, effect.note_alpha / 100)
     local noteBeat = 0
     local noteBeat2 = 0
 
@@ -193,16 +193,21 @@ function demoPlay:draw()
 
     -- 按谱面列表顺序收集可见音符；每个音符的偏移仅影响自身的可见性。
     local note_layers = {}
+    local motion = EffectService:createMotion(all_track)
+    local nowBeat = AudioService:getCurrentBeat()
+    local function noteY(trackId, target)
+        return settings.judge_line_y - motion:distance(trackId,nowBeat,target)*denom.scale*100
+    end
     for i = 1, ChartService:getNoteCount() do
         isnote = ChartService:getNote(i)
         noteBeat = isnote:getBeatValue()
         local beat2 = isnote:getBeat2()
         noteBeat2 = beat2 and isnote:getBeat2Value() or noteBeat
         local trackId = isnote:getTrack()
-        y = CoordinateService:toY(noteBeat)
+        y = noteY(trackId,noteBeat)
         y2 = y
         if isnote:isHold() then
-            y2 = CoordinateService:toY(noteBeat2)
+            y2 = noteY(trackId,noteBeat2)
         end
         y = y * sh
         y2 = y2 * sh
@@ -225,6 +230,8 @@ function demoPlay:draw()
                 y = layer[j].y
                 y2 = layer[j].y2
                 local trackId = isnote:getTrack()
+                local effect = play:get_effect(trackId)
+                love.graphics.setColor(1, 1, 1, effect.note_alpha / 100)
                 x, w = all_track_pos[trackId].track_x, all_track_pos[trackId].track_w
                 x = x * sw
                 w = w * sw
@@ -236,7 +243,7 @@ function demoPlay:draw()
                     w = spacing * w / math.abs(w)
                 end
                 x = x - w / 2
-                if y ~= y2 and y > judgePos then y = judgePos end     --hold头保持在线上
+                if isnote:isHold() and isnote:getBeatValue() <= nowBeat and isnote:getBeat2Value() > nowBeat then y = judgePos end     --hold头保持在线上
 
                 if not isnote:isHold() then
                     NoteSkin.draw(isnote:getType(), self.ui[isnote:getType()], x, y - note_h,

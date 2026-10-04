@@ -2,7 +2,7 @@ local noteEdit = object:new('noteEdit') --避免重名
 local ChartService = require('src.services.chartService')
 noteEdit.layout = require 'config.layouts.play'
 function noteEdit:keypressed(key)
-    if ChartService:isEditingEventGroup() then return end
+    if ChartService:isEditingEventGroup() or ChartService:isEditingEffect() then return end
     if mouse.y < self.layout.y then
         return
     end
@@ -40,7 +40,7 @@ function noteEdit:keypressed(key)
 end
 
 function noteEdit:mousepressed(x,y,button)
-    if ChartService:isEditingEventGroup() then return end
+    if ChartService:isEditingEventGroup() or ChartService:isEditingEffect() then return end
     if tabs and not tabs:isSingle() then
         local ti, lane = tabs:getLane(mouse.x, mouse.y)
         if lane ~= 'note' then return end

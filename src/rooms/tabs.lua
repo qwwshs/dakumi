@@ -71,8 +71,8 @@ local rulerToggleBounds = {}
 local function newTab(trackId)
     local tab = {
         track = trackId or 0,
-        edit = { note = true, x = true, w = true, lpos = true, rpos = true },  -- 各轨道类型可编辑
-        copy = { note = true, x = true, w = true, lpos = true, rpos = true },  -- 各轨道类型可复制
+        edit = {scroll=true,jump=true,track_alpha=true,track_line_alpha=true,rotate=true, note = true, x = true, w = true, lpos = true, rpos = true },  -- 各轨道类型可编辑
+        copy = {scroll=true,jump=true,track_alpha=true,track_line_alpha=true,rotate=true, note = true, x = true, w = true, lpos = true, rpos = true },  -- 各轨道类型可复制
         renaming = false,
         renameBuf = { value = '' },
     }

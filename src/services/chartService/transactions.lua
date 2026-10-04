@@ -18,6 +18,7 @@ return function(ChartService, state, internal, dependencies)
         if kind == 'track' then
             return state.chart.track and state.chart.track[tostring(key)] and table.copy(state.chart.track[tostring(key)]) or nil
         end
+        if kind == 'effect' then return table.copy(state.chart.effect or {}) end
         if kind == 'bpm_list' then return state.chart.bpm_list and table.copy(state.chart.bpm_list) or nil end
     end
 

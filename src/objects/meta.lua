@@ -82,6 +82,7 @@ meta_chart = {
         preference = {      -- 偏好设置
             x_offset = 0,       -- x 偏移
             event_scale = 100,  -- event 缩放
+            jump_mode = 'current', -- jump：current 当前值，cumulative 累计终值
         },
         track = {},         -- 轨道定义表
         version = 1         -- 谱面格式版本

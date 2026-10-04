@@ -104,6 +104,21 @@ return function()
     assert(seenDemo('note', normal), 'forward playback lost a demo note')
     drawDemo(4.4)
     assert(seenDemo('note', normal), 'backward seek lost a demo note')
+    -- 实际 demo 绘制也必须使用积分和当前 jump，而不是仅增加配置字段。
+    Chart:setChart({bpm_list={{bpm=120,beat={0,0,1},linear_ramp=0}}, note={}, event={},
+        effect={{track=1,type='scroll',beat={0,0,1},beat2={0,0,1},from=2,to=2},
+            {track=1,type='jump',beat={9,9,10},beat2={9,9,10},from=0.1,to=0.1}}})
+    Chart:load()
+    Chart:addNote(Note.new({beat={10,0,1}}))
+    drawDemo(4.9)
+    local expectedY=(settings.judge_line_y-0.4*denom.scale*100)*demoView.sh
+        - settings.note_height*demoView.sh
+    local found=false
+    for _, item in ipairs(drawn) do
+        if item.kind=='note' and math.abs(item.y-expectedY)<0.000001 then found=true end
+    end
+    assert(found, 'demo ignored scroll integration or current jump')
+    print('PASS: actual demo note position uses scroll and jump')
     play.get_all_track_pos = savedPositions
     Skin.draw = original
     print('PASS: demo visibility is independent of other notes offsets and array order')

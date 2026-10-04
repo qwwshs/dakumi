@@ -175,6 +175,94 @@ function love.update(dt)
         assert(ChartService:getNote(1):getTimeOffset() == 0)
         require('tests.editor_input_love.offset_render')()
         print('PASS: progress drag, edit wheel, context menu and real Nuklear note/event time-offset fields')
+    elseif frame == 26 then
+        local mode=require('src.objects.editTool.effectMode')
+        local Event=require('src.models.Event')
+        ChartService:add(Event.new({type='x',beat={0,0,1},beat2={20,0,1},track=1,from=50,to=50}))
+        mode:toggle()
+        assert(ChartService:isEditingEffect())
+        assert(table.concat(trackSequence,',')=='scroll,jump,track_alpha,track_line_alpha,rotate')
+        assert(tabs.layout.lane[1]=='scroll' and tabs.layout.lane[5]=='rotate')
+        local Coord=require('src.services.coordinateService')
+        fEvent:place('scroll',Coord:toY(10),1)
+        fEvent:place('scroll',Coord:toY(12),1)
+        assert(ChartService:getEffectCount()==1 and ChartService:getChartEventCount()==1)
+        assert(sidebar.displayed_content=='event')
+        sidebar:getGroup('event').fromv.value='2'
+        sidebar:getGroup('event').tov.value='3'
+    elseif frame == 27 then
+        local effect=ChartService:getEffect(1)
+        assert(effect.type=='scroll' and effect.track==1 and effect.from==2 and effect.to==3)
+        sidebar:getGroup('event').timeOffsetV.value='125'
+    elseif frame == 28 then
+        assert(ChartService:getEffect(1).time_offset==125)
+        sidebar:to('nil')
+        local before=ChartService:getEffect(1)
+        redo:undo()
+        assert(ChartService:getEffect(1).time_offset==nil and ChartService:getEffect(1).from==1)
+        redo:redoOne()
+        assert(table.eq(ChartService:getEffect(1),before))
+        local cb=require('src.utils.clipboard')
+        cb.tab=table.copy(cb.meta)
+        cb.tab.type,cb.tab.pos='copy','edit'
+        ctrl:copy_add(ChartService:getEvent(1),'event',1,1)
+        point(play.layout.edit.x+5,require('src.services.coordinateService'):toY(14))
+        local oldInput=input
+        input=function(name) return name=='paste' end
+        iskeyboard.ctrl=true
+        ctrl:keypressed('v')
+        input=oldInput; iskeyboard.ctrl=false
+        assert(ChartService:getEffectCount()==2, 'effect paste did not write to effect')
+        assert(ChartService:getChartEventCount()==1, 'effect paste changed ordinary events')
+        cb.tab=table.copy(cb.meta)
+        cb.tab.pos='edit'
+        ctrl:copy_add(ChartService:getEvent(2),'event',1,1)
+        input=function(name) return name=='deleteSelect' end
+        iskeyboard.ctrl=true
+        ctrl:keypressed('d')
+        input=oldInput; iskeyboard.ctrl=false
+        assert(ChartService:getEffectCount()==1, 'effect bulk delete failed')
+        tabs:addTab()
+        assert(tabs.list[2].edit.scroll and tabs:getLane(tabs:windowX(2)+1,tabs.layout.region.y+20))
+        tabs:closeTab(2)
+        require('src.objects.editTool.effectMode'):toggle()
+        assert(not ChartService:isEditingEffect() and trackSequence[1]=='note' and trackSequence[5]=='rpos')
+        assert(ChartService:getEventCount()==1 and ChartService:getEvent(1):getType()=='x')
+        assert(ChartService:getEffectCount()==1)
+        print('PASS: effect editor lanes, real placement/sidebar fields, time offset, undo/redo and exit isolation')
+    elseif frame == 29 or frame == 32 then
+        local bounds=require('src.objects.editTool.effectMode').buttonBounds
+        assert(bounds and bounds.w>0 and bounds.h>0, 'effect toolbar button has no bounds')
+        point(bounds.x+bounds.w/2,bounds.y+bounds.h/2)
+        love.mousepressed(mouse.x,mouse.y,1,false,1)
+    elseif frame == 30 or frame == 33 then
+        love.mousereleased(mouse.x,mouse.y,1,false,1)
+    elseif frame == 31 then
+        assert(ChartService:isEditingEffect(), 'effect toolbar button did not enter editing')
+    elseif frame == 34 then
+        assert(not ChartService:isEditingEffect(), 'effect toolbar button did not exit editing')
+        print('PASS: real Nuklear effect toolbar enter/exit buttons, copy/paste and bulk delete')
+        sidebar:to('preference')
+        local pref=sidebar:getGroup('preference')
+        assert(pref.jumpMode.value==1)
+        pref.jumpMode.value=2
+        results.oldTip=ui.tip
+        ui.tip=function(self,text,...)
+            if text==i18n:get('save') then return true end
+            return results.oldTip(self,text,...)
+        end
+    elseif frame == 35 then
+        ui.tip=results.oldTip
+        assert(ChartService:getPreferenceField('jump_mode')=='cumulative')
+        redo:undo()
+        assert(ChartService:getPreferenceField('jump_mode')=='current')
+        redo:redoOne()
+        assert(ChartService:getPreferenceField('jump_mode')=='cumulative')
+        local json=dkjson.decode(ChartService:encodeJson())
+        assert(json.preference.jump_mode=='cumulative')
+        sidebar:to('preference')
+        assert(sidebar:getGroup('preference').jumpMode.value==2)
+        print('PASS: real preference panel jump mode save, serialization, undo/redo and reopen')
         love.event.quit(0)
     end
 end

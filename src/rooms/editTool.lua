@@ -186,5 +186,6 @@ noteFake = require 'src.objects.editTool.noteFake'
 holdNoteHead = require 'src.objects.editTool.holdNoteHead'
 holdWipeHead = require 'src.objects.editTool.holdWipeHead'
 editTool:addObject(require 'src.objects.editTool.noteOptions')
+editTool:addObject(require 'src.objects.editTool.effectMode')
 
 return editTool

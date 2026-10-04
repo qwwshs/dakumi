@@ -140,6 +140,9 @@ return function(ChartService, state, internal, dependencies)
                 else
                     state.chart.track[tostring(key)] = nil
                 end
+            elseif kind == 'effect' then
+                state.chart.effect=detach(value) or {}
+                state.effectObjects=nil
             elseif kind == 'bpm_list' then
                 state.chart.bpm_list = detach(value)
                 if state.chart.bpm_list then self:sortBpmList() end

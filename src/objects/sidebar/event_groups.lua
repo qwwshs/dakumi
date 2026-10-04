@@ -41,7 +41,7 @@ function Ggroups:selectGroup(name)
     clipboard.mouse_start_pos.down = false
     if play then
         self.previousEffect = play.effect
-        play.effect = play:get_init_effect()
+        play.effect = {}
         play.now_all_track_pos = {}
     end
     resetPreview()
@@ -67,7 +67,7 @@ function Ggroups:exitGroup(restoreTrack)
     end
     self.previousTrack = nil
     if play then
-        play.effect = self.previousEffect or play:get_init_effect()
+        play.effect = self.previousEffect or {}
         play.now_all_track_pos = {}
     end
     resetPreview()
