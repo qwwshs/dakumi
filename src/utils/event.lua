@@ -1,3 +1,4 @@
+local CustomTransition = require('src.utils.customTransition')
 local TimeOffset = require('src.utils.timeOffset')
 local safeInput = require("src.utils.safeInput")
 --[[
@@ -65,6 +66,8 @@ function event:getTrans(isevent, t)
     t = math.min(math.max(t, 0), 1)
     if isevent:getTransType() == 'bezier' then
         return bezier(0, 1, 0, 1, isevent:getTransData(), t)
+    elseif isevent:getTransType() == 'custom' then
+        return (CustomTransition.evaluate(isevent:getCustomTrans(),t))
     elseif isevent:getTransType() == 'easings' then
         local ease = easings[isevent:getEasings()]
         return ease and ease(t) or t
@@ -76,6 +79,7 @@ end
 local function innerTransition(inner, progress)
     progress = math.min(math.max(progress, 0), 1)
     local trans = inner.trans or {}
+    if trans.type == 'custom' then return (CustomTransition.evaluate(trans.custom,progress)) end
     if trans.type == 'bezier' and type(trans.trans) == 'table' then
         return bezier(0, 1, 0, 1, trans.trans, progress) or progress
     end

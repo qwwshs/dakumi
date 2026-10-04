@@ -18,6 +18,7 @@ return function(ChartService, state, internal, dependencies)
         end
         state.chart = table.copy(data or {})
         table.fill(state.chart, meta_chart.__index)
+        if type(state.chart.custom_trans)~='table' then state.chart.custom_trans={} end
         if type(state.chart.event_groups) ~= 'table' then state.chart.event_groups = {} end
         state.eventGroupsRevision = state.eventGroupsRevision + 1
         state.extra_chart = { track = {} }
@@ -151,6 +152,8 @@ return function(ChartService, state, internal, dependencies)
             internal.addNoteToIndex(n)
         end
         self:resortTimePositions()
+        -- 纯表转为模型后重新注册，否则载入的事件 setter 不会进入撤销栈。
+        internal.rebuildRegistry()
         eventBus:emit('chart:changed', {kind = 'load'})
         return true
     end

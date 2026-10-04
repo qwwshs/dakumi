@@ -35,6 +35,7 @@
     bpm_list = {{beat = {0, 0, 1}, bpm = 120, linear_ramp = 0}},
     note = {},                           -- note / wipe / hold
     event = {},                          -- x / w / lpos / rpos / event_group
+    custom_trans = {},                   -- 名称 -> Lua 函数体字符串
     event_groups = {},                   -- 名称 -> {name, event = {...}}
     track = {},                          -- 轨道定义，键为字符串编号，如 '1'
     effect = {},                         -- 演示效果
@@ -47,7 +48,7 @@
 
 ```lua
 trans = {
-    type = 'bezier',             -- 或 'easings'
+    type = 'bezier',             -- 或 'easings' / 'custom'
     trans = {0.25, 0.1, 0.25, 1}, -- 两个内部控制点的 x、y；端点固定为 (0,0)、(1,1)
     easings = 1,                  -- 缓动函数索引，使用 easings 时生效
 }
@@ -98,6 +99,7 @@ event = {
 | `transactions.lua` | 事务、提交及失败回滚 |
 | `lifecycle.lua` | 替换、迁移、加载、编码与保存 |
 | `event_groups.lua` | 组定义、独立编辑和范围检查 |
+| `custom_trans.lua` | 自定义过渡定义读写、验证与字段事务 |
 | `entities.lua` | 音符与事件增删、排序 |
 | `fields.lua` | 信息、偏好、轨道与 BPM 字段 |
 | `timing.lua` | BPM 与拍 / 秒换算 |
@@ -245,3 +247,17 @@ ThemeService 读取 `users/ui/theme.yml`，分别应用 dark / light 配色、�
 Note（note/wipe/hold）、Event（含 event_group 实例）支持可选正数字段 `time_offset`，单位毫秒。未设置时省略，读取返回 0；setter 只接受有限正数或用于清除的 nil。`getBeat/getBeat2` 是基础节拍表，`getBeatValue/getBeat2Value` 是偏移后的实际节拍数。不要将实际节拍写回基础字段而保留同一偏移，否则会重复移动。
 
 `src/utils/timeOffset.lua` 接收 ChartService 注入的时间接口，在秒数上相加再换回节拍；模型仅依赖该工具。偏移与 BPM 变化需重排实际时间索引；事件组内部快照和归一化也包含偏移。用户操作与完整接口见[偏移时值](readme/time_offset.md)，回归入口为 `tests/time_offset.lua` 及 `tests/editor_input_love`。
+
+
+### 自定义 Lua 过渡
+
+`custom_trans` 是谱面级 `{name = source}` 字典；对象引用采用 `trans={type='custom',custom=name}`。`src/utils/customTransition.lua` 为叶子执行器，仅依赖 Lua/LuaJIT 原生接口；ChartService 在装配时注入脚本读取函数，工具不反向 require 服务。
+
+- `ChartService:getCustomTrans(name)` / `getCustomTransNames()`：读取定义，事件组编辑时读取主谱面。
+- `putCustomTrans(name, source)` / `deleteCustomTrans(name)`：验证并通过事务写入字段，触发 `chart:mutated` 和提交事件，支持撤销重做。
+- `customTransition.evaluate(name,t)`：输入夹到 0–1，返回有限数值；失败时返回 t 和错误原因。
+- `customTransition.validate(source)`：编译并在多个 t 下检查；保存不会执行文件、模块或系统操作。
+
+函数体在只读环境中运行，仅提供数学方法和少量基础函数。用户函数关闭 JIT 后，通过调试计数钩子限制指令并检查新增内存，退出时还原原钩子和字符串元表。脚本按名称与内容缓存，出错后停止执行；编辑脚本内容后重新编译。原生 `bezier` / `easings` 和编辑器其他模块继续使用原有 JIT。
+
+普通事件、组内事件与 effect 通过同一执行器插值；effect 积分缓存监听谱面变化，因此修改脚本也会重建位置计算。回归见 `tests/custom_trans.lua`、`tests/direct_event_editing.lua` 和 `tests/editor_input_love`。用户用法见[自定义过渡](readme/custom_trans.md)。

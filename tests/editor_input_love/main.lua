@@ -113,6 +113,7 @@ function love.update(dt)
         assert(results.tabsAfter > results.tabsBefore, 'tabbed edit wheel was blocked')
         assert(results.sidebarNoSeek, 'sidebar wheel leaked into chart time')
         tabs:closeTab(2)
+        assert(ChartService:putCustomTrans('context curve', 'return t*t'))
         local Event = require('src.models.Event')
         ChartService:add(Event.new({type='x', track=1, beat={10,0,1}, beat2={20,0,1},
             from=40, to=60, trans={type='easings', easings=1, trans={0,0,1,1}}}))
@@ -145,7 +146,10 @@ function love.update(dt)
         love.mousepressed(mouse.x, mouse.y, 1, false, 1)
     elseif frame == 18 then
         love.mousereleased(mouse.x, mouse.y, 1, false, 1)
-        assert(ChartService:getEvent(1):getTransType() == 'bezier', 'context menu item did not respond')
+        local event = ChartService:getEvent(1)
+        assert(event:getTransType() == 'custom' and event:getCustomTrans() == 'context curve',
+            'context menu did not switch to the custom transition')
+        assert(math.abs(fEvent:getTrans(event, 0.5) - 0.25) < 0.00001)
     elseif frame == 20 then
         assert(not directEventEditing._menuOpen, 'context menu remained open after choosing an item')
         point(1050, 500)
@@ -264,6 +268,43 @@ function love.update(dt)
         assert(sidebar:getGroup('preference').jumpMode.value==2)
         print('PASS: real preference panel jump mode save, serialization, undo/redo and reopen')
         require('tests.editor_input_love.import_plugins')()
+        ChartService:setChart({}); ChartService:load()
+        sidebar:to('custom transitions')
+        local page=sidebar:getGroup('custom transitions')
+        page.name.value='UI curve'
+        page.source.value='local a = t * t\nreturn a'
+    elseif frame == 36 then
+        local page=sidebar:getGroup('custom transitions')
+        assert(page.codeBounds.h==sidebar.layout.custom_trans.code_height)
+        point(page.codeBounds.x+20,page.codeBounds.y+20)
+        love.mousepressed(mouse.x,mouse.y,1,false,1)
+    elseif frame == 37 then
+        love.mousereleased(mouse.x,mouse.y,1,false,1)
+        love.keypressed('return','return',false)
+    elseif frame == 38 then
+        love.keyreleased('return','return')
+    elseif frame == 39 then
+        local page=sidebar:getGroup('custom transitions')
+        local _,lines=page.source.value:gsub('\n','')
+        assert(lines>=2,'Enter did not add a newline in the multi-line editor')
+        page.source.value='local a = t * t\nreturn a'
+        point(page.saveBounds.x+page.saveBounds.w/2,page.saveBounds.y+page.saveBounds.h/2)
+        love.mousepressed(mouse.x,mouse.y,1,false,1)
+    elseif frame == 40 then
+        love.mousereleased(mouse.x,mouse.y,1,false,1)
+    elseif frame == 41 then
+        assert(ChartService:getCustomTrans('UI curve')=='local a = t * t\nreturn a')
+        ChartService:addEvent(require('src.models.Event').new({track=1,type='x',beat={0,0,1},beat2={2,0,1},
+            from=0,to=100,trans={type='custom',custom='UI curve'}}))
+        sidebar:to('event',1)
+        assert(sidebar:getGroup('event').transType.value==3)
+    elseif frame == 42 then
+        assert(ChartService:getEvent(1):getCustomTrans()=='UI curve')
+        assert(math.abs(fEvent:getTrans(ChartService:getEvent(1),0.5)-0.25)<0.00001)
+        sidebar:to('custom transitions')
+        sidebar:getGroup('custom transitions'):select('UI curve')
+        assert(sidebar:getGroup('custom transitions').source.value=='local a = t * t\nreturn a')
+        print('PASS: real Nuklear multi-line custom transition, save button, event selection and reopen')
         love.event.quit(0)
     end
 end

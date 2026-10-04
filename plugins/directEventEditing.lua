@@ -10,7 +10,7 @@ local ctx
     功能：
     - 拖拽 event 的头/尾控制点
     - 拖拽 bezier 控制点
-    - 右键菜单切换过渡类型
+    - 右键菜单切换 bezier、easings、自定义过渡及其预设
     - 添加/删除 bezier 控制点
 ]]
 
@@ -242,8 +242,17 @@ function directEventEditing:update(dt)
                 ChartService:change('history.edit_event', function()
                     if isevent:getTransType() == 'bezier' then
                         isevent:setTransType('easings')
+                        if not isevent:getEasings() then isevent:setEasings(1) end
+                    elseif isevent:getTransType() == 'easings' then
+                        isevent:setTransType('custom')
+                        if isevent:getCustomTrans() == '' then
+                            isevent:setCustomTrans(ChartService:getCustomTransNames()[1] or '')
+                        end
                     else
                         isevent:setTransType('bezier')
+                        if not isevent:getTransData() then
+                            isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier] or {0, 0, 1, 1}))
+                        end
                     end
                 end)
             end
@@ -256,6 +265,13 @@ function directEventEditing:update(dt)
                             transIndex.bezier = transIndex.bezier + 1
                             isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
                         end
+                    elseif isevent:getTransType() == 'custom' then
+                        local names = ChartService:getCustomTransNames()
+                        local index = 0
+                        for i, name in ipairs(names) do
+                            if name == isevent:getCustomTrans() then index = i; break end
+                        end
+                        if names[index + 1] then isevent:setCustomTrans(names[index + 1]) end
                     else
                         if easings[transIndex.easings + 1] then
                             transIndex.easings = transIndex.easings + 1
@@ -273,6 +289,13 @@ function directEventEditing:update(dt)
                             transIndex.bezier = transIndex.bezier - 1
                             isevent:setTransData(table.copy(fEvent.bezier[transIndex.bezier]))
                         end
+                    elseif isevent:getTransType() == 'custom' then
+                        local names = ChartService:getCustomTransNames()
+                        local index = #names + 1
+                        for i, name in ipairs(names) do
+                            if name == isevent:getCustomTrans() then index = i; break end
+                        end
+                        if names[index - 1] then isevent:setCustomTrans(names[index - 1]) end
                     else
                         if easings[transIndex.easings - 1] then
                             transIndex.easings = transIndex.easings - 1

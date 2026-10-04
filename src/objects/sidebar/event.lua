@@ -10,6 +10,8 @@ Gevent.layout = require 'config.layouts.sidebar'.event
 Gevent.timeOffsetV = TimeOffsetField.new()
 Gevent.transv = {value = '1,1,1,1'}
 Gevent.transType = {value = 1}
+Gevent.customName={value=''}
+Gevent.customChoice={value=1}
 Gevent.fromv = {value = '0'}
 Gevent.tov = {value = '0'}
 Gevent.bezier_index = {value = 1}
@@ -58,6 +60,7 @@ function Gevent:to(event_index)
     end
     self.flipH.value = v:getFlipHorizontally() == 1
     self.flipV.value = v:getFlipVertically() == 1
+    self.customName.value=v:getCustomTrans()
     self.transv.value = ''
     if v:getTransType() == 'bezier' then
         self.transType.value = 1
@@ -66,6 +69,10 @@ function Gevent:to(event_index)
         self.transType.value = 2
         self.transv.value = tostring(v:getEasings())
         self.easings_index.value = v:getEasings()
+    end
+    if v:getTransType()=='custom' then
+        self.transType.value=3
+        self.customName.value=v:getCustomTrans()
     end
     -- 打开页面事务：页面期间的实体修改（含拖拽）全部累积，leave 时合并为一条记录
     ChartService:beginChange()
@@ -202,7 +209,7 @@ function Gevent:Nui()
     
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.trans.cols)
     Nui:label(i18n:get("trans_type"))
-    if Nui:combobox(self.transType,{'bezier','easings'}) then
+    if Nui:combobox(self.transType,{'bezier','easings',i18n:get('custom_trans.title')}) then
         if self.transType.value == 1 then
             self.transv.value = table.concat(Incoming_event:getTransData(), ",")
         elseif self.transType.value == 2 then
@@ -217,6 +224,17 @@ function Gevent:Nui()
         self:transTypeIsBezier()
     elseif self.transType.value == 2 then
         self:transTypeIsEasings()
+    elseif self.transType.value==3 then
+        local names=ChartService:getCustomTransNames()
+        local choices={i18n:get('custom_trans.none')}
+        self.customChoice.value=1
+        for i,name in ipairs(names) do
+            choices[#choices+1]=name
+            if name==self.customName.value then self.customChoice.value=i+1 end
+        end
+        Nui:label(i18n:get('custom_trans.name'))
+        if Nui:combobox(self.customChoice,choices) then self.customName.value=names[self.customChoice.value-1] or '' end
+        ui:edit('field',self.customName)
     end
 end
 
@@ -255,6 +273,9 @@ function Gevent:applyFields() --更新信息
         v:setTransType('bezier')
     elseif self.transType.value == 2 then
         v:setTransType('easings')
+    elseif self.transType.value==3 then
+        v:setTransType('custom')
+        v:setCustomTrans(self.customName.value)
     end
 
     if v:getTransType() == 'bezier' then

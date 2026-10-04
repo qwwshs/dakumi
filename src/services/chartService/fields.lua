@@ -140,6 +140,9 @@ return function(ChartService, state, internal, dependencies)
                 else
                     state.chart.track[tostring(key)] = nil
                 end
+            elseif kind == 'custom_trans' then
+                state.chart.custom_trans=state.chart.custom_trans or {}
+                state.chart.custom_trans[key]=detach(value)
             elseif kind == 'effect' then
                 state.chart.effect=detach(value) or {}
                 state.effectObjects=nil

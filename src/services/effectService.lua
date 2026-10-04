@@ -28,7 +28,12 @@ end
 local function value(entry, t)
     local e = entry.entity
     local first, last = entry.first, entry.last
-    if last <= first or t >= last then return e:getTo() end
+    if last <= first or t >= last then
+        if e:getTransType()=='custom' then
+            return e:getFrom()+(e:getTo()-e:getFrom())*transitions:getTrans(e,1)
+        end
+        return e:getTo()
+    end
     return e:getFrom() + (e:getTo()-e:getFrom())
         * transitions:getTrans(e,(t-first)/(last-first))
 end
@@ -100,7 +105,7 @@ local function compiled()
                 lane.segments[#lane.segments+1]=segment
                 total=total+integrate(function(t) return value(entry,t) end,entry.first,finish)
                 segment.tail=total
-                if stop < math.huge then total=total+(stop-finish)*entry.entity:getTo() end
+                if stop < math.huge then total=total+(stop-finish)*value(entry,entry.last) end
                 if malody then
                     local firstTime=ChartService:toTime(entry.first)
                     local finishTime=ChartService:toTime(finish)
@@ -111,7 +116,7 @@ local function compiled()
                     end,firstTime,finishTime)
                     ts.tail=timeTotal
                     if stop<math.huge then
-                        timeTotal=timeTotal+(ChartService:toTime(stop)-finishTime)*entry.entity:getTo()
+                        timeTotal=timeTotal+(ChartService:toTime(stop)-finishTime)*value(entry,entry.last)
                     end
                 end
 
@@ -155,7 +160,7 @@ function EffectService:createMotion(trackIds)
         if index==0 then return t end -- 默认 scroll=1
         local s=segments[index]
         local origin=segments[1].first
-        if t >= s.last then return origin+s.tail+(t-s.last)*s.entry.entity:getTo() end
+        if t >= s.last then return origin+s.tail+(t-s.last)*value(s.entry,s.entry.last) end
         return origin+s.prefix+integrate(function(x) return value(s.entry,x) end,s.first,t)
     end
     local function shifted(lane,t)
@@ -175,7 +180,7 @@ function EffectService:createMotion(trackIds)
             local segment=segments[i]
             local origin=segments[1].first
             if seconds>=segment.last then
-                p=origin+segment.tail+(seconds-segment.last)*segment.entry.entity:getTo()
+                p=origin+segment.tail+(seconds-segment.last)*value(segment.entry,segment.entry.last)
             else
                 p=origin+segment.prefix+integrate(function(x)
                     return value(segment.entry,ChartService:toBeat(x))

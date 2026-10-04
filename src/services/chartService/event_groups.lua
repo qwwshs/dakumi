@@ -30,10 +30,12 @@ return function(ChartService, state, internal, dependencies)
             not finiteNumber(value.from) or not finiteNumber(value.to) or
             (value.time_offset ~= nil and not TimeOffset.valid(value.time_offset)) then return false end
         local trans = value.trans
-        if type(trans) ~= 'table' or (trans.type ~= 'bezier' and trans.type ~= 'easings') then return false end
+        if type(trans) ~= 'table' or (trans.type ~= 'bezier' and trans.type ~= 'easings' and trans.type ~= 'custom') then return false end
         if trans.type == 'bezier' then
             if type(trans.trans) ~= 'table' or #trans.trans ~= 4 then return false end
             for _, point in ipairs(trans.trans) do if not finiteNumber(point) then return false end end
+        elseif trans.type=='custom' then
+            if type(trans.custom)~='string' or #trans.custom>128 then return false end
         elseif not finiteNumber(trans.easings) or trans.easings < 1 or
             trans.easings > #easings or trans.easings % 1 ~= 0 then return false end
         return true

@@ -62,8 +62,13 @@ function Import:validate(result)
     end
     if result.chart~=nil then
         if type(result.chart)~='table' then return false,'chart must be a Dakumi chart table' end
-        for _, key in ipairs({'note','event','bpm_list','effect','event_groups','preference','info','track'}) do
+        for _, key in ipairs({'note','event','bpm_list','effect','event_groups','custom_trans','preference','info','track'}) do
             if result.chart[key]~=nil and type(result.chart[key])~='table' then return false,'invalid chart.'..key end
+        end
+        for name,source in pairs(result.chart.custom_trans or {}) do
+            if type(name)~='string' or #name>128 or name=='' or type(source)~='string' or #source>16384 then
+                return false,'invalid custom transition definition'
+            end
         end
         if not validEntities(result.chart.note,'note') or not validEntities(result.chart.event,'event')
             or not validEntities(result.chart.effect,'effect') then return false,'invalid chart entity data' end

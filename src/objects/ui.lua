@@ -50,13 +50,14 @@ end
 
 function ui:edit(istype,vtable)
     local keyboard = require('src.utils.input'):getUIKeyboard()
-    if keyboard['return'] then
-        Nui:editUnfocus()
-    end
     if keyboard['ctrl'] and keyboard['a'] then
         Nui:editSetSelection(0, utf8.len(vtable.value))
     end
-    return Nui:edit(istype,vtable)
+    local state,changed=Nui:edit(istype,vtable)
+    -- 只取消当前单行控件的焦点；同窗口其他 field 不能抢走多行 box 的 Enter。
+    if keyboard['return'] and istype~='box' and
+        (state=='active' or state=='activated' or state=='commited') then Nui:editUnfocus() end
+    return state,changed
 end
 
 return ui

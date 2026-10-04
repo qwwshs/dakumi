@@ -22,6 +22,7 @@ Dakumi 是 qwwshs 使用 LÖVE 制作的 TAKUMI³ 饭制谱面编辑器。支持
 | 使用、导入、保存与恢复 | [文档首页](readme/README.md) |
 | 编辑器操作和默认快捷键 | [编辑手册](readme/edit_manual.md) |
 | 事件组的制作与放置 | [事件组](readme/event_groups.md) |
+| 用 Lua 编写变化曲线 | [自定义过渡](readme/custom_trans.md) |
 | 主题、图片与九宫格 | [主题自定义](readme/theme.md) |
 | 声纹图设置与频率尺 | [声纹图](readme/spectrogram_manual.md) |
 | 开发环境与回归检查 | [开发入门](DEVELOPMENT.md) |

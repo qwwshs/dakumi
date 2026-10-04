@@ -6,7 +6,7 @@
     所有字段通过 getter/setter 方法访问，不直接暴露内部数据。
     支持深度拷贝（copy）、深度比较（eq/__eq）、序列化（toTable）。
 
-    trans 字段是嵌套表 {trans={...}, type="bezier"|"easings", easings=number}，
+    trans 字段是嵌套表 {trans={...}, type="bezier"|"easings"|"custom", easings=number, custom=名称}，
     提供便捷方法直接访问子字段。
 ]]
 
@@ -58,6 +58,7 @@ function Event:getFlipVertically() return self._data.flip_vertically end
 -- trans 子字段便捷访问
 function Event:getTransType()   return self._data.trans.type end
 function Event:getTransData()   return self._data.trans.trans end
+function Event:getCustomTrans() return self._data.trans.custom or '' end
 function Event:getEasings()     return self._data.trans.easings end
 
 function Event:getTimeOffset() return self._data.time_offset or 0 end
@@ -86,6 +87,7 @@ end
 -- trans 子字段便捷设置
 function Event:setTransType(v)   self._data.trans.type = v end
 function Event:setTransData(v)   self._data.trans.trans = v end
+function Event:setCustomTrans(v) self._data.trans.custom = v end
 function Event:setEasings(v)     self._data.trans.easings = v end
 
 -- ========== 数值计算 ==========
@@ -180,7 +182,7 @@ end
 local recorder = require("src.utils.chartRecorder")
 local MUTATING_SETTERS = { 'setTimeOffset', 'setBeat', 'setBeat2', 'setTrack', 'setType', 'setFrom', 'setTo',
     'setTrans', 'setEventGroup', 'setFlipHorizontally', 'setFlipVertically',
-    'setTransType', 'setTransData', 'setEasings' }
+    'setTransType', 'setTransData', 'setEasings', 'setCustomTrans' }
 for i = 1, #MUTATING_SETTERS do
     local name = MUTATING_SETTERS[i]
     local original = Event[name]

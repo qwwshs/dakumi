@@ -70,6 +70,7 @@ meta_chart = {
         },
         note = {},          -- 音符列表
         event = {},         -- 事件列表
+        custom_trans = {}, -- 名称 -> Lua 过渡函数脚本（函数体接收 t）
         event_groups = {},  -- 事件组：名称 -> {name, event={...}}
         effect = {},        -- 效果列表
         offset = 0,         -- 音频偏移量（毫秒）
@@ -105,7 +106,8 @@ meta_event = {
         flip_vertically = 0,   -- 时间反向读取
         trans = {              -- 过渡参数
             trans = {0,0,1,1}, -- 贝塞尔控制点
-            type = 'bezier',   -- 过渡类型: "bezier" 或 "easings"
+            type = 'bezier',   -- 过渡类型: "bezier"、"easings" 或 "custom"
+            custom = '',      -- 自定义过渡名称
             easings = 1        -- 缓动函数索引
         },
     }

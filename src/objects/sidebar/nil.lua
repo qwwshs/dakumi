@@ -21,6 +21,7 @@ function Gnil:Nui()
     if Nui:button(i18n:get('event_group.title')) then
         sidebar:to('event groups')
     end
+    if Nui:button(i18n:get('custom_trans.title')) then sidebar:to('custom transitions') end
     -- 操作历史、均衡器、Takana 等入口由插件在此处按层号绘制。
     self('Nui')
 end

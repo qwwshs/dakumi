@@ -6,6 +6,7 @@ return {
     cols = 1,
     uiH = 50,
     links = {button = 48, gap = 8, padding = 6, margin = 12},
+    custom_trans = {code_height = 240},
     track = {
         x = 1250,
         y = 0,
