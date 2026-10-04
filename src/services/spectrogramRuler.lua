@@ -1,7 +1,7 @@
 local AudioService = require('src.services.audioService')
 --[[
     模块名: spectrogramRuler
-    描述: 判定线下方的 Nuklear 频率尺；频率缩放只在尺上接收滚轮，不改变编辑区的时间操作。
+    描述: 轨道信息下方的 Nuklear 频率尺；频率缩放只在尺上接收滚轮，不改变编辑区的时间操作。
 ]]
 local Config = require('src.services.spectrogramConfig')
 local Ruler = {}

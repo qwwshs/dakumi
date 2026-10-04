@@ -1,0 +1,54 @@
+name: 检查与回归
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装检查工具和图形运行环境
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit luarocks xvfb libopenal1 libgl1 libfreetype6 libmodplug1 libogg0 libvorbis0a libvorbisfile3 libtheora0 libsdl2-2.0-0
+          sudo luarocks install luacheck 1.2.0
+      - name: 取得项目使用的 LÖVE 11.4
+        run: |
+          mkdir -p .zcode/runtime
+          cd .zcode/runtime
+          curl --fail --location --retry 3 -o love.AppImage https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage
+          chmod +x love.AppImage
+          ./love.AppImage --appimage-extract > /dev/null
+      - name: Lua 5.1 语法与架构边界
+        run: |
+          python3 scripts/run_tests.py --syntax
+          python3 scripts/check_boundaries.py
+          luacheck src/utils/autoSaveRetention.lua src/services/spectrogramConfig.lua src/services/keyCapture.lua src/services/noteSkin.lua
+      - name: 独立回归与 LÖVE 集成测试
+        run: xvfb-run -a python3 scripts/run_tests.py --integration --love "$PWD/.zcode/runtime/squashfs-root/AppRun"
+      - name: 保留集成测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-reports
+          path: |
+            .zcode/*love.txt
+            .zcode/*love.png
+          if-no-files-found: ignore
+  windows-ui:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 取得 Windows LÖVE 11.4
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path .zcode/runtime -Force | Out-Null
+          Invoke-WebRequest -Uri https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip -OutFile .zcode/runtime/love.zip
+          Expand-Archive -LiteralPath .zcode/runtime/love.zip -DestinationPath .zcode/runtime
+      - name: 原生 Nuklear 编辑输入回归
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $PWD '.zcode/runtime/love-11.4-win64'
+          python scripts/run_tests.py --lua-library "$runtime/lua51.dll" --love "$runtime/love.exe" --ui

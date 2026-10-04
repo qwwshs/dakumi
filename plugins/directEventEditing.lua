@@ -1,9 +1,10 @@
+local ctx
 --[[
     插件名: directEventEditing
     描述: Event 直观编辑插件，提供可视化的拖拽控制点编辑 event
     作者: qwwshs
     版本: 1.0.0
-    依赖: object, input, messageBox, sidebar, chart, beat, fTrack, fEvent, mouse, transIndex, easings, Nui, i18n
+    依赖: object, input, messageBox, sidebar, chart, beat, fTrack, fEvent, mouse, transIndex, easings, ctx.ui, ctx.i18n
 
     功能：
     - 拖拽 event 的头/尾控制点
@@ -217,7 +218,7 @@ function directEventEditing:update(dt)
     local demo = play.layout.demo
     local region = tabs.layout.region
     self._menuOpen = false
-    Nui:stylePush({
+    ctx.ui:stylePush({
         ['window'] = {
             ['background'] = '#00000000',
             ['fixed background'] = '#00000000',
@@ -225,18 +226,18 @@ function directEventEditing:update(dt)
             ['padding'] = { x = 0, y = 0 },
         },
     })
-    local menu_host = Nui:windowBegin('directEventEditing', -1000, -1000, 1, 1)
-    Nui:stylePop()
+    local menu_host = ctx.ui:windowBegin('directEventEditing', -1000, -1000, 1, 1)
+    ctx.ui:stylePop()
     if menu_host then
         -- 保证壳窗口是当前激活窗口（nk_contextual_begin 的 ctx->current == ctx->active 条件）
-        Nui:windowSetFocus('directEventEditing')
-        if Nui:contextualBegin(MENU_W, MENU_H, demo.x, region.y, demo.w, region.h) then
+        ctx.ui:windowSetFocus('directEventEditing')
+        if ctx.ui:contextualBegin(MENU_W, MENU_H, demo.x, region.y, demo.w, region.h) then
             self._menuOpen = true
             -- 必须显式设置行布局：nk_contextual_item_text 依赖 row.columns/row.height 分配空间，
             -- 未设置时布局 columns=0，所有 item 宽度为 NaN 而完全不可见（菜单只剩黑色背景）
-            Nui:layoutRow('dynamic', MENU_ITEM_H, 1)
+            ctx.ui:layoutRow('dynamic', MENU_ITEM_H, 1)
             -- 切换过渡类型
-            if Nui:contextualItem(i18n:get('switch trans type')) then
+            if ctx.ui:contextualItem(ctx.i18n:get('switch trans type')) then
                 ChartService:change('history.edit_event', function()
                     if isevent:getTransType() == 'bezier' then
                         isevent:setTransType('easings')
@@ -247,7 +248,7 @@ function directEventEditing:update(dt)
             end
 
             -- 切换到下一个曲线类型
-            if Nui:contextualItem(i18n:get('switch the curve to the next type')) then
+            if ctx.ui:contextualItem(ctx.i18n:get('switch the curve to the next type')) then
                 ChartService:change('history.edit_event', function()
                     if isevent:getTransType() == 'bezier' then
                         if fEvent.bezier[transIndex.bezier + 1] then
@@ -264,7 +265,7 @@ function directEventEditing:update(dt)
             end
 
             -- 切换到上一个曲线类型
-            if Nui:contextualItem(i18n:get('switch the curve back to the previous type')) then
+            if ctx.ui:contextualItem(ctx.i18n:get('switch the curve back to the previous type')) then
                 ChartService:change('history.edit_event', function()
                     if isevent:getTransType() == 'bezier' then
                         if fEvent.bezier[transIndex.bezier - 1] then
@@ -283,7 +284,7 @@ function directEventEditing:update(dt)
             -- bezier 控制点操作
             if isevent:getTransType() == 'bezier' then
                 -- 控制点直接改 trans 数组（未经 setter），需先显式快照再入事务
-                if Nui:contextualItem(i18n:get('add control point')) then
+                if ctx.ui:contextualItem(ctx.i18n:get('add control point')) then
                     ChartService:change('history.edit_event', function()
                         ChartService:snapshotEntity(isevent)
                         local x = (mouse.x - c_x) / (c_x2 - c_x)
@@ -293,7 +294,7 @@ function directEventEditing:update(dt)
                         table.insert(td, y)
                     end)
                 end
-                if Nui:contextualItem(i18n:get('delete control point')) then
+                if ctx.ui:contextualItem(ctx.i18n:get('delete control point')) then
                     ChartService:change('history.edit_event', function()
                         ChartService:snapshotEntity(isevent)
                         local td = isevent:getTransData()
@@ -305,11 +306,11 @@ function directEventEditing:update(dt)
                 end
             end
 
-            Nui:contextualEnd()
+            ctx.ui:contextualEnd()
             sidebar:to('event', sidebar.incoming[1])
         end
     end
-    Nui:windowEnd()
+    ctx.ui:windowEnd()
 end
 
 --- 鼠标按下：检测控制点点击
@@ -359,6 +360,8 @@ directEventEditing.plugin = {
     version = '1.0.0',
     target = 'edit/play',
     layer = 130,
+    init = function(context) ctx = context end,
+    destroy = function() ctx = nil end,
     export = 'directEventEditing', -- 保留编辑器现有对象引用
 }
 

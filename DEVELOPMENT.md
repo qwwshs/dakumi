@@ -45,7 +45,19 @@
 
 ## 回归检查
 
-纯 Lua 测试在根目录使用 LuaJIT，例如：
+统一入口使用 Python 3，可自动调用独立 LuaJIT，或 Windows LÖVE 自带的 `lua51.dll`：
+
+```powershell
+python scripts/run_tests.py --syntax
+python scripts/check_boundaries.py
+python scripts/run_tests.py
+python scripts/run_tests.py --integration --love 'C:/Program Files/LOVE/lovec.exe'
+python scripts/run_tests.py --ui --love 'C:/Program Files/LOVE/lovec.exe'
+```
+
+GitHub Actions 在推送和 PR 时运行纯 Lua 回归、语法/边界/lint 检查、Linux LÖVE 音频/DSP 回归与 Windows Nuklear 编辑输入回归。配置和范围见[测试与备份](readme/测试与备份.md)。
+
+也可以在根目录直接使用 LuaJIT，例如：
 
 ```powershell
 luajit tests/layer_dependencies.lua

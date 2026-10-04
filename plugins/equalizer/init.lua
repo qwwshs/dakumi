@@ -1,3 +1,4 @@
+local ctx
 --equalizer界面
 local AudioService = require('src.services.audioService')
 local Gequalizer = group:new('equalizer')
@@ -30,17 +31,17 @@ Gequalizer.equalizerv = {
     {name = 'highcut',value = 6000,scope = {4000, 16000}, step = 1},
 }
 function Gequalizer:Nui()
-    Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
+    ctx.ui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
 
-    Nui:label(i18n:get("equalizer"))
-    if Nui:combobox(self.open, {'OFF', 'ON'}) then
+    ctx.ui:label(ctx.i18n:get("equalizer"))
+    if ctx.ui:combobox(self.open, {'OFF', 'ON'}) then
         AudioService:setEffect('equalizer', self.open.value == 2 and self.equalizer or false)
     end
 
     --效果表
     for _, param in ipairs(self.equalizerv) do
-        Nui:label(i18n:get(param.name))
-        if Nui:slider(param.scope[1], param, param.scope[2], param.step) then
+        ctx.ui:label(ctx.i18n:get(param.name))
+        if ctx.ui:slider(param.scope[1], param, param.scope[2], param.step) then
             self.equalizer[param.name] = param.value
             if self.open.value == 2 then
                 AudioService:setEffect('equalizer', self.equalizer)
@@ -57,7 +58,8 @@ return {
     description = '侧边栏均衡器',
     target = 'edit/sidebar',
 
-    init = function(ctx)
+    init = function(context)
+        ctx = context
         sidebarRoom = ctx.root:findContainer('edit/sidebar')
         homeGroup = sidebarRoom:getGroup('nil')
         navigation = object:new('equalizer navigation')
@@ -71,12 +73,13 @@ return {
         homeGroup:addObject(navigation, 20)
     end,
 
-    destroy = function(ctx)
+    destroy = function()
         if homeGroup and navigation then homeGroup:deleteObject(navigation) end
         if sidebarRoom then
             if sidebarRoom.displayed_content == 'equalizer' then sidebarRoom:to('nil') end
             sidebarRoom:deleteGroup(Gequalizer)
         end
         sidebarRoom, homeGroup, navigation = nil, nil, nil
+        ctx = nil
     end,
 }

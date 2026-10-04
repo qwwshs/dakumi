@@ -22,4 +22,9 @@ dakumi.love
 
 .zcode/
 
-.agents
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/dakumi-editor/
+.agents/skills/dakumi-editor/*
+!.agents/skills/dakumi-editor/SKILL.md

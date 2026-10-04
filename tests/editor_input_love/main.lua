@@ -21,6 +21,7 @@ io.open = function(path, mode)
 end
 nativefs.write = function() return true end
 nativefs.createDirectory = function() return true end
+nativefs.getDirectoryItemsInfo = function() return {} end
 nativefs.remove = function() error('unexpected deletion') end
 local rawRead, rawList = nativefs.read, nativefs.getDirectoryItems
 nativefs.read = function(path, ...)

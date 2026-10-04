@@ -1,3 +1,4 @@
+local ctx
 local AudioService = require('src.services.audioService')
 local ChartService = require("src.services.chartService")
 
@@ -249,10 +250,10 @@ ravageChartFileName: ravage
 
 --- 渲染导出 UI 并执行导出
 function Gtakana:Nui()
-    Nui:label(i18n:get('frame_rate') .. ':' .. self.frames)
-    self.frames = Nui:slider(1, self.frames, 120, 1)
+    ctx.ui:label(ctx.i18n:get('frame_rate') .. ':' .. self.frames)
+    self.frames = ctx.ui:slider(1, self.frames, 120, 1)
 
-    if Nui:button(i18n:get('do')) then
+    if ctx.ui:button(ctx.i18n:get('do')) then
         -- 生成所有数据
         local takana = generateTakanaChart(self.frames)
         local songinfo, level, name = generateSongInfo()
@@ -317,7 +318,8 @@ return {
     description = '侧边栏 Takana 导出',
     target = 'edit/sidebar',
 
-    init = function(ctx)
+    init = function(context)
+        ctx = context
         sidebarRoom = ctx.root:findContainer('edit/sidebar')
         homeGroup = sidebarRoom:getGroup('nil')
         navigation = object:new('takana navigation')
@@ -331,12 +333,13 @@ return {
         homeGroup:addObject(navigation, 30)
     end,
 
-    destroy = function(ctx)
+    destroy = function()
         if homeGroup and navigation then homeGroup:deleteObject(navigation) end
         if sidebarRoom then
             if sidebarRoom.displayed_content == 'takana' then sidebarRoom:to('nil') end
             sidebarRoom:deleteGroup(Gtakana)
         end
         sidebarRoom, homeGroup, navigation = nil, nil, nil
+        ctx = nil
     end,
 }

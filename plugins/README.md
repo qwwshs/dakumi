@@ -268,3 +268,7 @@ PluginManager:unregister('my_tool')         -- 移除挂载、钩子并调用 de
 ## 9. 回归验证
 
 项目根目录运行 `luajit tests/plugin_system.lua`，验证层顺序、嵌套容器、动态增删、插件注册/卸载、钩子及自动发现。测试使用内存文件系统替身，不读写用户谱面。真实编辑器输入与界面验证运行 `love tests/editor_input_love`，谱面通知运行 `love tests/chart_change_love`，音频资源验证运行 `love tests/audio_service_love`。`.zcode/` 中的探针是本地临时文件，不作为干净检出中的测试入口。
+
+### 内置插件 UI 上下文
+
+`directEventEditing`、`equalizer`、`takana` 和 `operationHistory` 均通过初始化收到的 `ctx.ui` 绘制，并通过 `ctx.i18n` 取得界面文字。对象式插件在 `.plugin.init(ctx)` 保存上下文，卸载时释放引用；声明 `function panel:Nui()` 仍是容器生命周期方法名，不代表读取全局 UI。辅助计算与其他历史业务依赖按现有接口使用。

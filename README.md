@@ -26,6 +26,8 @@ Dakumi 是 qwwshs 使用 LÖVE 制作的 TAKUMI³ 饭制谱面编辑器。支持
 | 声纹图设置与频率尺 | [声纹图](readme/spectrogram_manual.md) |
 | 开发环境与回归检查 | [开发入门](DEVELOPMENT.md) |
 | 分层、谱面格式、服务与通知 | [开发者指南](DEVELOPER_GUIDE.md) |
+| 全部服务职责与接口 | [服务索引](readme/服务索引.md) |
+| 自动检查与备份保留策略 | [测试与备份](readme/测试与备份.md) |
 | 外部插件、执行层和示例 | [插件开发](plugins/README.md) |
 
 在线指南：[dakumi.qwwshs.top](https://dakumi.qwwshs.top)。

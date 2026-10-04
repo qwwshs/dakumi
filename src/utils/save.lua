@@ -1,3 +1,5 @@
+local AutoSaveRetention = require('src.utils.autoSaveRetention')
+
 local function reportChartSaveFailure(content, reason)
     log('chart save error: ' .. tostring(reason))
 
@@ -75,10 +77,24 @@ function save(tab, name) -- 谱面与设置保存
         local ok, content, encodeErr = pcall(function()
             local encoded, err = encodeChart(tab)
             if not encoded then error(err) end
+            local selected = menu and menu.chartInfo and menu.chartInfo.chart_name
+                and menu.chartInfo.chart_name[menu.selectChartPos]
             local info = tab and tab.info or {}
-            local path = PATH.usersPath.auto_save .. os.date('%Y %m %d %H %M %S')
-                .. tostring(info.song_name or '') .. '-' .. tostring(info.chart_name or '') .. '.json'
-            return writeNative(path, encoded)
+            local identity = selected and selected.path or
+                (tostring(info.song_name or '') .. '/' .. tostring(info.chart_name or ''))
+            local now = os.time()
+            local directory = PATH.usersPath.auto_save:gsub('[/\\]+$', '') .. '/'
+            local filename = AutoSaveRetention.name(identity, now)
+            -- 同秒重启也不能覆盖已有备份。
+            while nativefs.getInfo(directory .. filename) do filename = AutoSaveRetention.name(identity, now) end
+            local wrote, err = writeNative(directory .. filename, encoded)
+            if not wrote then return false, err end
+            local cleaned, cleanupError = pcall(function()
+                local _, failures = AutoSaveRetention.prune(directory, nativefs, now, settings)
+                for _, failure in ipairs(failures) do log('auto save cleanup warning: ' .. failure) end
+            end)
+            if not cleaned then log('auto save cleanup warning: ' .. tostring(cleanupError)) end
+            return true
         end)
         if not ok then
             log(name .. ' save error: ' .. tostring(content))
