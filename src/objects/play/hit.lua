@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local hit = object:new('hit')
 local ChartService = require("src.services.chartService")
 hit.sw = 1
@@ -66,7 +67,7 @@ function hit:update(dt)
     if settings.hit == 0 and settings.hit_sound == 0 then
         return
     end
-    if not music_play then
+    if not AudioService:isPlaying() then
         return
     end
     
@@ -75,12 +76,12 @@ function hit:update(dt)
 
     --减少重复遍历
     local index_start = 1
-    if beat.nowbeat >= previous_frame_beat then
+    if AudioService:getCurrentBeat() >= previous_frame_beat then
         index_start = math.max(1, previous_frame_starting_point)
-    elseif beat.nowbeat < previous_frame_beat then
+    elseif AudioService:getCurrentBeat() < previous_frame_beat then
         index_start = 1
     end
-    previous_frame_beat = beat.nowbeat
+    previous_frame_beat = AudioService:getCurrentBeat()
     previous_frame_starting_point = 0
 
     for i = index_start, ChartService:getNoteCount() do
@@ -93,28 +94,28 @@ function hit:update(dt)
         local will_play = self.hittab[noteBeat][noteTrack]
         if will_play[noteType] == nil and not n:isFakeNote() then --不存在 记录
             will_play[noteType] = true
-            if noteBeat <= beat.nowbeat then --时间过了 不播放
+            if noteBeat <= AudioService:getCurrentBeat() then --时间过了 不播放
                 will_play[noteType] = false
             end
         end
-        if noteBeat <= beat.nowbeat and --播放
+        if noteBeat <= AudioService:getCurrentBeat() and --播放
             will_play[noteType] then
             local x, w = now_track[noteTrack].x, now_track[noteTrack].w
             w = math.abs(w)
             will_play[noteType] = false                                            --播放完成
             index_start = i
-            if self.sound and settings.hit_sound == 1 and music_play and w > 0 and not n:isFakeNote() then --播放
+            if self.sound and settings.hit_sound == 1 and AudioService:isPlaying() and w > 0 and not n:isFakeNote() then --播放
                 will_play_sound_number = will_play_sound_number + 1
 
             end
-            if settings.hit == 1 and music_play and w > 0 and not n:isFakeNote() and time.nowtime - ChartService:toTime(noteBeat) < 0.5 then
-                self.tab[#self.tab + 1] = { x = fTrack:to_play_track_x(x), time = time.nowtime, track = noteTrack }
+            if settings.hit == 1 and AudioService:isPlaying() and w > 0 and not n:isFakeNote() and AudioService:getCurrentTime() - ChartService:toTime(noteBeat) < 0.5 then
+                self.tab[#self.tab + 1] = { x = fTrack:to_play_track_x(x), time = AudioService:getCurrentTime(), track = noteTrack }
             end
         end
-        if time.nowtime - ChartService:toTime(noteBeat) < 0.5 and previous_frame_starting_point == 0 then
+        if AudioService:getCurrentTime() - ChartService:toTime(noteBeat) < 0.5 and previous_frame_starting_point == 0 then
                 previous_frame_starting_point = i - 1
         end
-        if noteBeat > beat.nowbeat then --时间未到 记录
+        if noteBeat > AudioService:getCurrentBeat() then --时间未到 记录
             will_play[noteType] = true --未播放
         end
     end
@@ -148,23 +149,23 @@ function hit:draw()
         local hit_light_scale_h = 1 / self.lightH
         love.graphics.setColor(1,1,1)
         local hit_time = settings.hit_time
-        local hit_alpha = (time.nowtime - v.time) / hit_time
+        local hit_alpha = (AudioService:getCurrentTime() - v.time) / hit_time
         hit_alpha = easings.out_quart(hit_alpha)
 
         local hit_light_time = settings.hit_light_time
-        local hit_light_alpha = (time.nowtime - v.time) / hit_light_time
+        local hit_light_alpha = (AudioService:getCurrentTime() - v.time) / hit_light_time
         hit_light_alpha = hit_light_alpha * 0.5 --最大透明度为0.5
 
-        if time.nowtime - v.time > hit_time or time.nowtime - v.time < 0  then
+        if AudioService:getCurrentTime() - v.time > hit_time or AudioService:getCurrentTime() - v.time < 0  then
             delete_it = true
             hit_alpha = 1
         end
-        if time.nowtime - v.time > hit_light_time or time.nowtime - v.time < 0 then
+        if AudioService:getCurrentTime() - v.time > hit_light_time or AudioService:getCurrentTime() - v.time < 0 then
             hit_light_alpha = 1
         end
 
 
-        if music_play then
+        if AudioService:isPlaying() then
             local x = v.x * sw - size / 2 * hit_alpha
             local y = judgePos - size / 2 * hit_alpha
             local w = hit_scale_w * hit_alpha
@@ -174,7 +175,7 @@ function hit:draw()
 
             love.graphics.draw(self.hit, x, y, 0, w, h)
 
-            local x, w = fTrack:to_play_track(fEvent:get(v.track, beat.nowbeat))
+            local x, w = fTrack:to_play_track(fEvent:get(v.track, AudioService:getCurrentBeat()))
             x = x * sw
             w = w * sw
 

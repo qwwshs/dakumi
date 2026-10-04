@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --[[
     模块名: tabs
     描述: 标签页管理器，将右侧 edit 区域拆分为多个标签页窗口
@@ -347,7 +348,7 @@ end
 -- 顶部显示轨道位置，底部显示其余信息；两块面板都由 Nuklear 绘制。
 local function drawEditInfo(tab, index, x, width)
     local trackId = tabs:getTabTrack(tab)
-    local nowX, nowW = fEvent:get(trackId, beat.nowbeat, true)
+    local nowX, nowW = fEvent:get(trackId, AudioService:getCurrentBeat(), true)
     local leftPos = nowX - nowW / 2
     local rightPos = nowX + nowW / 2
     local trackName = ChartService:getTrackField(trackId, 'name') or ''
@@ -405,8 +406,8 @@ local function drawEditInfo(tab, index, x, width)
     local name = 'edit_info_' .. index
     if Nui:windowBegin(name, x, y, width, height, 'border', 'background') then
         Nui:layoutRow('dynamic', 24, 2)
-        Nui:label(i18n:get('beat') .. ': ' .. math.roundToPrecision(beat.nowbeat, 100))
-        Nui:label(i18n:get('time') .. ': ' .. math.roundToPrecision(time.nowtime, 100))
+        Nui:label(i18n:get('beat') .. ': ' .. math.roundToPrecision(AudioService:getCurrentBeat(), 100))
+        Nui:label(i18n:get('time') .. ': ' .. math.roundToPrecision(AudioService:getCurrentTime(), 100))
         Nui:layoutRow('dynamic', 24, 2)
         Nui:label(i18n:get('track') .. ': ' .. trackId)
         Nui:label(i18n:get(hidden and 'hide' or 'do_not_hide'))

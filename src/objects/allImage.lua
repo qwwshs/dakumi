@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 isImage = {
     add = love.graphics.newImage("assets/img/add.png"),
     sub = love.graphics.newImage("assets/img/sub.png"),
@@ -75,7 +76,7 @@ function isImage:setTheme(theme)
         end
     end
     if musicPlay then
-        musicPlay.img = music_play and self.pause or self.play
-        musicPlay.img2 = music_play and self.play or self.pause
+        musicPlay.img = AudioService:isPlaying() and self.pause or self.play
+        musicPlay.img2 = AudioService:isPlaying() and self.play or self.pause
     end
 end

@@ -1,4 +1,5 @@
 --equalizer界面
+local AudioService = require('src.services.audioService')
 local Gequalizer = group:new('equalizer')
 Gequalizer.type = "equalizer"
 Gequalizer.layout = {cols = 2, uiH = 20}
@@ -32,9 +33,8 @@ function Gequalizer:Nui()
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
 
     Nui:label(i18n:get("equalizer"))
-    if Nui:combobox(self.open, { 'OFF', 'ON' }) and self.open.value == 2 then
-        love.audio.setEffect("equalizer", self.equalizer)
-        music:setEffect("equalizer")
+    if Nui:combobox(self.open, {'OFF', 'ON'}) then
+        AudioService:setEffect('equalizer', self.open.value == 2 and self.equalizer or false)
     end
 
     --效果表
@@ -43,7 +43,7 @@ function Gequalizer:Nui()
         if Nui:slider(param.scope[1], param, param.scope[2], param.step) then
             self.equalizer[param.name] = param.value
             if self.open.value == 2 then
-                love.audio.setEffect("equalizer", self.equalizer)
+                AudioService:setEffect('equalizer', self.equalizer)
             end
         end
     end

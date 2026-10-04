@@ -1,5 +1,5 @@
 local denom = object:new('denom')
-local ChartService = require("src.services.chartService")
+local AudioService = require("src.services.audioService")
 denom.scale = 1
 denom.denom = 4
 denom.type = 'custom'
@@ -47,18 +47,15 @@ function denom:wheelmovedInPlay(x, y)
         temp = -temp / self.denom
     end
 
-    beat.nowbeat = math.max(math.min(beat.nowbeat + temp, beat.allbeat), 0)
-
-    local min_denom = 0           --假设0最近
-    for i = 1, self.denom do     --取分度 哪个近取哪个
-        if math.abs(beat.nowbeat - (math.floor(beat.nowbeat) + i / self.denom)) < math.abs(beat.nowbeat - (math.floor(beat.nowbeat) + min_denom / self.denom)) then
+    local current = math.max(math.min(AudioService:getCurrentBeat() + temp, AudioService:getAllBeat()), 0)
+    local min_denom = 0 -- 取最近的节拍分度。
+    for i = 1, self.denom do
+        if math.abs(current - (math.floor(current) + i / self.denom)) <
+            math.abs(current - (math.floor(current) + min_denom / self.denom)) then
             min_denom = i
         end
     end
-    beat.nowbeat = math.floor(beat.nowbeat) + min_denom / self.denom     --更正位置
-
-    time.nowtime = ChartService:toTime(beat.nowbeat)
-    music_play = false
+    AudioService:setCurrentBeat(math.floor(current) + min_denom / self.denom, {pause = true})
 end
 
 function denom:Nui() --渲染

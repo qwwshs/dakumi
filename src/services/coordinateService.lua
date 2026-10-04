@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --[[
     模块名: CoordinateService
     描述: 坐标转换服务层，封装 beat↔屏幕坐标、track↔屏幕坐标的转换
@@ -21,7 +22,7 @@ end
 -- @tparam number pos 屏幕 Y 坐标
 -- @treturn number beat 值
 function CoordinateService:yToBeat(pos)
-    return (pos - settings.judge_line_y) / (-denom.scale * 100) + beat.nowbeat
+    return (pos - settings.judge_line_y) / (-denom.scale * 100) + AudioService:getCurrentBeat()
 end
 
 --- 将 beat 值转换为屏幕 Y 坐标
@@ -29,9 +30,9 @@ end
 -- @treturn number 屏幕 Y 坐标
 function CoordinateService:toY(isbeat)
     if type(isbeat) == "table" then
-        return settings.judge_line_y + (beat.nowbeat - beat:get(isbeat)) * denom.scale * 100
+        return settings.judge_line_y + (AudioService:getCurrentBeat() - beat:get(isbeat)) * denom.scale * 100
     elseif type(isbeat) == "number" then
-        return settings.judge_line_y + (beat.nowbeat - isbeat) * denom.scale * 100
+        return settings.judge_line_y + (AudioService:getCurrentBeat() - isbeat) * denom.scale * 100
     end
 end
 

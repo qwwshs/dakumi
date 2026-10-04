@@ -1,11 +1,12 @@
+local AudioService = require('src.services.audioService')
 --[[
     插件名: fft
     描述: FFT 频谱分析器插件，在菜单界面绘制音频频谱图
     作者: qwwshs
     版本: 1.0.0
-    依赖: lovefft, love.thread, menu, WINDOW
+    依赖: lovefft, AudioService, menu, WINDOW
 
-    在独立线程中加载音频数据，使用 FFT 计算频谱并在菜单界面中绘制。
+    复用音频服务的解码数据，使用 FFT 计算频谱并在菜单界面中绘制。
     当用户选择音乐时自动启动频谱分析。
 ]]
 
@@ -15,10 +16,7 @@ local loveFFT = require("src.utils.lovefft")
 --- 是否已启动频谱分析
 local fft_start = false
 
--- 音频加载线程
-local audioThread = love.thread.newThread("src/thread/audioThread.lua")
-local audioChannel = love.thread.getChannel("audio_channel")
-local statusChannel = love.thread.getChannel("status_channel")
+local boundData
 
 -- FFT 配置
 local fftSize = 1024  -- FFT 采样数（必须是 2 的幂）
@@ -27,42 +25,28 @@ loveFFT:init(fftSize)
 
 --- 当用户选择音乐时调用，启动音频加载线程
 function FFT:select_music()
-    audioThread:start(menu.musicPath)
-    fft_start = false
+    boundData, fft_start, fftArray = nil, false, {}
+    AudioService:requestSoundData()
 end
 
---- 释放 FFT 资源（进入编辑模式时调用）
+--- 进入编辑模式后停止分析，保留唯一 FFT 工作线程供返回菜单时复用。
 function FFT:toedit()
-    loveFFT:release()
+    boundData, fft_start, fftArray = nil, false, {}
 end
 
 --- 每帧更新：从线程获取 FFT 数据
 function FFT:update(dt)
-    -- 检查线程状态
-    local data = audioChannel:pop()
-    local message = statusChannel:pop()
-
-    if message then
-        print(message)
-    end
-
-    -- 处理线程消息
-    if message == "success" then
-        local success = pcall(function() loveFFT:setSoundData(data) end)
-        if not success then
-            log("FFT data load error")
-            return
+    local data = AudioService:getSoundData()
+    if data ~= boundData then
+        boundData, fft_start = data, false
+        if data then
+            fft_start = pcall(function() loveFFT:setSoundData(data) end)
+            if not fft_start then log('FFT data load error') end
         end
-        fft_start = true
-    elseif message == "error" then
-        log("FFT data load error")
     end
-
-    if not fft_start then return end
-
-    -- 获取当前播放位置并触发 FFT 计算
-    if not menu.chartInfo.song then return end
-    local currentTime = math.min(menu.chartInfo.song:tell(), menu.chartInfo.song:getDuration())
+    if not fft_start or data:getSampleCount() < fftSize then return end
+    local currentTime = math.min(AudioService:getAudioTime(),
+        (data:getSampleCount() - fftSize) / data:getSampleRate())
     local success = pcall(function() loveFFT:updatePlayTime(currentTime) end)
     if not success then
         fft_start = false

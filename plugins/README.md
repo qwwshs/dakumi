@@ -135,7 +135,7 @@ edit:deleteGroup(panel)
 | `root` | 根 room，通过 `findContainer` 查找容器 |
 | `chart` | ChartService：谱面读写、索引查询 |
 | `coord` | CoordinateService：坐标与节拍转换 |
-| `audio` | AudioService：播放状态及音频对象访问 |
+| `audio` | AudioService：加载、播放、暂停、定位、速度、音量及只读音频数据 |
 | `beat` | 节拍模块 |
 | `settings` | 当前全局设置表 |
 | `i18n` | 国际化对象 |
@@ -144,6 +144,10 @@ edit:deleteGroup(panel)
 | `WINDOW` / `PATH` | 窗口与路径配置 |
 
 这些字段在插件开始注册时已就绪。谱面此时可能尚未加载，不要在 `init` 中假设存在音符、事件或音乐。
+
+音频操作统一使用 `ctx.audio`。读取播放位置用 `getCurrentTime()/getCurrentBeat()`，暂停用 `pause()`，定位用 `seek(seconds, {pause=true})`，读取波形数据用 `getSoundData()`。不要再使用已移除的 `music/music_data/music_play/time` 全局或 `ctx.beat.nowbeat/allbeat`，也不要在插件中再次推进播放时钟或直接控制音频源。时长和总节拍由资源、offset 和 BPM 表推导，不再提供独立的时长/总节拍写入接口。
+
+插件可通过 `ctx.eventBus:on('audio:decoded', callback)` 获知分析数据就绪，通过 `audio:loaded`、`audio:playing_changed`、`audio:error` 读取换歌、播放状态和错误通知；注销时调用返回的退订函数。详细说明见 [音频服务](../readme/音频服务.md)。
 
 描述表支持：
 

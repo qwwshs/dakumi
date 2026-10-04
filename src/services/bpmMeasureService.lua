@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 -- 单次后台测量；确认写入由 ChartService 事务记录，可整体撤销。
 local ChartService = require('src.services.chartService')
 local bus = require('src.utils.eventBus')
@@ -21,11 +22,11 @@ function Service:start(onApplied)
         love.window.showMessageBox(i18n:get('bpm_measure'), i18n:get('bpm_measure_group'), 'info')
         return false
     end
-    if not music_data then
+    if not AudioService:getSoundData() then
         love.window.showMessageBox(i18n:get('bpm_measure'), i18n:get('bpm_measure_no_audio'), 'error')
         return false
     end
-    local nextJob = {sound = music_data, generation = generation, onApplied = onApplied,
+    local nextJob = {sound = AudioService:getSoundData(), generation = generation, onApplied = onApplied,
         output = love.thread.newChannel(), cancel = love.thread.newChannel()}
     local ok, err = pcall(function()
         nextJob.thread = love.thread.newThread('src/thread/bpm.lua')
@@ -42,7 +43,7 @@ end
 function Service:update()
     if not job then return end
     local current = job
-    if (current.generation ~= generation or current.sound ~= music_data) and not current.cancel:peek() then current.cancel:push(true) end
+    if (current.generation ~= generation or current.sound ~= AudioService:getSoundData()) and not current.cancel:peek() then current.cancel:push(true) end
     if recorder.hasTxn() and not current.cancel:peek() then return end
     local message = current.output:pop()
     if not message and current.thread:isRunning() then return end
@@ -69,7 +70,6 @@ function Service:update()
     ChartService:change('history.measure_bpm', function()
         ChartService:setOffset(offset)
         ChartService:setBpmList(list)
-        beat.allbeat = ChartService:toBeat(time.alltime)
     end)
     if current.onApplied then current.onApplied(result.bpm, offset) end
 end

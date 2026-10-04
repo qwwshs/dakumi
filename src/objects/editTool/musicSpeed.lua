@@ -1,5 +1,6 @@
+local AudioService = require('src.services.audioService')
 local speed = object:new('speed')
-speed.speed = 1
+speed.speed = 1 -- 上次确认的界面值；实际播放速度由服务持有。
 speed.type = 'custom'
 speed.text = 'speed'
 speed.layout = require 'config.layouts.editTool'
@@ -21,8 +22,7 @@ function speed:Nui() --渲染
         Nui:layoutRow('dynamic', self.layout.groupRowH, 2)
         Nui:label(i18n:get(self.text))
         if ui:imageButton(isImage.up) then
-            self.speed = self.speed + 0.1
-            self.useToSpeed.value = tostring(self.speed)
+            self:to(self.speed + 0.1)
         end
         local active = ui:edit('field', self.useToSpeed)
         if active == 'active' then
@@ -32,8 +32,7 @@ function speed:Nui() --渲染
             end
         end
         if ui:imageButton(isImage.down) then
-            self.speed = math.max(self.speed-0.1,0.1)
-            self.useToSpeed.value = tostring(self.speed)
+            self:to(math.max(self.speed - 0.1, 0.1))
         end
 
         Nui:groupEnd()
@@ -41,12 +40,18 @@ function speed:Nui() --渲染
 end
 
 function speed:update(dt)
-    if tonumber(self.useToSpeed.value) then
-        self.speed = math.max(tonumber(self.useToSpeed.value),0.1)
+    local value = tonumber(self.useToSpeed.value)
+    if value and value ~= self.speed then
+        self:to(value)
+    elseif value and self.speed ~= AudioService:getRate() then
+        -- 插件改变速度后同步显示，不用旧的输入值每帧覆盖服务。
+        self:to(AudioService:getRate())
     end
 end
 
 function speed:to(sp)
+    sp = math.max(tonumber(sp) or 1, 0.1)
+    if not AudioService:setRate(sp) then return end
     self.speed = sp
     self.useToSpeed.value = tostring(sp)
 end

@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --chartInfo界面
 local ChartService = require("src.services.chartService")
 local BpmMeasure = require('src.services.bpmMeasureService')
@@ -80,7 +81,7 @@ function GchartInfo:Nui()
     Nui:label(i18n:get'bpmlist')
     if Nui:button(i18n:get('add')) then
         --往当前beat位置添加一个bpm
-        local nearBeat = beat:toNearby(beat.nowbeat)
+        local nearBeat = beat:toNearby(AudioService:getCurrentBeat())
         self.bpmList[#self.bpmList + 1] = {
             bpm = {value = '120'},
             beat = {

@@ -13,6 +13,8 @@ love.filesystem.read = function(path, ...)
     end
     return originalRead(path, ...)
 end
+local currentBeat = (1 - 0.163) * 163 / 60
+package.loaded['src.services.audioService'] = {getCurrentBeat = function() return currentBeat end}
 local Spec = require('src.services.spectrogramService')
 local Config = require('src.services.spectrogramConfig')
 local Analyzer = require('src.services.spectrogramAnalyzer')
@@ -20,7 +22,6 @@ local Chart = require('src.services.chartService')
 Chart.toTime = function(_, b) return b * 60 / 163 end
 Chart.getOffset = function() return -163 end
 Chart.getBpmCount = function() return 0 end
-beat = {nowbeat = (1 - 0.163) * 163 / 60}
 denom = {scale = 5}
 settings = {judge_line_y = 680}
 WINDOW = {scale = 1.4}
@@ -81,22 +82,22 @@ function love.draw()
     if frame >= 461 then sound = pulse end
     if frame >= 61 and frame <= 300 then
         local t = frame <= 180 and 1 + (frame - 60)/60 or 3 + (frame - 180)/60 * 2
-        beat.nowbeat = (t - 0.163) * 163 / 60
+        currentBeat = (t - 0.163) * 163 / 60
     elseif frame == 301 then
-        beat.nowbeat = (1 - 0.163) * 163 / 60
+        currentBeat = (1 - 0.163) * 163 / 60
     elseif frame == 330 then
         settings.spectrogram_floor_db, settings.spectrogram_gain_db = -120, 12
     elseif frame == 331 then
         settings.spectrogram_min_hz, settings.spectrogram_max_hz = 980, 1060
     elseif frame >= 350 and frame <= 358 then
-        beat.nowbeat = (frame % 7) * 163 / 60
+        currentBeat = (frame % 7) * 163 / 60
     elseif frame == 389 then
         settings.spectrogram_floor_db, settings.spectrogram_gain_db = -180, 48
     elseif frame == 401 then
         settings.spectrogram_floor_db, settings.spectrogram_gain_db = -84, 0
     elseif frame == 461 then
         settings.spectrogram_mode, settings.spectrogram_min_hz, settings.spectrogram_max_hz = 'transient', 40, 12000
-        beat.nowbeat, denom.scale = -0.163 * 163 / 60, 0.025
+        currentBeat, denom.scale = -0.163 * 163 / 60, 0.025
     end
     love.graphics.setCanvas(canvas); love.graphics.clear(0,0,0,0)
     love.graphics.push(); love.graphics.scale(1.4)

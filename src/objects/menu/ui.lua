@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 menuUI = {}
 local ChartService = require("src.services.chartService")
 
@@ -8,7 +9,7 @@ menuUI.chartTool = {}
 menuUI.chartTool[#menuUI.chartTool + 1] = {type = 'button',text = 'edit'}
 
 menuUI.chartTool[#menuUI.chartTool].func = function()
-    love.audio.stop( ) --停止歌曲
+    AudioService:pause()
     if not menu.chartInfo.chart_name[menu.selectChartPos] then
         love.window.showMessageBox('Not music',i18n:get('Not music'))
         return
@@ -29,9 +30,11 @@ menuUI.chartTool[#menuUI.chartTool].func = function()
         messageBox:add('event_group.invalid')
         return
     end --初始化（构建 extra_chart 索引）
-    time.nowtime = 0
-    beat.nowbeat = 0
-    music_data = love.sound.newSoundData(menu.musicPath)
+    local ok, err = AudioService:prepareEditor()
+    if not ok then
+        love.window.showMessageBox(i18n:get('Not music'), tostring(err), 'error')
+        return
+    end
     room:to('edit')
     love.window.setTitle(ChartService:getInfoField('song_name').."-"..ChartService:getInfoField('chart_name'))
 end

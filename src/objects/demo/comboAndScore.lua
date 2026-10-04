@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local comboAndScore = object:new('comboAndScore') --连击与分数显示
 local ChartService = require("src.services.chartService")
 comboAndScore.scoreLayout = require 'config.layouts.demo'.score
@@ -34,18 +35,18 @@ function comboAndScore:opened()
 end
 
 function comboAndScore:update(dt)
-    if previous_frame_beat == beat.nowbeat then
+    if previous_frame_beat == AudioService:getCurrentBeat() then
         return
     end
-    previous_frame_beat = beat.nowbeat
+    previous_frame_beat = AudioService:getCurrentBeat()
     for i = math.max(previous_frame_starting_point,1), ChartService:getNoteCount() do
         local n = ChartService:getNote(i)
         local beatVal = n:getBeatValue()
         local _,w = fEvent:get(n:getTrack(), beatVal)
-        if beatVal < beat.nowbeat and not n:isFakeNote() and w ~= 0 then
+        if beatVal < AudioService:getCurrentBeat() and not n:isFakeNote() and w ~= 0 then
             combo = combo + 1
         end
-        if beatVal > beat.nowbeat then
+        if beatVal > AudioService:getCurrentBeat() then
             previous_frame_starting_point = i
             break
         end

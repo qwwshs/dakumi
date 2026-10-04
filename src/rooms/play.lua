@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local play = group:new('play')
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
@@ -71,9 +72,9 @@ function play:update(dt)
         local beat1 = iseffect.beat
         local beat2 = iseffect.beat2
         if iseffect then
-            if ((beat:get(beat) <= beat.nowbeat and beat:get(beat2) > beat.nowbeat) or (beat:get(beat2) <= beat.nowbeat)) and not effect_ed[iseffect.type] then
+            if ((beat:get(beat) <= AudioService:getCurrentBeat() and beat:get(beat2) > AudioService:getCurrentBeat()) or (beat:get(beat2) <= AudioService:getCurrentBeat())) and not effect_ed[iseffect.type] then
                 play.effect[iseffect.type] = iseffect.from +
-                    (iseffect.to - iseffect.from) * self:getTrans(iseffect, (beat.nowbeat - beat1) / (beat2 - beat1))
+                    (iseffect.to - iseffect.from) * self:getTrans(iseffect, (AudioService:getCurrentBeat() - beat1) / (beat2 - beat1))
                 effect_ed[iseffect.type] = true
             end
         end
@@ -82,7 +83,7 @@ function play:update(dt)
     play.now_all_track_pos = {}
     local all_track = fTrack:track_get_all_track()
     for i = 1, #all_track do
-        local x, w = fEvent:get(all_track[i], beat.nowbeat)
+        local x, w = fEvent:get(all_track[i], AudioService:getCurrentBeat())
         local track_x, track_w = fTrack:to_play_track(x, w)
         play.now_all_track_pos[all_track[i]] = { x = x, w = w, track_x = track_x, track_w = track_w }
     end
@@ -208,13 +209,13 @@ function play:mousepressed(x, y, button, istouch, presses)
         for i = 1, ChartService:getEventCount() do                                   --点击轨道进入轨道的编辑事件
             local e = ChartService:getEvent(i)
             if not table.find(local_track, e:getTrack()) then --不存在 记录
-                local track_x, track_w = fEvent:get(e:getTrack(), beat.nowbeat)
+                local track_x, track_w = fEvent:get(e:getTrack(), AudioService:getCurrentBeat())
                 track_x, track_w = fTrack:to_play_track(track_x, track_w)
                 if math.intersect(x, x, track_x, track_w + track_x) then
                     local_track[#local_track + 1] = e:getTrack()
                 end
             end
-            if e:getBeatValue() > beat.nowbeat then
+            if e:getBeatValue() > AudioService:getCurrentBeat() then
                 break
             end
         end

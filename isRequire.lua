@@ -81,6 +81,18 @@ input:init({fs = nativefs, json = dkjson, keyboard = iskeyboard, uiKeyboard = ui
 -- 启动入口负责装配具体实现；utils 工具自身不向上 require 服务和对象。
 local chartAccess = require('src.services.chartService')
 local coordinates = require('src.services.coordinateService')
+local audio = require('src.services.audioService')
+audio:init({chart = chartAccess, events = eventBus, report = log, backend = {
+    newSource = love.audio.newSource, newSoundData = love.sound.newSoundData,
+    newThread = love.thread.newThread, newChannel = love.thread.newChannel,
+    setEffect = love.audio.setEffect,
+    readAudio = function(path)
+        -- 在线程启动前取得文件快照，不依赖菜单稍后解除的目录挂载。
+        local data = nativefs.newFileData(PATH.base .. '/' .. path)
+        if data then return data end
+        return love.filesystem.newFileData(path)
+    end,
+}})
 fEvent:init({chart = chartAccess, event = require('src.models.Event'), coordinates = coordinates})
 fNote:init({chart = chartAccess, note = require('src.models.Note'), coordinates = coordinates})
 fTrack:init({chart = chartAccess})
@@ -108,4 +120,4 @@ require("src.rooms.start")  -- 启动场景
 
 -- 新入口使用显式上下文；旧场景的全局别名暂时保留，便于分批迁移。
 return {root = sceneSystem.room, input = input, eventBus = eventBus, keyboard = iskeyboard, uiKeyboard = uiKeyboard,
-    mouse = mouse, window = WINDOW, paths = PATH, uiFactory = nuklear}
+    mouse = mouse, window = WINDOW, paths = PATH, uiFactory = nuklear, audio = audio}

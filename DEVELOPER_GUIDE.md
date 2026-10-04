@@ -83,7 +83,7 @@ quit              -- 退出
 第4层: 核心系统模块           (file, pass, room, window, meta)
 第5层: 业务逻辑模块           (beat, event, note, log, string, table, save)
 第6层: 数据处理库             (nativefs, dkjson, easings, bezier, math, track, input)
-装配阶段: 数据模型/服务        (Note/Event、ChartService/CoordinateService，注入工具接口)
+装配阶段: 数据模型/服务        (Note/Event、ChartService/CoordinateService/AudioService，注入工具与音频后端接口)
 第7层: UI 和对象模块          (messageBox, i18n, allImage, ui)
 第8层: 场景模块               (edit, menu, start)
 第9层: 插件管理器上下文       (在 main.lua 中初始化，复用已加载的服务)
@@ -310,24 +310,28 @@ CoordinateService:getNearFence()           -- 最近栅栏
 
 ### AudioService (`src/services/audioService.lua`)
 
-封装音频状态访问。
+音频源、分析数据、播放状态和播放时钟由服务私有持有，`isRequire.lua` 注入 LÖVE 后端、谱面时间接口和事件总栈。服务统一管理加载/释放、后台解码、播放/暂停、定位、变速、音量和效果；工具栏与插件只发命令。`main.lua` 每帧更新服务一次。
+
+`getCurrentTime()` 返回谱面秒数，音频位置是谱面秒数减去 `offset/1000`。当前节拍和总节拍根据时间与 BPM 表推导，不另存可写的 `beat.nowbeat/allbeat`。相同播放位置的换算结果会缓存，谱面变更通知会使缓存失效。
 
 ```lua
-AudioService:getSource()          -- 获取音频源
-AudioService:setSource(source)    -- 设置音频源
-AudioService:getSoundData()       -- 获取波形数据
-AudioService:isPlaying()          -- 是否正在播放
-AudioService:setPlaying(playing)  -- 设置播放状态
-AudioService:getCurrentTime()     -- 当前时间（秒）
-AudioService:setCurrentTime(t)    -- 设置当前时间
-AudioService:getDuration()        -- 总时长
-AudioService:getCurrentBeat()     -- 当前 beat
-AudioService:setCurrentBeat(b)    -- 设置当前 beat
-AudioService:getAllBeat()         -- 总 beat 数
-AudioService:pause()              -- 暂停
-AudioService:resume()             -- 恢复
-AudioService:stop()               -- 停止
+AudioService:load(path, {preview = true}) -- 加载歌曲并在菜单预览，后台解码分析数据
+AudioService:prepareEditor()             -- 保证分析数据可用，暂停并定位到谱面起点
+AudioService:pause() / resume() / stop()  -- 立即控制音频源；stop 将谱面位置归零
+AudioService:seek(seconds, {pause = true}) -- 定位、限制范围，并同步音频源
+AudioService:setCurrentBeat(value)       -- 按当前 BPM 表将节拍换成秒再定位
+AudioService:setRate(1)                  -- 播放速度（正数）
+AudioService:setVolume(0.5)              -- 音量（0 到 1）
+AudioService:setEffect(name, parameters) -- 设置效果；parameters=false 时关闭
+AudioService:getSoundData()              -- 波形/声纹图/分析插件只读使用
+AudioService:getCurrentTime() / getAudioTime() -- 谱面秒数 / 音频秒数
+AudioService:getDuration() / getRawDuration()  -- 含 offset 的谱面时长 / 原音频时长
+AudioService:getCurrentBeat() / getAllBeat()   -- 当前节拍 / 总节拍
+AudioService:isPlaying() / isLoading()   -- 播放与后台解码状态
+AudioService:unload()                    -- 停止、释放源并清空数据和解码任务引用
 ```
+
+旧的 `music/music_data/music_play/time` 全局已移除，`beat` 只保留节拍计算工具。详细的资源归属、注入方式、音频事件和插件迁移见 [音频服务](readme/音频服务.md)。
 
 ---
 

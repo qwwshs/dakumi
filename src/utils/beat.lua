@@ -9,8 +9,6 @@
 ]]
 
 beat = object:new('beat')
-beat.nowbeat = 0    -- 当前 beat 值
-beat.allbeat = 1    -- 总 beat 数
 
 --- 将时间（秒）转换为 beat 值
 -- @tparam table bpm BPM 列表

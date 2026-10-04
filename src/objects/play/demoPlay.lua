@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --轨道渲染
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
@@ -196,10 +197,10 @@ function demoPlay:draw()
 
     --减少重复遍历
     local index_start = 1
-    if beat.nowbeat > previous_frame_beat then
+    if AudioService:getCurrentBeat() > previous_frame_beat then
         index_start = math.max(1, previous_frame_starting_point)
     end
-    previous_frame_beat = beat.nowbeat
+    previous_frame_beat = AudioService:getCurrentBeat()
     previous_frame_starting_point = 0
 
     --先按beat顺序收集可见note到各自层级(同一层级内保持beat顺序)
@@ -218,7 +219,7 @@ function demoPlay:draw()
         end
         y = y * sh
         y2 = y2 * sh
-        if (noteBeat > beat.nowbeat or (noteBeat2 > beat.nowbeat)) and previous_frame_starting_point == 0 then
+        if (noteBeat > AudioService:getCurrentBeat() or (noteBeat2 > AudioService:getCurrentBeat())) and previous_frame_starting_point == 0 then
             previous_frame_starting_point = i - 1
         end
         if math.intersect(0, judgePos, y, y2) and not (y > judgePos and isnote:isFakeNote()) then
@@ -280,8 +281,8 @@ function demoPlay:draw()
     --进度条
     local progress_bar = fTrack:to_play_track(-x_offset + event_scale * 0.2, 0) * sw
     love.graphics.setColor(play.colors.white)
-    love.graphics.rectangle("fill", start_x + (end_x - start_x) / 2 - (progress_bar * time.nowtime / time.alltime) / 2,
-        judgePos + 30, time.nowtime / time.alltime * progress_bar, 5)
+    love.graphics.rectangle("fill", start_x + (end_x - start_x) / 2 - (progress_bar * AudioService:getCurrentTime() / AudioService:getDuration()) / 2,
+        judgePos + 30, AudioService:getCurrentTime() / AudioService:getDuration() * progress_bar, 5)
 
     love.graphics.rectangle("fill", start_x + (end_x - start_x) / 2 - progress_bar / 2, judgePos + 29, 1, 7)
     love.graphics.rectangle("fill", start_x + (end_x - start_x) / 2 + progress_bar / 2, judgePos + 29, 1, 7)

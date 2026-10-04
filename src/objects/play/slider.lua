@@ -1,5 +1,5 @@
+local AudioService = require('src.services.audioService')
 local slider = object:new('slider')
-local ChartService = require("src.services.chartService")
 local layout = require 'config.layouts.play'
 slider.now_y = layout.slider.y + layout.slider.h --现在所在y位置
 slider.x = layout.slider.x
@@ -24,18 +24,17 @@ end
 
 function slider:update(dt)
     if not mouse.down then self.down = false end
-    local progress = time.alltime > 0 and time.nowtime / time.alltime or 0
+    local progress = AudioService:getDuration() > 0 and AudioService:getCurrentTime() / AudioService:getDuration() or 0
     self.now_y = -(progress * self.h) + self.y + self.h
     local y1 = mouse.y
     if y1 < self.y then y1 = self.y end   ---限制范围
     if y1 > self.y + self.h then y1 = self.y + self.h end
     if slider.down then
-        music_play = false
+        AudioService:pause()
         self.now_y = y1
-        time.nowtime = -(self.now_y - self.y - self.h) / self.h * time.alltime
-        beat.nowbeat = ChartService:toBeat(time.nowtime)
+        AudioService:seek(-(self.now_y - self.y - self.h) / self.h * AudioService:getDuration())
         if Nui:windowBegin("slider", self.x, self.y,0,0,'background') then
-            Nui:tooltip("nowtime" .. ":" .. math.roundToPrecision(time.nowtime, 100) .. " " .. "beat" .. ":" .. math.roundToPrecision(beat.nowbeat, 100))
+            Nui:tooltip("nowtime" .. ":" .. math.roundToPrecision(AudioService:getCurrentTime(), 100) .. " " .. "beat" .. ":" .. math.roundToPrecision(AudioService:getCurrentBeat(), 100))
         end
         Nui:windowEnd()
     end
@@ -47,7 +46,7 @@ function slider:mousepressed(x1, y1, button)
         return
     end
     slider.down = true
-    music_play = false
+    AudioService:pause()
 end
 
 function slider:mousereleased(_, _, button)

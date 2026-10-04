@@ -56,14 +56,16 @@ end
 
 local slider = require('src.objects.play.slider')
 local ChartService = require('src.services.chartService')
+local AudioService = require('src.services.audioService')
 local results = {}
 function love.load()
     gameLoad({})
     ChartService:setChart({bpm_list={{bpm=120,beat={0,0,1},linear_ramp=0}}, event={}, note={}})
     ChartService:load()
-    music_data = love.sound.newSoundData(882000, 44100, 16, 1)
-    music = love.audio.newSource(music_data, 'static')
-    time.nowtime, time.alltime, beat.nowbeat, beat.allbeat = 3, 20, 6, 40
+    local data = love.sound.newSoundData(882000, 44100, 16, 1)
+    AudioService:setSource(love.audio.newSource(data, 'static'))
+    AudioService:setSoundData(data)
+    AudioService:seek(3)
     room:to('edit')
 end
 local function point(x, y)
@@ -81,26 +83,26 @@ function love.update(dt)
         results.dragStart = slider.down
         point(500, slider.y+slider.h*0.25)
     elseif frame == 3 then
-        results.dragTime = time.nowtime
+        results.dragTime = AudioService:getCurrentTime()
         love.mousereleased(mouse.x, mouse.y, 1, false, 1)
     elseif frame == 4 then
         results.dragStopped = not slider.down
         point(1050, 500)
-        results.singleBefore = beat.nowbeat
+        results.singleBefore = AudioService:getCurrentBeat()
         love.wheelmoved(0, 1)
-        results.singleAfter = beat.nowbeat
+        results.singleAfter = AudioService:getCurrentBeat()
         tabs:addTab()
     elseif frame == 6 then
         point(1050, 500)
-        results.tabsBefore = beat.nowbeat
+        results.tabsBefore = AudioService:getCurrentBeat()
         love.wheelmoved(0, 1)
-        results.tabsAfter = beat.nowbeat
+        results.tabsAfter = AudioService:getCurrentBeat()
     elseif frame == 7 then
         sidebar:to('track')
         point(1500, 500)
-        local before = beat.nowbeat
+        local before = AudioService:getCurrentBeat()
         love.wheelmoved(0, -1)
-        results.sidebarNoSeek = beat.nowbeat == before
+        results.sidebarNoSeek = AudioService:getCurrentBeat() == before
     elseif frame == 8 then
         for key, value in pairs(results) do print(key .. '=' .. tostring(value)) end
         assert(results.dragStart, 'progress drag did not start')
@@ -115,19 +117,20 @@ function love.update(dt)
             from=40, to=60, trans={type='easings', easings=1, trans={0,0,1,1}}}))
         sidebar:to('event', 1)
         directEventEditing.open = true
+        settings.wavfrom, settings.spectrogram = 1, 1
     elseif frame == 10 then
         point(slider.x+10, slider.y+slider.h*0.5)
         love.mousepressed(mouse.x, mouse.y, 1, false, 1)
         assert(slider.down, 'direct event editing host blocked the progress drag')
         point(500, slider.y+slider.h*0.25)
     elseif frame == 11 then
-        assert(math.abs(time.nowtime - 15) < 0.001)
+        assert(math.abs(AudioService:getCurrentTime() - 15) < 0.001)
         love.mousereleased(mouse.x, mouse.y, 1, false, 1)
     elseif frame == 12 then
         point(500, 500)
-        local before = beat.nowbeat
+        local before = AudioService:getCurrentBeat()
         love.wheelmoved(0, 1)
-        assert(beat.nowbeat > before, 'direct event editing host blocked the time wheel')
+        assert(AudioService:getCurrentBeat() > before, 'direct event editing host blocked the time wheel')
     elseif frame == 13 then
         point(500, 500)
         love.mousepressed(mouse.x, mouse.y, 2, false, 1)
@@ -145,9 +148,9 @@ function love.update(dt)
     elseif frame == 20 then
         assert(not directEventEditing._menuOpen, 'context menu remained open after choosing an item')
         point(1050, 500)
-        local before = beat.nowbeat
+        local before = AudioService:getCurrentBeat()
         love.wheelmoved(0, 1)
-        assert(beat.nowbeat > before, 'time wheel remained blocked after closing the context menu')
+        assert(AudioService:getCurrentBeat() > before, 'time wheel remained blocked after closing the context menu')
         print('PASS: progress drag, release, single/tabbed edit wheel, sidebar isolation and direct event context menu')
         love.event.quit(0)
     end

@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local safeInput = require("src.utils.safeInput")
 --event界面
 local ChartService = require("src.services.chartService")
@@ -233,7 +234,7 @@ function Gevent:NuiNext() --更新信息
     end
 
     if require('src.utils.input'):getUIKeyboard()['return'] then --对from以及to进行计算
-        local x, w = fEvent:get(track.track, beat.nowbeat, true)
+        local x, w = fEvent:get(track.track, AudioService:getCurrentBeat(), true)
         local vars = {now = {x = x, w = w, lpos = x - w / 2, rpos = x + w / 2}}
         local from = safeInput.evaluateExpression(self.fromv.value, vars)
         local to = safeInput.evaluateExpression(self.tov.value, vars)

@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --edit区域渲染
 local ChartService = require("src.services.chartService")
 local CoordinateService = require("src.services.coordinateService")
@@ -18,8 +19,8 @@ end
 --[[
     波形图缓存（模块级，多个标签页窗口共享同一份）
     wav:  采样峰值单元缓存。音频按 WAVE_CELL 个采样切一个单元，按声道记录 min/max，
-          由 wavFill 逐帧增量构建（受时间预算限制），music_data 更换即 wavReset。
-    rows: 行条缓存。编辑窗内每 1px y 一条"峰值带"（min/max），只依赖全局参数
+          由 wavFill 逐帧增量构建（受时间预算限制），音频服务的数据更换即 wavReset。
+    rows: 行条缓存。编辑窗内每 1px y 一条"峰值带"（min/max），只依赖播放与显示参数
           （music/nowbeat/scale/judge/offset/bpmCount），不依赖窗口 x，
           因此多个标签页同帧只重建一次。
 ]]
@@ -36,15 +37,16 @@ local rows = { bands = {}, valid = false, pending = 0, needCell = 0 }
 local function wavReset()
     wav.cells = {}
     wav.built = -1
-    wav.music = music_data
+    wav.music = AudioService:getSoundData()
 end
 
 -- 增量构建 [built+1, targetCell] 的峰值单元，超过时间预算即停，下一帧继续
 local function wavFill(targetCell, budgetMs)
+    local data = AudioService:getSoundData()
     if targetCell <= wav.built then return end
-    local sr = music_data:getSampleRate()
-    local ch = music_data:getChannelCount()
-    local count = music_data:getSampleCount()
+    local sr = data:getSampleRate()
+    local ch = data:getChannelCount()
+    local count = data:getSampleCount()
     local cells = wav.cells
     local start = os.clock()
     for c = wav.built + 1, targetCell do
@@ -55,11 +57,11 @@ local function wavFill(targetCell, budgetMs)
         local mn1, mx1 = 1, -1
         local mn2, mx2 = 1, -1
         for s = s0, s1 do
-            local v = music_data:getSample(s, 1)
+            local v = data:getSample(s, 1)
             if v < mn1 then mn1 = v end
             if v > mx1 then mx1 = v end
             if ch >= 2 then
-                local v2 = music_data:getSample(s, 2)
+                local v2 = data:getSample(s, 2)
                 if v2 < mn2 then mn2 = v2 end
                 if v2 > mx2 then mx2 = v2 end
             end
@@ -74,9 +76,10 @@ end
 -- 重建行条缓存：逐行计算该 1px 行对应的音频峰值区间；
 -- 行引用的采样单元还没建完则本行留空并累计 pending（之后每帧重建，底部先补全）
 local function rowsRebuild()
-    local sr = music_data:getSampleRate()
-    local ch = music_data:getChannelCount()
-    local count = music_data:getSampleCount()
+    local data = AudioService:getSoundData()
+    local sr = data:getSampleRate()
+    local ch = data:getChannelCount()
+    local count = data:getSampleCount()
     local y0 = math.floor(play.layout.edit.y)
     local y1 = math.floor(settings.judge_line_y)
     local n = y1 - y0
@@ -98,11 +101,11 @@ local function rowsRebuild()
             local ae = math.min(s1, count - 1)
             local lo, hi, lo2, hi2 = 1, -1, 1, -1
             for s = as, ae do
-                local v = music_data:getSample(s, 1)
+                local v = data:getSample(s, 1)
                 if v < lo then lo = v end
                 if v > hi then hi = v end
                 if ch >= 2 then
-                    local v2 = music_data:getSample(s, 2)
+                    local v2 = data:getSample(s, 2)
                     if v2 < lo2 then lo2 = v2 end
                     if v2 > hi2 then hi2 = v2 end
                 end
@@ -139,8 +142,8 @@ local function rowsRebuild()
     rows.pending = pending
     rows.needCell = needCell
     rows.valid = true
-    rows.music = music_data
-    rows.nowbeat = beat.nowbeat
+    rows.music = data
+    rows.nowbeat = AudioService:getCurrentBeat()
     rows.scale = denom.scale
     rows.judge = settings.judge_line_y
     rows.offset = ChartService:getOffset()
@@ -163,8 +166,9 @@ end
 
 -- 绘制波形图：行条缓存 + 立体声分色（左蓝右橙）+ 亮度分档（顶部暗 → 底部亮）
 function demoInEdit:drawSample(pos, istrack)
-    if not music_data then return end
-    if wav.music ~= music_data then wavReset() end
+    local data = AudioService:getSoundData()
+    if not data then return end
+    if wav.music ~= data then wavReset() end
     local layout = self.layout or play.layout.edit
     local x = pos or self.x or layout.x
     local y0 = math.floor(play.layout.edit.y)
@@ -173,20 +177,20 @@ function demoInEdit:drawSample(pos, istrack)
     if n <= 0 then return end
 
     -- 失效检测：全局参数任一变化，或上轮有行未建成（pending > 0）→ 重建
-    if not (rows.valid and rows.pending == 0 and rows.music == music_data and
-        rows.nowbeat == beat.nowbeat and rows.scale == denom.scale and
+    if not (rows.valid and rows.pending == 0 and rows.music == data and
+        rows.nowbeat == AudioService:getCurrentBeat() and rows.scale == denom.scale and
         rows.judge == settings.judge_line_y and rows.offset == ChartService:getOffset() and
         rows.bpmCount == ChartService:getBpmCount() and rows.y0 == y0) then
         rowsRebuild()
     end
 
     -- 增量构建峰值单元到"视窗需求 + 预取"；需求远超已建（首帧/跳转）用更大的时间预算
-    local sr = music_data:getSampleRate()
+    local sr = data:getSampleRate()
     local prefetchCells = math.floor(WAVE_PREFETCH_S * sr / WAVE_CELL)
     wavFill(rows.needCell + prefetchCells, (rows.needCell > wav.built) and WAVE_BUILD_MS_GAP or WAVE_BUILD_MS)
 
     -- 逐行绘制（行内按峰值幅度向外生长，夹在窗口内）
-    local ch = music_data:getChannelCount()
+    local ch = data:getChannelCount()
     local window_w = layout.w
     local cx = x + window_w / 2
     local half = window_w / 2 - 2       -- 单侧幅度上限
@@ -290,7 +294,7 @@ function demoInEdit:drawEditContent(pos, istrack)
     end
 
     if settings.spectrogram == 1 then
-        Spectrogram:draw(music_data, pos, self.layout.w, self.layout.y,
+        Spectrogram:draw(AudioService:getSoundData(), pos, self.layout.w, self.layout.y,
             math.min(settings.judge_line_y, self.layout.y + self.layout.h))
     end
     if settings.wavfrom == 1 then
@@ -318,13 +322,13 @@ function demoInEdit:drawEditContent(pos, istrack)
     --减少重复遍历
     local index_start = 1
     local index_start_event = 1
-    if beat.nowbeat > previous_frame_beat then
+    if AudioService:getCurrentBeat() > previous_frame_beat then
         index_start = math.max(1, previous_frame_starting_point)
         index_start_event = math.max(1, previous_frame_starting_point_event)
     end
     previous_frame_starting_point = 0
     previous_frame_starting_point_event = 0
-    previous_frame_beat = beat.nowbeat
+    previous_frame_beat = AudioService:getCurrentBeat()
     
     local y = 0
     local y2 = 0

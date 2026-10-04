@@ -35,7 +35,6 @@ return function(ChartService, state, internal, dependencies)
         for i = 1, #bpmlist do
             state.chart.bpm_list[i] = bpmlist[i]
         end
-        beat.allbeat = beat:toBeat(state.chart.bpm_list, time.alltime)
     end
 
     --- 对事件列表排序（按 beat 升序，同步排序 chart 和 extra_chart）

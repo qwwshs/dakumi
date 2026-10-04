@@ -7,8 +7,7 @@
 
     全局变量说明:
     - DAKUMI: 版本信息
-    - time/beat: 时间和节拍状态
-    - music/music_data/music_play: 音频状态
+    - beat: 节拍计算工具（播放状态由 AudioService 私有持有）
     - mouse/iskeyboard: 输入状态
     - WINDOW: 窗口尺寸和缩放信息
     - PATH: 资源和用户数据路径配置
@@ -19,12 +18,8 @@
 
 DAKUMI           = { _VERSION = "0.5.0c" }      -- 版本信息
 beat             = beat                         -- 节拍计算模块（在 isRequire.lua 中初始化）
-time             = { nowtime = 0, alltime = 1 } -- 时间状态：当前时间、总时长
 -- chart/extra_chart 已由 ChartService 私有持有，不再定义全局变量
 bg               = nil                          -- 当前背景图片
-music            = nil                          -- 当前音频源
-music_data       = nil                          -- 音频波形数据
-music_play       = false                        -- 音乐是否正在播放
 
 --- 鼠标状态
 mouse            = { x = 0, y = 0, down = false, cursor = '' }
@@ -88,6 +83,8 @@ local KeyCapture = require('src.services.keyCapture')
 local BpmMeasureService = require('src.services.bpmMeasureService')
 local CoordinateService = require("src.services.coordinateService")
 local AudioService = require("src.services.audioService")
+local appliedMusicVolume = settings.music_volume
+AudioService:setVolume(appliedMusicVolume / 100)
 local ThemeService = require("src.services.themeService")
 ThemeService:load(PATH.usersPath.ui .. 'theme.yml')
 
@@ -280,6 +277,11 @@ function love.update(dt)
     local original_x, original_y = love.mouse.getPosition() --对缩放进行处理
     mouse.x, mouse.y = CoordinateService:screenToGame(original_x, original_y)
 
+    if appliedMusicVolume ~= settings.music_volume then
+        appliedMusicVolume = settings.music_volume
+        AudioService:setVolume(appliedMusicVolume / 100)
+    end
+    AudioService:update(dt)
     BpmMeasureService:update()
     room("update", dt)
 
@@ -306,6 +308,7 @@ end
 
 function love.quit()
     room("quit")
+    AudioService:unload()
 end
 
 function love.resize(w, h)

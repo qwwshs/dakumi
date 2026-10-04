@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --[[
     模块名: spectrogramRuler
     描述: 判定线下方的 Nuklear 频率尺；频率缩放只在尺上接收滚轮，不改变编辑区的时间操作。
@@ -8,9 +9,9 @@ local rulerFrame, bounds = nil, {}
 local function clamp(n, low, high) return math.max(low, math.min(high, n)) end
 
 function Ruler:zoom(factor, position, pan)
-    if not music_data then return end
-    local o = Config.read(settings, music_data:getSampleRate())
-    local low, high, limit = o.minHz, o.maxHz, music_data:getSampleRate() / 2
+    if not AudioService:getSoundData() then return end
+    local o = Config.read(settings, AudioService:getSoundData():getSampleRate())
+    local low, high, limit = o.minHz, o.maxHz, AudioService:getSoundData():getSampleRate() / 2
     local logarithmic = o.scale ~= 'linear'
     if logarithmic then low, high, limit = math.log(low), math.log(high), math.log(limit) end
     local minimum = logarithmic and 0 or 1
@@ -43,8 +44,8 @@ function Ruler:contains(x, y)
 end
 
 function Ruler:draw(ui, x, width)
-    if not music_data or settings.spectrogram ~= 1 or settings.spectrogram_ruler == 0 then return end
-    local o = Config.read(settings, music_data:getSampleRate())
+    if not AudioService:getSoundData() or settings.spectrogram ~= 1 or settings.spectrogram_ruler == 0 then return end
+    local o = Config.read(settings, AudioService:getSoundData():getSampleRate())
     ui:layoutRow('dynamic', 28, 1)
     local rx, ry, rw, rh = ui:widgetBounds()
     ui:label('')

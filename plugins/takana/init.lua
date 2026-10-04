@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local ChartService = require("src.services.chartService")
 
 local Gtakana = group:new('takana')
@@ -55,7 +56,7 @@ local function generateTakanaChart(frames)
             children = {},
             model = {
                 timeStart = 0,
-                timeEnd = math.floor(time.alltime * to_ms),
+                timeEnd = math.floor(AudioService:getDuration() * to_ms),
                 movement = {
                     left = { list = {}, type = "position" },
                     right = { list = {}, type = "position" },
@@ -70,7 +71,7 @@ local function generateTakanaChart(frames)
         local prev_lpos, prev_rpos = nil, nil
         local nowisfade = false
 
-        for istime = 0, time.alltime, 1 / frames do
+        for istime = 0, AudioService:getDuration(), 1 / frames do
             istime = math.roundToPrecision(istime, to_ms)
             local nowbeat = ChartService:toBeat(istime)
             local x, w = fEvent:get(istrack, nowbeat)
@@ -290,7 +291,7 @@ function Gtakana:Nui()
         nativefs.write(ispath .. name .. '.json', dkjson.encode(takana, { indent = true }))
 
         -- 复制音频文件
-        if music then
+        if AudioService:getSource() then
             local ext = getFileExtension(menu.musicPath)
             nativefs.newFile(ispath .. 'music.' .. ext)
             nativefs.write(ispath .. 'music.' .. ext, nativefs.read(menu.musicPath))

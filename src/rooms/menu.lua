@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 local safeInput = require("src.utils.safeInput")
 local layout         = require 'config.layouts.menu' --菜单布局
 local colors         = require 'config.colors.menu'  --菜单颜色
@@ -17,7 +18,7 @@ room:addRoom(menu, 0)
 menu.chartTab = {}                                                          --所有谱面的文件夹
 menu.selectMusicPos = 1                                                     --选择到的谱面
 menu.selectChartPos = 1                                                     --选择到的歌曲
-menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
+menu.chartInfo = { song_name = nil, bg = nil, chart_name = {} } --谱面的信息
 menu.path = ''
 menu.bgPath = ''
 menu.musicPath = ''
@@ -81,9 +82,9 @@ end
 
 function menu:select_music()
     if menu.chartTab[menu.selectMusicPos] then
-        love.audio.stop()                                                           --停止上一个歌曲
+        AudioService:unload() -- 停止并释放上一个歌曲。
         beat_last = 0
-        menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
+        menu.chartInfo = { song_name = nil, bg = nil, chart_name = {} } --谱面的信息
         --输出选择到的谱面的谱面信息
         nativefs.mount(PATH.base)
         local now_file_path = PATH.usersPath.chart .. menu.chartTab[menu.selectMusicPos] .. "/"
@@ -133,24 +134,12 @@ function menu:select_music()
         for i, v in ipairs(file_tab) do                                   --因为一些数据在chart里面 所以分开读
             local v_extemsion = getFileExtension(v)
             if table.find(file_extension.music, getFileExtension(v)) then --歌曲
-                love.audio.stop()                                         --停止上一个歌曲
-                if menu:check('music', now_file_path .. v) then
-                    menu.chartInfo.song = love.audio.newSource(
-                        now_file_path .. v, "stream")
-                    menu.chartInfo.song:setVolume(settings.music_volume / 100) --设置音量大小
-                    menu.chartInfo.song:play()
-
-                    --读取音频信息
-                    music = menu.chartInfo.song
+                local ok, err = AudioService:load(now_file_path .. v, {preview = true})
+                if ok then
                     menu.musicPath = now_file_path .. v
-                    time.alltime = music:getDuration() + ChartService:getOffset() / 1000
-                    beat.allbeat = ChartService:toBeat(time.alltime)
                 else
-                    log("music file error")
-                    menu.chartInfo.song = nil
-                    music = nil
-                    time.alltime = 0
-                    beat.allbeat = 0
+                    log('music file error: ' .. tostring(err))
+                    AudioService:unload()
                 end
             end
         end
@@ -162,8 +151,8 @@ end
 
 function menu:flushed()                                                         --刷新
     menu.chartTab = {}                                                          --所有谱面的文件夹
-    menu.chartInfo = { song_name = nil, bg = nil, chart_name = {}, song = nil } --谱面的信息
-    love.audio.stop()                                                           --停止上一个歌曲
+    menu.chartInfo = { song_name = nil, bg = nil, chart_name = {} } --谱面的信息
+    AudioService:unload() -- 停止并释放上一个歌曲。
 
     local dir = love.filesystem.getIdentity()                                   --文件的写入目录
 
@@ -245,23 +234,13 @@ end
 function menu:update(dt)
     menu('update', dt)
 
-    --更新music时间
-    if menu.chartInfo.song then
-        time.nowtime = time.nowtime + dt
-        beat.nowbeat = ChartService:toBeat(time.nowtime)
-    else
-        time.nowtime = 0
-    end
-    if ChartService:getBpmCount() > 0 then
-        beat.nowbeat = ChartService:toBeat(time.nowtime)
-    end
-    if ChartService:getBpmCount() > 0 and math.floor(beat.nowbeat) ~= beat_last then
+    if ChartService:getBpmCount() > 0 and math.floor(AudioService:getCurrentBeat()) ~= beat_last then
         bg_animation.now.alpha = bg_animation.st2.alpha
-        beat_last = math.floor(beat.nowbeat)
+        beat_last = math.floor(AudioService:getCurrentBeat())
         if flesh_st then
             timer.tween(
-            ChartService:toTime(math.floor(beat.nowbeat) + 1) -
-            ChartService:toTime(math.floor(beat.nowbeat)), bg_animation.now, bg_animation.ed2,
+            ChartService:toTime(math.floor(AudioService:getCurrentBeat()) + 1) -
+            ChartService:toTime(math.floor(AudioService:getCurrentBeat())), bg_animation.now, bg_animation.ed2,
                 bg_animation.trans2)
         end
     end

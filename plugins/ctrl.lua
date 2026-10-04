@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --[[
     模块名: ctrl
     描述: 复制/粘贴/框选管理模块
@@ -546,7 +547,7 @@ local function selectInPlayArea(min_x, max_x, min_y_beat, max_y_beat)
     local function checkTrack(track_id)
         if checked_track[track_id] then return end
         checked_track[track_id] = true
-        local track_x, track_w = fTrack:to_play_track(fEvent:get(track_id, beat.nowbeat))
+        local track_x, track_w = fTrack:to_play_track(fEvent:get(track_id, AudioService:getCurrentBeat()))
         if math.intersect(min_x, max_x, track_x, track_x + track_w) then
             local_track[track_id] = true
         end
@@ -732,7 +733,7 @@ function ctrl:wheelmoved(x, y)
     if input('accelerate') then
         temp = temp * 4
     end
-    music_play = false
+    AudioService:pause()
     if y > 0 then
         temp = temp / denom.denom
     else

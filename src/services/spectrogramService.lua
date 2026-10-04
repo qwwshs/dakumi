@@ -1,3 +1,4 @@
+local AudioService = require('src.services.audioService')
 --[[
     模块名: spectrogramService
     描述: 保留完整数值频谱，以固定时间格缓存；按屏幕像素汇总后由 GPU 转分贝、调色。
@@ -193,7 +194,7 @@ local function rebuildTiles(rows, columns)
 end
 
 local function signature(y0, y1)
-    local parts = {beat.nowbeat, denom.scale, settings.judge_line_y, ChartService:getOffset(), y0, y1}
+    local parts = {AudioService:getCurrentBeat(), denom.scale, settings.judge_line_y, ChartService:getOffset(), y0, y1}
     for i = 1, ChartService:getBpmCount() do
         local b = ChartService:getBpm(i)
         parts[#parts + 1] = table.concat({b.bpm, b.linear_ramp or 0, b.beat[1], b.beat[2], b.beat[3]}, ',')
