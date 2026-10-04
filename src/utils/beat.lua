@@ -91,8 +91,8 @@ function beat:toTime(bpm, isbeat)
         return thebeat / bpm * 60
     end
     
-    -- 只有一个BPM或者beat小于第一个BPM的beat时刻
-    if #bpm == 1 or isbeat <= beat:get(bpm[2].beat) then
+    -- 单一 BPM 或第一段之前按起始速度换算；第一段渐变必须进入积分计算。
+    if #bpm == 1 or isbeat <= beat:get(bpm[1].beat) then
         return thetime(isbeat, bpm[1].bpm)
     end
     

@@ -16,7 +16,7 @@
     - Nui: Nuklear UI 实例
 ]]
 
-DAKUMI           = { _VERSION = "0.5.0c" }      -- 版本信息
+DAKUMI           = { _VERSION = "0.6.0" }      -- 版本信息
 beat             = beat                         -- 节拍计算模块（在 isRequire.lua 中初始化）
 -- chart/extra_chart 已由 ChartService 私有持有，不再定义全局变量
 bg               = nil                          -- 当前背景图片

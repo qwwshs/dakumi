@@ -152,7 +152,29 @@ function love.update(dt)
         local before = AudioService:getCurrentBeat()
         love.wheelmoved(0, 1)
         assert(AudioService:getCurrentBeat() > before, 'time wheel remained blocked after closing the context menu')
-        print('PASS: progress drag, release, single/tabbed edit wheel, sidebar isolation and direct event context menu')
+        sidebar:getGroup('event').timeOffsetV.value = '125'
+    elseif frame == 21 then
+        local e = ChartService:getEvent(1)
+        assert(e:getTimeOffset() == 125 and math.abs(e:getBeatValue() - 10.25) < 0.00001)
+        sidebar:getGroup('event').timeOffsetV.value = '0'
+    elseif frame == 22 then
+        assert(ChartService:getEvent(1):getTimeOffset() == 125)
+        assert(sidebar:getGroup('event').timeOffsetV.error == 'time_offset_invalid')
+        sidebar:getGroup('event').timeOffsetV.value = ''
+    elseif frame == 23 then
+        assert(ChartService:getEvent(1):getTimeOffset() == 0)
+        local Note = require('src.models.Note')
+        ChartService:add(Note.new({type='hold',beat={10,0,1},beat2={12,0,1}}))
+        sidebar:to('note', 1)
+        sidebar:getGroup('note').timeOffsetV.value = '250'
+    elseif frame == 24 then
+        local n = ChartService:getNote(1)
+        assert(n:getTimeOffset() == 250 and math.abs(n:getBeatValue() - 10.5) < 0.00001)
+        sidebar:getGroup('note').timeOffsetV.value = ''
+    elseif frame == 25 then
+        assert(ChartService:getNote(1):getTimeOffset() == 0)
+        require('tests.editor_input_love.offset_render')()
+        print('PASS: progress drag, edit wheel, context menu and real Nuklear note/event time-offset fields')
         love.event.quit(0)
     end
 end

@@ -15,6 +15,31 @@ return function(ChartService, state, internal, dependencies)
         return beat:toTime(state.chart.bpm_list or {}, isbeat)
     end
 
+    -- 偏移会改变实际时间排序；保留侧栏正在编辑的对象，不能让索引指向另一元件。
+    function ChartService:resortTimePositions()
+        local selected, kind
+        if sidebar and sidebar.incoming then
+            kind = sidebar.displayed_content
+            if kind == 'note' or kind == 'event' then
+                selected = state.chart[kind][sidebar.incoming[1]]
+            end
+        end
+        for _, list in ipairs({state.chart.note or {}, state.chart.event or {}}) do
+            for _, entity in ipairs(list) do
+                if type(entity.getBeatValue) ~= 'function' then return end
+            end
+        end
+        self:sortNotes()
+        self:sortEvents()
+        if selected then
+            sidebar.incoming[1] = internal.findItemIndex(state.chart[kind], selected)
+        end
+    end
+
+    function ChartService:onTimeOffsetChanged(entity)
+        if dependencies.recorder.inChartEntity(entity) then self:resortTimePositions() end
+    end
+
     -- ============================================================
     -- 排序（同步排序 chart 和 extra_chart）
     -- ============================================================

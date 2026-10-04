@@ -113,7 +113,7 @@ local function generateTakanaChart(frames)
                 local takana_note = {
                     id = id,
                     model = {
-                        timeJudge = math.floor(ChartService:toTime(isnote:getBeat()) * to_ms),
+                        timeJudge = math.floor(ChartService:toTime(isnote:getBeatValue()) * to_ms),
                         type = 'hit'
                     },
                 }
@@ -131,14 +131,14 @@ local function generateTakanaChart(frames)
                     takana_note.model.hitType = 'Slide'
                 elseif isnote:isHold() then
                     takana_note.model.type = 'hold'
-                    takana_note.model.timeEnd = math.floor(ChartService:toTime(isnote:getBeat2()) * to_ms)
+                    takana_note.model.timeEnd = math.floor(ChartService:toTime(isnote:getBeat2Value()) * to_ms)
 
                     -- hold 头部可以附加 note 或 wipe
                     if isnote:getNoteHead() == 1 then
                         local hold_note = {
                             id = id,
                             model = {
-                                timeJudge = math.floor(ChartService:toTime(isnote:getBeat()) * to_ms),
+                                timeJudge = math.floor(ChartService:toTime(isnote:getBeatValue()) * to_ms),
                                 type = 'hit',
                                 hitType = 'Tap'
                             },
@@ -155,7 +155,7 @@ local function generateTakanaChart(frames)
                         local hold_note = {
                             id = id,
                             model = {
-                                timeJudge = math.floor(ChartService:toTime(isnote:getBeat()) * to_ms),
+                                timeJudge = math.floor(ChartService:toTime(isnote:getBeatValue()) * to_ms),
                                 type = 'hit',
                                 hitType = 'Slide'
                             },

@@ -1,4 +1,7 @@
 return {
+    ['time_offset'] = 'Time offset (ms)',
+    ['time_offset_invalid'] = 'Enter a positive number; leave blank to disable',
+    ['time_offset_overlap'] = 'Offset overlaps an event group',
     ['keybind.expand'] = 'Show key bindings',
     ['keybind.collapse'] = 'Hide key bindings',
     ['keybind.capture_title'] = 'Record key binding',

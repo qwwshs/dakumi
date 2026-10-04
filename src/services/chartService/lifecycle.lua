@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 -- 谱面加载、格式迁移、保存与序列化；由 init.lua 注入唯一私有状态。
 return function(ChartService, state, internal, dependencies)
     local Note = dependencies.Note
@@ -78,6 +79,7 @@ return function(ChartService, state, internal, dependencies)
                     if type(inner) ~= 'table' then
                         groupData.event[index] = nil
                     else
+                        inner.time_offset = TimeOffset.normalize(inner.time_offset)
                         if type(inner.trans) ~= 'table' then
                             inner.trans = table.copy(meta_event.__index.trans)
                         elseif #inner.trans > 0 then
@@ -148,6 +150,7 @@ return function(ChartService, state, internal, dependencies)
             local n = state.chart.note[i]
             internal.addNoteToIndex(n)
         end
+        self:resortTimePositions()
         eventBus:emit('chart:changed', {kind = 'load'})
         return true
     end

@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 local ctx
 --[[
     插件名: directEventEditing
@@ -53,8 +54,8 @@ end
 -- @treturn number c_x2 尾部 x 坐标
 -- @treturn number c_y2 尾部 y 坐标
 local function getEventScreenPos(isevent)
-    local c_y = CoordinateService:toY(isevent:getBeat())
-    local c_y2 = CoordinateService:toY(isevent:getBeat2())
+    local c_y = CoordinateService:toY(isevent:getBeatValue())
+    local c_y2 = CoordinateService:toY(isevent:getBeat2Value())
     local c_x = fTrack:to_play_track_x(isevent:getFrom())
     local c_x2 = fTrack:to_play_track_x(isevent:getTo())
     return c_x, c_y, c_x2, c_y2
@@ -178,7 +179,7 @@ function directEventEditing:update(dt)
             local now_beat = beat:toNearby(CoordinateService:yToBeat(mouse.y))
             if beat:get(now_beat) < isevent:getBeat2Value() then
                 local oldBeat = isevent:getBeat()
-                isevent:setBeat(now_beat)
+                isevent:setBeat(TimeOffset.baseBeat(now_beat, isevent:getTimeOffset()))
                 if not ChartService:canPlaceEvent(isevent, isevent) then isevent:setBeat(oldBeat) end
             end
             local now_from = fTrack:track_get_near_fence_x()
@@ -189,7 +190,7 @@ function directEventEditing:update(dt)
             local now_beat = beat:toNearby(CoordinateService:yToBeat(mouse.y))
             if beat:get(now_beat) > isevent:getBeatValue() then
                 local oldBeat = isevent:getBeat2()
-                isevent:setBeat2(now_beat)
+                isevent:setBeat2(TimeOffset.baseBeat(now_beat, isevent:getTimeOffset()))
                 if not ChartService:canPlaceEvent(isevent, isevent) then isevent:setBeat2(oldBeat) end
             end
             local now_to = fTrack:track_get_near_fence_x()

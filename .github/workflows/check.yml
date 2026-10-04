@@ -24,7 +24,7 @@ jobs:
         run: |
           python3 scripts/run_tests.py --syntax
           python3 scripts/check_boundaries.py
-          luacheck src/utils/autoSaveRetention.lua src/services/spectrogramConfig.lua src/services/keyCapture.lua src/services/noteSkin.lua
+          luacheck src/utils/autoSaveRetention.lua src/services/spectrogramConfig.lua src/services/keyCapture.lua src/services/noteSkin.lua src/utils/timeOffset.lua
       - name: 独立回归与 LÖVE 集成测试
         run: xvfb-run -a python3 scripts/run_tests.py --integration --love "$PWD/.zcode/runtime/squashfs-root/AppRun"
       - name: 保留集成测试报告

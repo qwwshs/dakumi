@@ -1,4 +1,7 @@
 return {
+    ['time_offset'] = '偏移时值（ms）',
+    ['time_offset_invalid'] = '偏移时值须为正数；留空取消偏移',
+    ['time_offset_overlap'] = '偏移后与事件组范围重叠',
     ['keybind.expand'] = '展开改键位',
     ['keybind.collapse'] = '收起改键位',
     ['keybind.capture_title'] = '录入键位',

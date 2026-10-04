@@ -1,3 +1,4 @@
+local TimeOffsetField = require('src.objects.timeOffsetField')
 local AudioService = require('src.services.audioService')
 local safeInput = require("src.utils.safeInput")
 --event界面
@@ -6,6 +7,7 @@ local editState = require("src.utils.editState") -- 插件拖拽状态（核心�
 local Gevent = group:new('event')
 Gevent.type = "event"
 Gevent.layout = require 'config.layouts.sidebar'.event
+Gevent.timeOffsetV = TimeOffsetField.new()
 Gevent.transv = {value = '1,1,1,1'}
 Gevent.transType = {value = 1}
 Gevent.fromv = {value = '0'}
@@ -44,6 +46,7 @@ function Gevent:to(event_index)
     Incoming_event_index = event_index
     local v = ChartService:getEvent(event_index)
     if not v then log("Sidebar group event not found! event index: "..event_index) log(v) sidebar:to("nil") return end
+    self.timeOffsetV:load(v)
     Incoming_event = v
     Incoming_event_before_arrival = v:copy()
     self.fromv.value = tostring(v:getFrom())
@@ -167,6 +170,7 @@ function Gevent:transTypeIsEasings()
 end
 
 function Gevent:Nui()
+    self.timeOffsetV:draw(self.layout.uiH)
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     Nui:label(i18n:get("from"))
     ui:edit('field',self.fromv)
@@ -219,6 +223,7 @@ end
 function Gevent:NuiNext() --更新信息
     local v = ChartService:getEvent(sidebar.incoming[1])
     if not v then return end
+    self.timeOffsetV:apply(v, ChartService)
 
     if v:getType() == 'event_group' then
         local from, to = tonumber(self.fromv.value), tonumber(self.tov.value)
@@ -279,6 +284,8 @@ function Gevent:leave()
         ChartService:suspend(function()
             Incoming_event:setBeat(Incoming_event_before_arrival:getBeat())
             Incoming_event:setBeat2(Incoming_event_before_arrival:getBeat2())
+            local offset = Incoming_event_before_arrival:getTimeOffset()
+            Incoming_event:setTimeOffset(offset > 0 and offset or nil)
             Incoming_event:setTrack(Incoming_event_before_arrival:getTrack())
             Incoming_event:setType(Incoming_event_before_arrival:getType())
             Incoming_event:setFrom(Incoming_event_before_arrival:getFrom())

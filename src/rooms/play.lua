@@ -142,8 +142,8 @@ function play:draw()
         local eventCount = ChartService:getTrackEventCount(track.track, eventType)
         for i = eventCount, 1, -1 do
             local isevent = ChartService:getTrackEvent(track.track, eventType, i)
-            local y = CoordinateService:toY(isevent:getBeat())
-            local y2 = CoordinateService:toY(isevent:getBeat2())
+            local y = CoordinateService:toY(isevent:getBeatValue())
+            local y2 = CoordinateService:toY(isevent:getBeat2Value())
             if not (y2 > WINDOW.h or y < 0) then
                 -- beizer曲线
                 for k = 1, 100 do

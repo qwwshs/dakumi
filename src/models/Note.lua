@@ -7,6 +7,7 @@
     支持深度拷贝（copy）、深度比较（eq/__eq）、序列化（toTable）。
 ]]
 
+local TimeOffset = require('src.utils.timeOffset')
 local Note = {}
 Note.__index = function(self, key)
     return Note[key]
@@ -19,6 +20,7 @@ function Note.new(data)
     data = data or {}
     local self = setmetatable({}, Note)
     self._data = {
+        time_offset = TimeOffset.normalize(data.time_offset),
         beat      = data.beat or {0, 0, 1},
         track     = data.track or 1,
         type      = data.type or 'note',
@@ -40,6 +42,8 @@ function Note:getBeat2()     return self._data.beat2 end
 function Note:getNoteHead()  return self._data.note_head end
 function Note:getWipeHead()  return self._data.wipe_head end
 
+function Note:getTimeOffset() return self._data.time_offset or 0 end
+
 -- ========== Setter ==========
 
 function Note:setBeat(v)      self._data.beat = v end
@@ -49,6 +53,14 @@ function Note:setFake(v)      self._data.fake = v end
 function Note:setBeat2(v)     self._data.beat2 = v end
 function Note:setNoteHead(v)  self._data.note_head = v end
 function Note:setWipeHead(v)  self._data.wipe_head = v end
+
+-- 留空表示关闭偏移；有值时必须是有限正数。
+function Note:setTimeOffset(value)
+    assert(value == nil or TimeOffset.valid(value), '偏移时值必须为正数（毫秒）')
+    if self._data.time_offset == value then return end
+    self._data.time_offset = value
+    TimeOffset.changed(self)
+end
 
 -- ========== 便捷判断 ==========
 
@@ -62,14 +74,14 @@ function Note:isFakeNote()   return self._data.fake == 1 end
 --- 获取 beat 的数值表示（委托给 beat 模块）
 -- @treturn number beat 数值
 function Note:getBeatValue()
-    return beat:get(self._data.beat)
+    return TimeOffset.shiftBeat(self._data.beat, self._data.time_offset)
 end
 
 --- 获取 beat2 的数值表示（hold 专用，非 hold 返回 nil）
 -- @treturn number|nil beat2 数值
 function Note:getBeat2Value()
     if self._data.beat2 then
-        return beat:get(self._data.beat2)
+        return TimeOffset.shiftBeat(self._data.beat2, self._data.time_offset)
     end
     return nil
 end
@@ -81,6 +93,7 @@ end
 function Note:copy()
     local d = self._data
     return Note.new({
+        time_offset = d.time_offset,
         beat      = table.copy(d.beat),
         track     = d.track,
         type      = d.type,
@@ -97,6 +110,7 @@ end
 function Note:eq(other)
     if not other or not other._data then return false end
     local a, b = self._data, other._data
+    if a.time_offset ~= b.time_offset then return false end
     if a.track ~= b.track then return false end
     if a.type ~= b.type then return false end
     if a.fake ~= b.fake then return false end
@@ -118,6 +132,7 @@ Note.__eq = Note.eq
 function Note:toTable()
     local d = self._data
     local t = {
+        time_offset = d.time_offset,
         beat  = d.beat,
         track = d.track,
         type  = d.type,
@@ -144,7 +159,7 @@ end
 -- 豁免期（撤销回放/内部舞步）与谱面外副本（粘贴预览、编辑副本等）不产生记录
 -- ============================================================
 local recorder = require("src.utils.chartRecorder")
-local MUTATING_SETTERS = { 'setBeat', 'setTrack', 'setType', 'setFake', 'setBeat2', 'setNoteHead', 'setWipeHead' }
+local MUTATING_SETTERS = { 'setTimeOffset', 'setBeat', 'setTrack', 'setType', 'setFake', 'setBeat2', 'setNoteHead', 'setWipeHead' }
 for i = 1, #MUTATING_SETTERS do
     local name = MUTATING_SETTERS[i]
     local original = Note[name]

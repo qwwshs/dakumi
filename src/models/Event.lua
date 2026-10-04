@@ -10,6 +10,7 @@
     提供便捷方法直接访问子字段。
 ]]
 
+local TimeOffset = require('src.utils.timeOffset')
 local Event = {}
 Event.__index = function(self, key)
     return Event[key]
@@ -22,6 +23,7 @@ function Event.new(data)
     data = data or {}
     local self = setmetatable({}, Event)
     self._data = {
+        time_offset = TimeOffset.normalize(data.time_offset),
         beat  = data.beat or {0, 0, 1},
         beat2 = data.beat2 or {0, 0, 1},
         track = data.track or 1,
@@ -58,6 +60,8 @@ function Event:getTransType()   return self._data.trans.type end
 function Event:getTransData()   return self._data.trans.trans end
 function Event:getEasings()     return self._data.trans.easings end
 
+function Event:getTimeOffset() return self._data.time_offset or 0 end
+
 -- ========== Setter ==========
 
 function Event:setBeat(v)   self._data.beat = v end
@@ -71,6 +75,14 @@ function Event:setEventGroup(v) self._data.event_group = v end
 function Event:setFlipHorizontally(v) self._data.flip_horizontally = v == 1 and 1 or 0 end
 function Event:setFlipVertically(v) self._data.flip_vertically = v == 1 and 1 or 0 end
 
+-- 留空表示关闭偏移；有值时必须是有限正数。
+function Event:setTimeOffset(value)
+    assert(value == nil or TimeOffset.valid(value), '偏移时值必须为正数（毫秒）')
+    if self._data.time_offset == value then return end
+    self._data.time_offset = value
+    TimeOffset.changed(self)
+end
+
 -- trans 子字段便捷设置
 function Event:setTransType(v)   self._data.trans.type = v end
 function Event:setTransData(v)   self._data.trans.trans = v end
@@ -80,12 +92,12 @@ function Event:setEasings(v)     self._data.trans.easings = v end
 
 --- 获取 beat 的数值表示
 function Event:getBeatValue()
-    return beat:get(self._data.beat)
+    return TimeOffset.shiftBeat(self._data.beat, self._data.time_offset)
 end
 
 --- 获取 beat2 的数值表示
 function Event:getBeat2Value()
-    return beat:get(self._data.beat2)
+    return TimeOffset.shiftBeat(self._data.beat2, self._data.time_offset)
 end
 
 -- ========== 类型判断 ==========
@@ -101,6 +113,7 @@ function Event:isRpos()  return self._data.type == 'rpos' end
 function Event:copy()
     local d = self._data
     return Event.new({
+        time_offset = d.time_offset,
         beat  = table.copy(d.beat),
         beat2 = table.copy(d.beat2),
         track = d.track,
@@ -118,6 +131,7 @@ end
 function Event:eq(other)
     if not other or not other._data then return false end
     local a, b = self._data, other._data
+    if a.time_offset ~= b.time_offset then return false end
     if a.track ~= b.track then return false end
     if a.type ~= b.type then return false end
     if a.from ~= b.from then return false end
@@ -139,6 +153,7 @@ Event.__eq = Event.eq
 function Event:toTable()
     local d = self._data
     return {
+        time_offset = d.time_offset,
         beat  = d.beat,
         beat2 = d.beat2,
         track = d.track,
@@ -163,7 +178,7 @@ end
 -- 豁免期（撤销回放/内部舞步）与谱面外副本（粘贴预览、编辑副本等）不产生记录
 -- ============================================================
 local recorder = require("src.utils.chartRecorder")
-local MUTATING_SETTERS = { 'setBeat', 'setBeat2', 'setTrack', 'setType', 'setFrom', 'setTo',
+local MUTATING_SETTERS = { 'setTimeOffset', 'setBeat', 'setBeat2', 'setTrack', 'setType', 'setFrom', 'setTo',
     'setTrans', 'setEventGroup', 'setFlipHorizontally', 'setFlipVertically',
     'setTransType', 'setTransData', 'setEasings' }
 for i = 1, #MUTATING_SETTERS do

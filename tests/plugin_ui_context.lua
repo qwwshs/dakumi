@@ -6,6 +6,7 @@ i18n = setmetatable({}, {__index = block})
 love = {mouse = {isDown = function() return false end}}
 package.loaded['src.services.audioService'] = {}
 local event = {getBeat = function() return 0 end, getBeat2 = function() return 1 end,
+    getBeatValue = function() return 0 end, getBeat2Value = function() return 1 end,
     getFrom = function() return 0 end, getTo = function() return 1 end,
     getTransType = function() return 'easings' end}
 package.loaded['src.services.chartService'] = {getEvent = function() return event end}

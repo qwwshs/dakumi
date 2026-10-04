@@ -61,12 +61,9 @@ function demoPlay:Setup(x, y, w, h)
     to3d_shader:send("judge", (settings.judge_line_y - layout.y) / h)
 end
 
-local previous_frame_beat = 0           -- 上一帧的节拍
-local previous_frame_starting_point = 1 -- 上一帧的遍历起点
-
+-- demo 逐个判断实际显示时间，不缓存数组下标。
+-- 插件增删、跨帧编辑与偏移重排期间，谱面列表未必保持时间顺序。
 function demoPlay:resetTraversal()
-    previous_frame_beat = 0
-    previous_frame_starting_point = 1
 end
 
 function demoPlay:draw()
@@ -185,7 +182,6 @@ function demoPlay:draw()
 
     local note_h = settings.note_height * sh                 --25 * denom.scale
     love.graphics.setColor(1, 1, 1, effect.note_alpha / 100)
-    local end_beat = CoordinateService:yToBeat(0)
     local noteBeat = 0
     local noteBeat2 = 0
 
@@ -195,22 +191,13 @@ function demoPlay:draw()
     --展示侧note渲染
     local spacing = 20 * sw --note和track的间距
 
-    --减少重复遍历
-    local index_start = 1
-    if AudioService:getCurrentBeat() > previous_frame_beat then
-        index_start = math.max(1, previous_frame_starting_point)
-    end
-    previous_frame_beat = AudioService:getCurrentBeat()
-    previous_frame_starting_point = 0
-
-    --先按beat顺序收集可见note到各自层级(同一层级内保持beat顺序)
+    -- 按谱面列表顺序收集可见音符；每个音符的偏移仅影响自身的可见性。
     local note_layers = {}
-    for i = index_start, ChartService:getNoteCount() do
+    for i = 1, ChartService:getNoteCount() do
         isnote = ChartService:getNote(i)
         noteBeat = isnote:getBeatValue()
         local beat2 = isnote:getBeat2()
         noteBeat2 = beat2 and isnote:getBeat2Value() or noteBeat
-        if noteBeat > end_beat then break end     --超过可见范围
         local trackId = isnote:getTrack()
         y = CoordinateService:toY(noteBeat)
         y2 = y
@@ -219,9 +206,6 @@ function demoPlay:draw()
         end
         y = y * sh
         y2 = y2 * sh
-        if (noteBeat > AudioService:getCurrentBeat() or (noteBeat2 > AudioService:getCurrentBeat())) and previous_frame_starting_point == 0 then
-            previous_frame_starting_point = i - 1
-        end
         if math.intersect(0, judgePos, y, y2) and not (y > judgePos and isnote:isFakeNote()) then
             local zindex = track_zindex[trackId] or 0
             if not note_layers[zindex] then

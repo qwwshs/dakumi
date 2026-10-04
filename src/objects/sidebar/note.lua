@@ -1,13 +1,16 @@
+local TimeOffsetField = require('src.objects.timeOffsetField')
 --note界面
 local ChartService = require("src.services.chartService")
 local Gnote = group:new('note')
 Gnote.type = "note"
 Gnote.layout = require 'config.layouts.sidebar'.note
+Gnote.timeOffsetV = TimeOffsetField.new()
 Gnote.fakev = {value = false}
 Gnote.noteHeadv = {value = false}
 Gnote.wipeHeadv = {value = false}
 function Gnote:to(index)
     local v = ChartService:getNote(index)
+    self.timeOffsetV:load(v)
     if v:isFakeNote() then --因为Nui的开关 开和关 是反的
         self.fakev.value = true
     else
@@ -28,6 +31,7 @@ function Gnote:to(index)
 end
 
 function Gnote:Nui()
+    self.timeOffsetV:draw(self.layout.uiH)
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     Nui:checkbox(i18n:get("note fake"), self.fakev)
     if self.fakev.value then
@@ -56,6 +60,7 @@ function Gnote:NuiNext() --更新信息
     if not v then return end
     -- 一次勾选更新的全部字段归入同一事务
     ChartService:change('history.edit_note', function()
+        self.timeOffsetV:apply(v, ChartService)
         if self.fakev.value then
             v:setFake(1)
         else

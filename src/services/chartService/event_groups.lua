@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 -- 事件组定义、独立编辑与范围互斥；由 init.lua 注入唯一私有状态。
 return function(ChartService, state, internal, dependencies)
     local Event = dependencies.Event
@@ -26,7 +27,8 @@ return function(ChartService, state, internal, dependencies)
         if type(value) ~= 'table' or not table.find(event_property_type, value.type) or
             not validBeat(value.beat) or not validBeat(value.beat2) or
             beat:get(value.beat2) <= beat:get(value.beat) or
-            not finiteNumber(value.from) or not finiteNumber(value.to) then return false end
+            not finiteNumber(value.from) or not finiteNumber(value.to) or
+            (value.time_offset ~= nil and not TimeOffset.valid(value.time_offset)) then return false end
         local trans = value.trans
         if type(trans) ~= 'table' or (trans.type ~= 'bezier' and trans.type ~= 'easings') then return false end
         if trans.type == 'bezier' then
@@ -91,6 +93,7 @@ return function(ChartService, state, internal, dependencies)
             local data = {
                 type = value.type, beat = table.copy(value.beat), beat2 = table.copy(value.beat2),
                 from = value.from, to = value.to, trans = table.copy(value.trans),
+                time_offset = value.time_offset,
             }
             if not validInnerEvent(data) then return nil end
             data.track = nil

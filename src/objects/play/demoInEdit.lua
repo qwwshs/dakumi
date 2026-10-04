@@ -233,14 +233,19 @@ function demoInEdit:drawSample(pos, istrack)
     love.graphics.setColor(1, 1, 1)
 end
 
-local previous_frame_beat = 0           -- 上一帧的节拍
-local previous_frame_starting_point = 1 -- 上一帧的遍历起点（note）
-local previous_frame_starting_point_event = 1 -- 上一帧的event遍历起点
+-- 谱面重排后旧数组下标失效；每个编辑窗口独立保存遍历状态。
+local traversalRevision = 0
+local traversalEvents = require('src.utils.eventBus')
+local function invalidateTraversal()
+    traversalRevision = traversalRevision + 1
+end
+traversalEvents:on('chart:mutated', invalidateTraversal)
+traversalEvents:on('chart:changed', invalidateTraversal)
 
 function demoInEdit:resetTraversal()
-    previous_frame_beat = 0
-    previous_frame_starting_point = 1
-    previous_frame_starting_point_event = 1
+    self._traversal = nil
+    -- 默认实例的重置也要使所有标签页的缓存失效。
+    invalidateTraversal()
 end
 
 function demoInEdit:draw(pos, istrack)
@@ -319,29 +324,34 @@ function demoInEdit:drawEditContent(pos, istrack)
 
     love.graphics.setColor(1, 1, 1)
     --note(edit区域渲染)
-    --减少重复遍历
-    local index_start = 1
-    local index_start_event = 1
-    if AudioService:getCurrentBeat() > previous_frame_beat then
-        index_start = math.max(1, previous_frame_starting_point)
-        index_start_event = math.max(1, previous_frame_starting_point_event)
+    -- 只有谱面、轨道和可见范围均未改变且时间向前时才能复用下标。
+    local currentBeat = AudioService:getCurrentBeat()
+    local previous = rawget(self, '_traversal')
+    local index_start, index_start_event = 1, 1
+    if previous and previous.revision == traversalRevision and previous.track == istrack
+        and previous.scale == denom.scale and previous.judge == settings.judge_line_y
+        and previous.height == WINDOW.h and previous.noteHeight == note_h
+        and currentBeat > previous.beat then
+        index_start = math.max(1, previous.note)
+        index_start_event = math.max(1, previous.event)
     end
-    previous_frame_starting_point = 0
-    previous_frame_starting_point_event = 0
-    previous_frame_beat = AudioService:getCurrentBeat()
-    
+    local traversal = {revision = traversalRevision, track = istrack, scale = denom.scale,
+        judge = settings.judge_line_y, height = WINDOW.h, noteHeight = note_h,
+        beat = currentBeat, note = 0, event = 0}
+    self._traversal = traversal
+
     local y = 0
     local y2 = 0
     for i = index_start, ChartService:getNoteCount() do
         local n = ChartService:getNote(i)
         if n:getTrack() == istrack then
-            local y = CoordinateService:toY(n:getBeat())
+            local y = CoordinateService:toY(n:getBeatValue())
             local y2 = y
             if n:isHold() then
-                y2 = CoordinateService:toY(n:getBeat2())
+                y2 = CoordinateService:toY(n:getBeat2Value())
             end
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
-                if previous_frame_starting_point == 0 then previous_frame_starting_point = i end
+                if traversal.note == 0 then traversal.note = i end
                 if n:isNote() then
                     NoteSkin.draw('note', self.ui_note, trackleft.note, y - note_h, self.note_w, note_h)
                 elseif n:isWipe() then
@@ -374,7 +384,7 @@ function demoInEdit:drawEditContent(pos, istrack)
     local thelocal_hold = fNote:getHoldTable()
     if thelocal_hold._data and thelocal_hold:getTrack() == istrack then -- 存在
         love.graphics.setColor(1, 1, 1)
-        local y = CoordinateService:toY(thelocal_hold:getBeat())
+        local y = CoordinateService:toY(thelocal_hold:getBeatValue())
         local y2 = CoordinateService:toY(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
         local note_h2 = y - y2 - note_h * 2
         if math.intersect(y, y2, track_y + track_h + note_h, -note_h) then
@@ -389,10 +399,10 @@ function demoInEdit:drawEditContent(pos, istrack)
         ChartService:getNote(note_index) and
         ChartService:getNote(note_index):getTrack() == istrack then --框出现在编辑的note
         local sn = ChartService:getNote(note_index)
-        local y = CoordinateService:toY(sn:getBeat())
+        local y = CoordinateService:toY(sn:getBeatValue())
         local y2 = y - note_h
         if sn:isHold() then
-            y2 = CoordinateService:toY(sn:getBeat2())
+            y2 = CoordinateService:toY(sn:getBeat2Value())
         end
         love.graphics.setColor(play.colors.white_half)
         love.graphics.rectangle("fill", trackleft.note, y2, interval, y - y2)
@@ -408,12 +418,12 @@ function demoInEdit:drawEditContent(pos, istrack)
         local e = ChartService:getEvent(i)
         if e:getTrack() == istrack then
             love.graphics.setColor(1, 1, 1)
-            local y = CoordinateService:toY(e:getBeat())
-            local y2 = CoordinateService:toY(e:getBeat2())
+            local y = CoordinateService:toY(e:getBeatValue())
+            local y2 = CoordinateService:toY(e:getBeat2Value())
             local event_h2 = y - y2 - event_h * 2
             local x_pos = trackleft[e:getType()]
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
-                if previous_frame_starting_point_event == 0 then previous_frame_starting_point_event = i end
+                if traversal.event == 0 then traversal.event = i end
                 if e:getType() == 'event_group' then
                     love.graphics.setColor(play.colors.cyan_fade)
                     love.graphics.rectangle('fill', trackleft.x, y2, interval * 4, y - y2)
@@ -444,7 +454,7 @@ function demoInEdit:drawEditContent(pos, istrack)
     local thelocal_event = fEvent:getHoldTable()
     if thelocal_event._data and thelocal_event:getTrack() == istrack then -- 存在
         love.graphics.setColor(1, 1, 1)
-        local y = CoordinateService:toY(thelocal_event:getBeat())
+        local y = CoordinateService:toY(thelocal_event:getBeatValue())
         local y2 = CoordinateService:toY(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
         local event_h2 = y - y2 - event_h * 2
         local x_pos = trackleft[thelocal_event:getType()]
@@ -465,8 +475,8 @@ function demoInEdit:drawEditContent(pos, istrack)
     if sidebar.displayed_content == "event" and ChartService:getEvent(event_index) and --选中event框绘制
         ChartService:getEvent(event_index):getTrack() == istrack then             --框出现在编辑的event
         local se = ChartService:getEvent(event_index)
-        local y = CoordinateService:toY(se:getBeat())
-        local y2 = CoordinateService:toY(se:getBeat2())
+        local y = CoordinateService:toY(se:getBeatValue())
+        local y2 = CoordinateService:toY(se:getBeat2Value())
         love.graphics.setColor(play.colors.white_half)
         local selectedX = se:getType() == 'event_group' and trackleft.x or trackleft[se:getType()]
         local selectedW = se:getType() == 'event_group' and interval * 4 or interval

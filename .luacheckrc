@@ -3,3 +3,4 @@ std = 'luajit'
 self = false -- 冒号方法允许不读取隐式 self，保持接口一致。
 max_line_length = false
 files['src/utils/autoSaveRetention.lua'] = {globals = {'love'}}
+files['src/utils/timeOffset.lua'] = {globals = {'beat'}}

@@ -239,3 +239,9 @@ ThemeService 读取 `users/ui/theme.yml`，分别应用 dark / light 配色、�
 ## 服务索引与自动检查
 
 完整模块职责与接口见 [服务索引](readme/服务索引.md)。检查入口、CI 与自动保存保留策略见 [测试与备份](readme/测试与备份.md)。
+
+## 元件时间偏移
+
+Note（note/wipe/hold）、Event（含 event_group 实例）支持可选正数字段 `time_offset`，单位毫秒。未设置时省略，读取返回 0；setter 只接受有限正数或用于清除的 nil。`getBeat/getBeat2` 是基础节拍表，`getBeatValue/getBeat2Value` 是偏移后的实际节拍数。不要将实际节拍写回基础字段而保留同一偏移，否则会重复移动。
+
+`src/utils/timeOffset.lua` 接收 ChartService 注入的时间接口，在秒数上相加再换回节拍；模型仅依赖该工具。偏移与 BPM 变化需重排实际时间索引；事件组内部快照和归一化也包含偏移。用户操作与完整接口见[偏移时值](readme/time_offset.md)，回归入口为 `tests/time_offset.lua` 及 `tests/editor_input_love`。

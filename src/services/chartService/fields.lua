@@ -74,6 +74,7 @@ return function(ChartService, state, internal, dependencies)
             local before = state.chart.bpm_list and table.copy(state.chart.bpm_list) or nil
             recorder.touchField('bpm_list', nil, before)
             state.chart.bpm_list = list and table.copy(list) or nil
+            self:resortTimePositions()
             if internal.valuesDiffer(before, state.chart.bpm_list) then
                 internal.emitMutation({kind = 'field_updated', field = 'bpm_list',
                     before = before, after = state.chart.bpm_list and table.copy(state.chart.bpm_list) or nil})

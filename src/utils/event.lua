@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 local safeInput = require("src.utils.safeInput")
 --[[
     模块名: event (fEvent)
@@ -106,7 +107,7 @@ local function usableInner(inner)
             if value[i] ~= value[i] or math.abs(value[i]) == math.huge then return false end
         end
     end
-    return beat:get(inner.beat2) > beat:get(inner.beat)
+    return TimeOffset.shiftBeat(inner.beat2, inner.time_offset) > TimeOffset.shiftBeat(inner.beat, inner.time_offset)
 end
 
 -- 组内时间按最早起点、最晚终点归一化；各属性沿用普通事件的插值与保持规则。
@@ -120,7 +121,7 @@ local function groupValues(instance, atBeat)
     local groupStart, groupEnd
     for _, inner in ipairs(groupData.event) do
         if usableInner(inner) then
-            local first, last = beat:get(inner.beat), beat:get(inner.beat2)
+            local first, last = TimeOffset.shiftBeat(inner.beat, inner.time_offset), TimeOffset.shiftBeat(inner.beat2, inner.time_offset)
             groupStart = groupStart and math.min(groupStart, first) or first
             groupEnd = groupEnd and math.max(groupEnd, last) or last
         end
@@ -133,9 +134,9 @@ local function groupValues(instance, atBeat)
     local selected = {}
     for _, inner in ipairs(groupData.event) do
         if usableInner(inner) then
-            local first = beat:get(inner.beat)
+            local first = TimeOffset.shiftBeat(inner.beat, inner.time_offset)
             if first <= innerBeat and (not selected[inner.type] or
-                first >= beat:get(selected[inner.type].beat)) then
+                first >= TimeOffset.shiftBeat(selected[inner.type].beat, selected[inner.type].time_offset)) then
                 selected[inner.type] = inner
             end
         end
@@ -145,7 +146,7 @@ local function groupValues(instance, atBeat)
     if scale == 0 then scale = 100 end
     local offset = ChartService:getPreferenceField('x_offset') or 0
     for kind, inner in pairs(selected) do
-        local first, last = beat:get(inner.beat), beat:get(inner.beat2)
+        local first, last = TimeOffset.shiftBeat(inner.beat, inner.time_offset), TimeOffset.shiftBeat(inner.beat2, inner.time_offset)
         local fraction = innerBeat >= last and 1 or (innerBeat - first) / (last - first)
         local value = inner.from + (inner.to - inner.from) * innerTransition(inner, fraction)
         local normalized = (value - (kind == 'w' and 0 or offset)) / scale

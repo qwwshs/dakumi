@@ -65,3 +65,5 @@ copy /b love.exe+dakumi.love dakumi.exe
 主要依赖：[LÖVE](https://github.com/love2d/love)、[LÖVE-Nuklear](https://github.com/keharriso/love-nuklear)、[LXGW Neo XiHei](https://github.com/lxgw/LxgwNeoXiHei)、[dkjson](https://github.com/LuaDist/dkjson)、[serpent](https://github.com/pkulchenko/serpent)、[lua-yaml](https://github.com/exosite/lua-yaml)、[moonshine](https://github.com/vrld/moonshine)、[hump](https://github.com/vrld/hump)、[lovefft](https://github.com/Gennadiyev/lovefft)、[fileselect](https://github.com/bili-fule/fileselect)。单次 BPM / offset 测量参考 [qwwshs/bpm](https://github.com/qwwshs/bpm)。
 
 项目使用 [MIT 许可](LICENSE)。第三方依赖遵循各自的许可。
+
+元件毫秒位置调整见[偏移时值说明](readme/time_offset.md)。

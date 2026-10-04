@@ -63,6 +63,15 @@ end
 
 local previous_frame_beat = 0 -- 上一帧的节拍
 local previous_frame_starting_point = 1 -- 上一帧的遍历起点
+-- 时间偏移、BPM 与撤销会重新排列音符；不能继续沿用上次的扫描下标。
+local function resetTimeTraversal()
+    previous_frame_beat, previous_frame_starting_point = 0, 1
+end
+local timingEvents = require('src.utils.eventBus')
+timingEvents:on('chart:mutated', function(change)
+    if change.method == 'setTimeOffset' or change.field == 'bpm_list' then resetTimeTraversal() end
+end)
+timingEvents:on('chart:changed', resetTimeTraversal)
 function hit:update(dt)
     if settings.hit == 0 and settings.hit_sound == 0 then
         return

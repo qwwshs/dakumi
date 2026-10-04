@@ -15,4 +15,5 @@ for _, name in ipairs({
 }) do
     require('src.services.chartService.' .. name)(ChartService, state, internal, dependencies)
 end
+require('src.utils.timeOffset').init(ChartService)
 return ChartService

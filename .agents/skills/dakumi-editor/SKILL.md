@@ -293,3 +293,11 @@ dakumi editor/
 - directEventEditing/equalizer/takana/operationHistory 的 UI 必须使用初始化注入的 `ctx.ui` 和 `ctx.i18n`，不要新增全局 Nui 访问。`Nui()` 作为生命周期方法名可以保留。
 - 自动保存通过 `src/utils/autoSaveRetention.lua` 清理：默认每谱面 50 份、30 天、全目录 256 MB，每谱面最近一份保护；新备份写入失败不清理。配置字段与旧文件兼容说明见 `readme/测试与备份.md`。开发测试必须使用虚拟目录，不能清理真实用户备份。
 - `.gitignore` 仅放行本项目的 `SKILL.md`，其他本机技能继续忽略。本文与开发指南一起维护并纳入提交。
+
+## 14. 元件正数毫秒偏移
+
+- Note（note/wipe/hold）与 Event（含事件组实例）使用可选 `time_offset`，单位毫秒，仅保存有限正数。未设置省略字段；`setTimeOffset(nil)` 清除，0/负数/无穷/非数字拒绝。用户入口在 note/event 侧栏。
+- `getBeat/getBeat2` 返回基础节拍，`getBeatValue/getBeat2Value` 现在返回偏移后的实际节拍。绘制和选择用实际值；拖动保存基础值要用 `timeOffset.baseBeat` 反扣毫秒。复制/粘贴按基础节拍移动并保留偏移。
+- `src/utils/timeOffset.lua` 由 ChartService 注入时钟，不能 require 服务。BPM 与偏移变化重排索引并维持侧栏对象；组内事件快照、归一化、互斥和历史范围均包含偏移。
+- `beat:toTime` 的第一段渐变不能走恒速短路；与 `toBeat` 应互为逆运算。毫秒偏移回归覆盖 BPM 突变与第一段渐变。
+- 文档 `readme/time_offset.md`；内存回归 `tests/time_offset.lua`，真实 Nuklear 偏移输入回归 `tests/editor_input_love`。

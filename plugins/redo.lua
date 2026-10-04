@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 --[[
     模块名: redo
     描述: 撤销/重做管理模块
@@ -90,7 +91,7 @@ local function getBeatRange(operation)
         local data = item._data or item
         for _, value in ipairs({data.beat, data.beat2}) do
             if type(value) == 'table' then
-                local number = beat:get(value)
+                local number = TimeOffset.shiftBeat(value, data.time_offset)
                 if type(number) == 'number' then
                     first = first and math.min(first, number) or number
                     last = last and math.max(last, number) or number

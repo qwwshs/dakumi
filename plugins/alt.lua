@@ -1,3 +1,4 @@
+local TimeOffset = require('src.utils.timeOffset')
 local alt = object:new('alt')
 local ChartService = require("src.services.chartService")
 local Event = require("src.objects.Event")
@@ -13,7 +14,7 @@ function alt:keypressed(key)
     if input('dragHead') then --拖头
         if is_note then
             local isnote = ChartService:getNote(note_or_event_index):copy()
-            isnote:setBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            isnote:setBeat(TimeOffset.baseBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)), isnote:getTimeOffset()))
             ChartService:push()
             ChartService:add(isnote)
             ChartService:delete(ChartService:getNote(note_or_event_index))
@@ -23,7 +24,7 @@ function alt:keypressed(key)
         if is_event then
             local original = ChartService:getEvent(note_or_event_index)
             local isevent = original:copy()
-            isevent:setBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            isevent:setBeat(TimeOffset.baseBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)), isevent:getTimeOffset()))
             if not ChartService:canPlaceEvent(isevent, original) then
                 messageBox:add('illegal operation')
                 return
@@ -42,7 +43,7 @@ function alt:keypressed(key)
                 return
             end
             local isnote = ChartService:getNote(note_or_event_index):copy()
-            isnote:setBeat2(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            isnote:setBeat2(TimeOffset.baseBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)), isnote:getTimeOffset()))
             ChartService:push()
             ChartService:add(isnote)
             ChartService:delete(ChartService:getNote(note_or_event_index))
@@ -56,7 +57,7 @@ function alt:keypressed(key)
             end
             local original = ChartService:getEvent(note_or_event_index)
             local isevent = original:copy()
-            isevent:setBeat2(beat:toNearby(CoordinateService:yToBeat(mouse.y)))
+            isevent:setBeat2(TimeOffset.baseBeat(beat:toNearby(CoordinateService:yToBeat(mouse.y)), isevent:getTimeOffset()))
             if not ChartService:canPlaceEvent(isevent, original) then
                 messageBox:add('illegal operation')
                 return
@@ -74,46 +75,29 @@ function alt:keypressed(key)
         if is_event and ChartService:getEvent(note_or_event_index) and
             ChartService:getEvent(note_or_event_index):getType() ~= 'event_group' then
             local isevent = ChartService:getEvent(note_or_event_index)
+            local baseStart, baseEnd = beat:get(isevent:getBeat()), beat:get(isevent:getBeat2())
+            local offset = isevent:getTimeOffset()
             local temp_event = isevent:copy() -- 临时event表
             local temp_event_int = {}--得到每个位置的event数值
-            for i = 0, --算每个长条的from to值
-            math.ceil((isevent:getBeat2Value() -
-            isevent:getBeatValue()) * (denom.denom * 2)) + 1
-            do
-                local isnow_beat = (i/(denom.denom * 2)) +
-                isevent:getBeatValue()
-                local temp_now = {fEvent:get(isevent:getTrack(),
-                isnow_beat)}
-                temp_event_int[i] = temp_now[1]
-                if temp_event:getType() == "w" then
-                    temp_event_int[i] = temp_now[2]
-                end
+            local steps = math.ceil((baseEnd - baseStart) * denom.denom * 2)
+            for i = 0, steps do
+                local sampleBeat = math.min(baseEnd, baseStart + i / (denom.denom * 2))
+                local x, w = fEvent:get(isevent:getTrack(), TimeOffset.shiftBeat(sampleBeat, offset))
+                temp_event_int[i] = temp_event:getType() == 'w' and w or x
             end
 
-            ChartService:push() --开始记录
-            for i = 0, math.floor((isevent:getBeat2Value() - isevent:getBeatValue()) * (denom.denom * 2)) do
-                local isnow_beat =  (i /(denom.denom * 2)) +
-                isevent:getBeatValue()
-                local event_min_denom = 0 --假设0最近
-                for k = 0, denom.denom*2 do --取分度 哪个近取哪个
-                    if math.abs(isnow_beat - (math.floor(isnow_beat) + k / (denom.denom*2))) <
-                    math.abs(isnow_beat - (math.floor(isnow_beat) + event_min_denom / (denom.denom*2))) then
-                        event_min_denom = k
-                    end
-                end
-                local local_event = Event.new()
-                local_event:setType(temp_event:getType())
-                local_event:setTrack(temp_event:getTrack())
-                local_event:setBeat({math.floor(isnow_beat),event_min_denom ,denom.denom*2})
-                local_event:setBeat2({math.floor(isnow_beat),event_min_denom + 1 ,denom.denom*2})
-                local_event:setFrom(temp_event_int[i])
-                local_event:setTo(temp_event_int[i + 1])
-
-                if isnow_beat > isevent:getBeat2Value() then
-                    local_event:setBeat2(isevent:getBeat2())
-                end
+            ChartService:push()
+            for i = 0, steps - 1 do
+                local first = baseStart + i / (denom.denom * 2)
+                local last = math.min(baseEnd, baseStart + (i + 1) / (denom.denom * 2))
+                local local_event = Event.new({
+                    type = temp_event:getType(), track = temp_event:getTrack(),
+                    beat = TimeOffset.baseBeat(first, 0), beat2 = TimeOffset.baseBeat(last, 0),
+                    time_offset = offset > 0 and offset or nil,
+                    from = temp_event_int[i], to = temp_event_int[i + 1],
+                })
                 ChartService:add(local_event)
-                if ctrl then ctrl:copy_add(local_event,'event') end
+                if ctrl then ctrl:copy_add(local_event, 'event') end
             end
             ChartService:delete(isevent)
             ChartService:pop('history.cut_event') --结束记录

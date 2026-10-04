@@ -106,22 +106,15 @@ function ctrl:getPasteItems(flip, all)
 
     local to_beat = beat:toNearby(CoordinateService:yToBeat(mouse.y))
 
-    -- 确定基准 beat（取剪贴板中最早的内容）
-    local first_beat = { 0, 0, 4 }
-    if items.note[1] and items.event[1] then
-        if items.note[1]:getBeatValue() <= items.event[1]:getBeatValue() then
-            first_beat = items.note[1]:getBeat()
-        else
-            first_beat = items.event[1]:getBeat()
+    -- 粘贴平移基础节拍并保留毫秒偏移；不能用偏移后的排序猜测最早基础节拍。
+    local first_beat, firstValue
+    for _, kind in ipairs({'note', 'event'}) do
+        if kind ~= 'event' or copy_tab2.pos ~= 'play' or all or #items.note == 0 then
+            for _, item in ipairs(items[kind]) do
+                local value = beat:get(item:getBeat())
+                if not firstValue or value < firstValue then first_beat, firstValue = item:getBeat(), value end
+            end
         end
-    elseif items.note[1] then
-        first_beat = items.note[1]:getBeat()
-    elseif items.event[1] then
-        first_beat = items.event[1]:getBeat()
-    end
-
-    if items.note[1] and copy_tab2.pos == 'play' and not all then
-        first_beat = items.note[1]:getBeat()
     end
 
     -- 跨标签页粘贴：以鼠标所在标签页为锚点，按标签页下标整体平移。
@@ -257,10 +250,10 @@ function ctrl:draw(drawInTabs)
             local n = clipboard.tab.note[i]
             local ti = clipboard.tab.note_tabidx[i]
             if ti then
-                local y = CoordinateService:toY(n:getBeat())
+                local y = CoordinateService:toY(n:getBeatValue())
                 local y2 = y - note_h
                 if n:isHold() then
-                    y2 = CoordinateService:toY(n:getBeat2())
+                    y2 = CoordinateService:toY(n:getBeat2Value())
                 end
                 if y > 0 - note_h and y2 < WINDOW.h + note_h then
                     love.graphics.rectangle("fill", tabs:windowX(ti), y2, note_w, y - y2)
@@ -270,10 +263,10 @@ function ctrl:draw(drawInTabs)
     else
         for i = 1, #clipboard.tab.note do
             local n = clipboard.tab.note[i]
-            local y = CoordinateService:toY(n:getBeat())
+            local y = CoordinateService:toY(n:getBeatValue())
             local y2 = y - note_h
             if n:isHold() then
-                y2 = CoordinateService:toY(n:getBeat2())
+                y2 = CoordinateService:toY(n:getBeat2Value())
             end
             if n:getTrack() == track.track then
                 if y > 0 - note_h and y2 < WINDOW.h + note_h then
@@ -290,10 +283,10 @@ function ctrl:draw(drawInTabs)
             local n = clipboard.tab.note[i]
             local trackPos = all_track_pos[n:getTrack()]
             local x, w = fTrack:to_play_track(trackPos.x, trackPos.w)
-            local y = CoordinateService:toY(n:getBeat())
+            local y = CoordinateService:toY(n:getBeatValue())
             local y2 = y
             if n:isHold() then
-                y2 = CoordinateService:toY(n:getBeat2())
+                y2 = CoordinateService:toY(n:getBeat2Value())
             end
             if y < 0 - note_h then break end
             if math.intersect(y, y2, settings.judge_line_y + note_h, 0 - note_h) and
@@ -323,8 +316,8 @@ function ctrl:draw(drawInTabs)
                     end
                 end
                 if lane_k or e:getType() == 'event_group' then
-                    local y = CoordinateService:toY(e:getBeat())
-                    local y2 = CoordinateService:toY(e:getBeat2())
+                    local y = CoordinateService:toY(e:getBeatValue())
+                    local y2 = CoordinateService:toY(e:getBeat2Value())
                     local x_pos = tabs:windowX(ti) + play.layout.edit.interval *
                         (e:getType() == 'event_group' and 1 or lane_k - 1)
                     local width = e:getType() == 'event_group' and play.layout.edit.interval * 4 or note_w
@@ -337,8 +330,8 @@ function ctrl:draw(drawInTabs)
     else
         for i = 1, #clipboard.tab.event do
             local e = clipboard.tab.event[i]
-            local y = CoordinateService:toY(e:getBeat())
-            local y2 = CoordinateService:toY(e:getBeat2())
+            local y = CoordinateService:toY(e:getBeatValue())
+            local y2 = CoordinateService:toY(e:getBeat2Value())
             local x_pos = trackSequence:getRange(e:getType())
             if e:getTrack() == track.track then
                 if math.intersect(y, y2, 0 - note_h, WINDOW.h + note_h) then
@@ -398,10 +391,10 @@ function ctrl:drawPastePreview()
             x = play.layout.edit.x
         end
         if x then
-            local y = CoordinateService:toY(n:getBeat())
+            local y = CoordinateService:toY(n:getBeatValue())
             local y2 = y - note_h
             if n:isHold() then
-                y2 = CoordinateService:toY(n:getBeat2())
+                y2 = CoordinateService:toY(n:getBeat2Value())
             end
             if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                 if is_tabs_paste then
@@ -436,8 +429,8 @@ function ctrl:drawPastePreview()
                 x = play.layout.edit.x
             end
             if x then
-                local y = CoordinateService:toY(e:getBeat())
-                local y2 = CoordinateService:toY(e:getBeat2())
+                local y = CoordinateService:toY(e:getBeatValue())
+                local y2 = CoordinateService:toY(e:getBeat2Value())
                 if math.intersect(y, y2, WINDOW.h + note_h, -note_h) then
                     if is_tabs_paste then
                         local r = tabs.layout.region
