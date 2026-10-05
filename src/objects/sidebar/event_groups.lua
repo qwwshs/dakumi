@@ -50,19 +50,22 @@ end
 
 function Ggroups:exitGroup(restoreTrack)
     if not ChartService:isEditingEventGroup() then return true end
-    -- 离开事件属性页会提交尚未写入撤销表的改动。
-    if sidebar and sidebar.displayed_content == 'event' then
-        sidebar:to('event groups')
-    end
+    self.restoreTrackOnExit = restoreTrack == true
     local ok = ChartService:finishEventGroupEdit()
+    self.restoreTrackOnExit = nil
     if not ok then showError(); return false end
+    return true
+end
+
+-- 服务主动结束编辑（重新加载/替换谱面）也走同一份界面清理。
+function Ggroups:finishExit()
     if fEvent then fEvent:cleanUp() end
     if self.previousClipboard then
         clipboard.tab = self.previousClipboard
         clipboard.mouse_start_pos.down = false
     end
     self.previousClipboard = nil
-    if restoreTrack and track and self.previousTrack then
+    if self.restoreTrackOnExit ~= false and track and self.previousTrack then
         track:to('track', self.previousTrack)
     end
     self.previousTrack = nil
@@ -74,6 +77,8 @@ function Ggroups:exitGroup(restoreTrack)
     self.previousEffect = nil
     return true
 end
+
+require('src.utils.eventBus'):on('chart:group_edit_end', function() Ggroups:finishExit() end)
 
 function Ggroups:nowBreak()
     return self:exitGroup(true)

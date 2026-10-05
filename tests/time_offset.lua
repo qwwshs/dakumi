@@ -61,6 +61,7 @@ local first = Note.new({beat=at(1)})
 local second = Note.new({beat=at(2)})
 Chart:add(first); Chart:add(second)
 sidebar = {displayed_content='note', incoming={1}, to=function() end}
+require('src.objects.sidebar.chart_notifications')(sidebar, Chart, require('src.utils.eventBus'))
 Chart:change('history.edit_note',function() first:setTimeOffset(2000) end)
 assert(Chart:getNote(1)==second and Chart:getNote(2)==first and sidebar.incoming[1]==2)
 assert(redo:undo() and Chart:getNote(1):getTimeOffset()==0)

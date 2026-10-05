@@ -15,15 +15,8 @@ return function(ChartService, state, internal, dependencies)
         return beat:toTime(state.chart.bpm_list or {}, isbeat)
     end
 
-    -- 偏移会改变实际时间排序；保留侧栏正在编辑的对象，不能让索引指向另一元件。
+    -- 偏移会改变实际时间排序；选择状态由订阅排序通知的界面维护。
     function ChartService:resortTimePositions()
-        local selected, kind
-        if sidebar and sidebar.incoming then
-            kind = sidebar.displayed_content
-            if kind == 'note' or kind == 'event' then
-                selected = state.chart[kind][sidebar.incoming[1]]
-            end
-        end
         for _, list in ipairs({state.chart.note or {}, state.chart.event or {}}) do
             for _, entity in ipairs(list) do
                 if type(entity.getBeatValue) ~= 'function' then return end
@@ -31,9 +24,7 @@ return function(ChartService, state, internal, dependencies)
         end
         self:sortNotes()
         self:sortEvents()
-        if selected then
-            sidebar.incoming[1] = internal.findItemIndex(state.chart[kind], selected)
-        end
+
     end
 
     function ChartService:onTimeOffsetChanged(entity)
@@ -62,9 +53,20 @@ return function(ChartService, state, internal, dependencies)
         end
     end
 
+    -- 发出旧索引到新索引的映射，不持有界面或选择状态。
+    internal.sortWithIndexMap = function(list, kind)
+        local before = {}
+        for i, entity in ipairs(list) do before[i] = entity end
+        table.sort(list, function(a, b) return a:getBeatValue() < b:getBeatValue() end)
+        local indices, mapping = {}, {}
+        for i, entity in ipairs(list) do indices[entity] = i end
+        for i, entity in ipairs(before) do mapping[i] = indices[entity] end
+        dependencies.eventBus:emit('chart:indices_changed', kind, mapping)
+    end
+
     --- 对事件列表排序（按 beat 升序，同步排序 chart 和 extra_chart）
     function ChartService:sortEvents()
-        table.sort(state.chart.event, function(a, b) return a:getBeatValue() < b:getBeatValue() end)
+        internal.sortWithIndexMap(state.chart.event, 'event')
         for _, trackData in pairs(state.extra_chart.track) do
             for _, eventType in ipairs(event_type) do
                 if trackData[eventType] then
@@ -76,7 +78,7 @@ return function(ChartService, state, internal, dependencies)
 
     --- 对音符列表排序（按 beat 升序，同步排序 chart 和 extra_chart）
     function ChartService:sortNotes()
-        table.sort(state.chart.note, function(a, b) return a:getBeatValue() < b:getBeatValue() end)
+        internal.sortWithIndexMap(state.chart.note, 'note')
         for _, trackData in pairs(state.extra_chart.track) do
             table.sort(trackData.note, function(a, b) return a:getBeatValue() < b:getBeatValue() end)
         end

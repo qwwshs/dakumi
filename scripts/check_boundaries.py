@@ -18,6 +18,11 @@ for name in ("event", "note", "track"):
     path = ROOT / f"src/utils/{name}.lua"
     if re.search(r"require\s*\(?\s*['\"]src\.services\.", path.read_text(encoding="utf-8")):
         failures.append(f"{path.relative_to(ROOT)}: 工具模块引用了服务层")
+for path in (ROOT / "src/services").rglob("*.lua"):
+    for line, text in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        code = text.split("--", 1)[0]
+        if re.search(r"\bsidebar\b", code) or re.search(r"require\s*\(?\s*['\"]src\.(objects\.sidebar|rooms\.sidebar)", code):
+            failures.append(f"{path.relative_to(ROOT)}:{line}: 服务层引用了侧栏界面")
 for failure in failures:
     print(failure)
 print(f"静态边界检查：{len(failures)} 个问题")

@@ -17,10 +17,7 @@ return function(Chart, state, internal, dependencies)
         recorder.touchField('effect',nil,table.copy(state.chart.effect or {}))
     end
     local function sort()
-        local selected=sidebar and sidebar.displayed_content=='event'
-            and state.effectObjects[sidebar.incoming[1]] or nil
-        table.sort(state.effectObjects,function(a,b) return a:getBeatValue()<b:getBeatValue() end)
-        if selected then sidebar.incoming[1]=internal.findItemIndex(state.effectObjects,selected) end
+        internal.sortWithIndexMap(state.effectObjects, 'effect')
     end
     local function attach(entity)
         -- 实体不注册为谱面 event；修改通过整份 effect 字段记录，避免写入 note/event。
@@ -116,7 +113,7 @@ return function(Chart, state, internal, dependencies)
     local beginGroup = Chart.beginEventGroupEdit
     function Chart:beginEventGroupEdit(name)
         if self:isEditingEffect() then
-            if sidebar then sidebar:to('nil') end
+            dependencies.eventBus:emit('chart:effect_edit_ending')
             self:setEffectEditing(false)
             state.effectObjects=nil
         end

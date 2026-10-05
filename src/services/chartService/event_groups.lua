@@ -128,6 +128,7 @@ return function(ChartService, state, internal, dependencies)
     function ChartService:finishEventGroupEdit()
         local session = state.activeGroupEdit
         if not session then return true end
+        eventBus:emit('chart:group_edit_ending')
         local ok = self:syncEventGroupEdit()
         if not ok then return false end
         state.chart, state.extra_chart = session.mainChart, session.mainIndex

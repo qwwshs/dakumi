@@ -10,6 +10,9 @@
               不影响其余订阅者；回调中再次订阅/退订是安全的（基于分发前快照）。
 
     当前事件清单:
+      chart:indices_changed (kind, mapping)        排序后旧索引到新索引映射（note/event/effect）
+      chart:group_edit_ending ()                   退出组编辑前，订阅方提交当前编辑状态
+      chart:effect_edit_ending ()                  退出效果编辑前，订阅方提交当前编辑状态
       chart:replaced         ()                     整张谱面被替换（选谱/导入）
       chart:committed        (operation, actionKey) 一组已提交的谱面变更，operation 形如
                                                     {add={note={},event={}}, del={note={},event={}},

@@ -120,4 +120,5 @@ sidebar:addGroup(require 'src.objects.sidebar.note')
 sidebar:addGroup(require 'src.objects.sidebar.events')
 sidebar:addGroup(require 'src.objects.sidebar.event_groups')
 sidebar:addGroup(require 'src.objects.sidebar.custom_trans')
+require('src.objects.sidebar.chart_notifications')(sidebar, ChartService, require('src.utils.eventBus'))
 return sidebar

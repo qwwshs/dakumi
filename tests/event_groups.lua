@@ -136,3 +136,16 @@ groupSidebar:update()
 assert(not ChartService:isEditingEventGroup() and track.track == 6)
 assert(track.useToTrack.value == '6')
 print('PASS: event groups, dedicated editing, save, track exit and undo')
+
+-- 服务直接重新加载时，同样恢复侧栏管理的轨道、剪贴板与预览。
+track:to('track', 7)
+local preservedClipboard=clipboard.tab
+local preservedEffect=play.effect
+assert(groupSidebar:selectGroup('编辑'))
+sidebar.displayed_content='event'
+require('src.objects.sidebar.chart_notifications')(sidebar,ChartService,require('src.utils.eventBus'))
+assert(ChartService:load())
+assert(not ChartService:isEditingEventGroup() and track.track==7)
+assert(clipboard.tab==preservedClipboard and play.effect==preservedEffect)
+assert(sidebar.displayed_content=='event groups')
+print('PASS: 服务主动退出事件组恢复界面状态')

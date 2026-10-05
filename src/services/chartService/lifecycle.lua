@@ -11,9 +11,7 @@ return function(ChartService, state, internal, dependencies)
     -- @tparam table data 谱面数据表
     function ChartService:setChart(data)
         if state.activeGroupEdit then
-            local groups = sidebar and sidebar:getGroup('event groups')
-            local ok
-            if groups then ok = groups:exitGroup(true) else ok = self:finishEventGroupEdit() end
+            local ok = self:finishEventGroupEdit()
             if not ok then return false end
         end
         state.chart = table.copy(data or {})
@@ -121,9 +119,7 @@ return function(ChartService, state, internal, dependencies)
     -- 仅在内存中迁移格式、转换对象并构建索引；持久化由 save 显式执行
     function ChartService:load()
         if state.activeGroupEdit then
-            local groups = sidebar and sidebar:getGroup('event groups')
-            local ok
-            if groups then ok = groups:exitGroup(true) else ok = self:finishEventGroupEdit() end
+            local ok = self:finishEventGroupEdit()
             if not ok then return false end
         end
         self:update()
