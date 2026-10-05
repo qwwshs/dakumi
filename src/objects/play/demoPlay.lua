@@ -75,7 +75,10 @@ function demoPlay:draw()
     local judgePos = settings.judge_line_y * sh
     local all_track_pos = play:get_all_track_pos()
 
-    local all_track = fTrack:track_get_all_track()
+    -- 绘制使用本帧已经计算过位置的轨道快照；侧栏在 update 后可能刚创建初始值轨道。
+    local all_track = {}
+    for id in pairs(all_track_pos) do all_track[#all_track + 1] = id end
+    table.sort(all_track)
 
     if next(all_track_pos) == nil then --没有轨道
         return

@@ -48,16 +48,6 @@ local function safePath(path)
 
 end
 
-local function event(chart, track, kind, b, n)
-    local bt = beat(b)
-    local bt2 = beat(b)
-    bt2[1] = bt2[1] + 1
-    chart.event[#chart.event + 1] = {track=track, type=kind, beat=bt, beat2=bt2,
-
-        from=n, to=n, trans={type='easings', easings=1}}
-
-end
-
 function M.convert(mc)
 
     local meta = assert(mc.meta, 'Malody：缺少 meta')
@@ -74,7 +64,7 @@ function M.convert(mc)
 
     local chart = {version=1, note={}, event={}, effect={}, track={}, event_groups={}, offset=0,
 
-        preference={jump_mode='cumulative', motion_mode='malody', event_scale=100, x_offset=0},
+        preference={jump_mode='cumulative', jump_unit='ms', motion_mode='malody', event_scale=100, x_offset=0},
 
         info={song_name=song.title or '', artist=song.artist or '',
 
@@ -152,11 +142,8 @@ function M.convert(mc)
 
     for t=1,columns do
 
-        chart.track[t]={name=tostring(t)}
-
-        event(chart,t,'x',{0,0,1},(t-0.5)*100/columns)
-
-        event(chart,t,'w',{0,0,1},100/columns)
+        -- 固定按键轨道用初始值表示，不再制造两条占位事件。
+        chart.track[tostring(t)]={name=tostring(t),start_x=(t-0.5)*100/columns,start_w=100/columns}
 
     end
 

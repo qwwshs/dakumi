@@ -51,6 +51,8 @@ local gameLoad, gameUpdate, gameDraw = love.load, love.update, love.draw
 local frame = 0
 function love.errorhandler(message)
     print(debug.traceback(tostring(message)))
+    local report=rawOpen(project..'/.zcode/editor_input_love.txt','w')
+    if report then report:write(debug.traceback(tostring(message))); report:close() end
     love.event.quit(1)
     return function() return 1 end
 end
@@ -250,6 +252,7 @@ function love.update(dt)
         local pref=sidebar:getGroup('preference')
         assert(pref.jumpMode.value==1)
         pref.jumpMode.value=2
+        pref.jumpUnit.value=2
         results.oldTip=ui.tip
         ui.tip=function(self,text,...)
             if text==i18n:get('save') then return true end
@@ -258,14 +261,19 @@ function love.update(dt)
     elseif frame == 35 then
         ui.tip=results.oldTip
         assert(ChartService:getPreferenceField('jump_mode')=='cumulative')
+        assert(ChartService:getPreferenceField('jump_unit')=='ms')
         redo:undo()
         assert(ChartService:getPreferenceField('jump_mode')=='current')
+        assert(ChartService:getPreferenceField('jump_unit')=='beat')
         redo:redoOne()
         assert(ChartService:getPreferenceField('jump_mode')=='cumulative')
+        assert(ChartService:getPreferenceField('jump_unit')=='ms')
         local json=dkjson.decode(ChartService:encodeJson())
         assert(json.preference.jump_mode=='cumulative')
+        assert(json.preference.jump_unit=='ms')
         sidebar:to('preference')
         assert(sidebar:getGroup('preference').jumpMode.value==2)
+        assert(sidebar:getGroup('preference').jumpUnit.value==2)
         print('PASS: real preference panel jump mode save, serialization, undo/redo and reopen')
         require('tests.editor_input_love.import_plugins')()
         ChartService:setChart({}); ChartService:load()
@@ -305,6 +313,31 @@ function love.update(dt)
         sidebar:getGroup('custom transitions'):select('UI curve')
         assert(sidebar:getGroup('custom transitions').source.value=='local a = t * t\nreturn a')
         print('PASS: real Nuklear multi-line custom transition, save button, event selection and reopen')
+        sidebar:to('track edit',2)
+    elseif frame == 43 then
+        local page=sidebar:getGroup('track edit')
+        assert(page.startValues.start_x.value=='')
+        page.startValues.start_x.value='50'
+        page.startValues.start_w.value='20'
+    elseif frame == 44 then
+        assert(ChartService:getTrackField(2,'start_x')==50 and ChartService:getTrackField(2,'start_w')==20)
+        local x,w=fEvent:get(2,1)
+        assert(x==50 and w==20)
+        assert(dkjson.decode(ChartService:encodeJson()).track['2'].start_w==20)
+        sidebar:to('nil')
+        assert(redo:undo() and ChartService:getTrackField(2,'start_x')==nil)
+        assert(redo:redoOne() and ChartService:getTrackField(2,'start_x')==50)
+        sidebar:to('track edit',2)
+        assert(sidebar:getGroup('track edit').startValues.start_w.value=='20')
+    elseif frame == 45 then
+        sidebar:getGroup('track edit').startValues.start_w.value=''
+    elseif frame == 46 then
+        assert(ChartService:getTrackField(2,'start_w')==nil)
+        sidebar:to('nil')
+        assert(redo:undo() and ChartService:getTrackField(2,'start_w')==20)
+        print('PASS: real track initial fields, clear, reopen, display, serialization and undo/redo')
+        local report=rawOpen(project..'/.zcode/editor_input_love.txt','w')
+        if report then report:write('PASS: editor input, jump mode/unit, track initial values and history\n'); report:close() end
         love.event.quit(0)
     end
 end

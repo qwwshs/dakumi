@@ -9,6 +9,13 @@ local manager=require('src.utils.plugin')
 local Import=require('src.services.importService')
 local Chart=require('src.services.chartService')
 local Audio=require('src.services.audioService')
+assert(Import:isDakumiChart({note={},event={},bpm_list={{beat={0,0,1},bpm=120}}}))
+assert(not Import:isDakumiChart({components={}}))
+assert(not Import:isDakumiChart({other_format={}}))
+assert(not Import:isDakumiChart({note={},event={},bpm_list={}}))
+assert(not Import:isDakumiChart({note={'bad'},event={},bpm_list={{beat={0,0,1},bpm=120}}}))
+assert(Import:isDakumiChart({note={},event={{trans={type='bezier',trans={0,0,0.3,0.3,1,1}}}},
+    bpm_list={{beat={0,0,1},bpm=120}},components={}}), '原生谱面有额外字段也应优先')
 manager:init({marker='context',importer=Import})
 Chart:setChart({info={chart_name='original'}}); Chart:load()
 local audits={}

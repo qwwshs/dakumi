@@ -26,6 +26,10 @@ local settingFields = {
     {key = 'right_boundary'},
     {key = 'left_reference'},
     {key = 'right_reference'},
+    {key = 'start_x'},
+    {key = 'start_w'},
+    {key = 'start_lpos'},
+    {key = 'start_rpos'},
 }
 
 local function trim(value)

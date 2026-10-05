@@ -16,6 +16,10 @@ return {
 
     ['import_failed'] = '导入失败',
     ['jump_mode'] = 'Jump 计算方式',
+    ['jump_unit'] = 'Jump 单位',
+    ['jump_unit_beat'] = '拍',
+    ['jump_unit_ms'] = '毫秒（ms）',
+    ['track_start_values'] = '轨道初始值（填写两个，其余留空）',
     ['jump_mode_current'] = '当前值',
     ['jump_mode_cumulative'] = '累计（只使用终值）',
 
@@ -213,6 +217,10 @@ return {
     ['track_filter.field.right_boundary'] = '右边界',
     ['track_filter.field.left_reference'] = '左边界参考',
     ['track_filter.field.right_reference'] = '右边界参考',
+    ['track_filter.field.start_x'] = '初始 x',
+    ['track_filter.field.start_w'] = '初始 w',
+    ['track_filter.field.start_lpos'] = '初始 lpos',
+    ['track_filter.field.start_rpos'] = '初始 rpos',
     ['equalizer'] = '均衡器',  
     ['operation history'] = '操作历史',
     ['history.click_to_jump'] = '点击一条记录即可回到该步',

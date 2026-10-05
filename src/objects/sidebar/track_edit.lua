@@ -6,6 +6,9 @@ GtrackEdit.type = "track edit"
 GtrackEdit.layout = require 'config.layouts.sidebar'.track_edit
 GtrackEdit.track = 0
 GtrackEdit.trackName = {value = ''}
+local startFields = {'start_x', 'start_w', 'start_lpos', 'start_rpos'}
+GtrackEdit.startValues = {}
+for _, field in ipairs(startFields) do GtrackEdit.startValues[field] = {value = ''} end
 GtrackEdit.w0thenShow = {value = false}
 GtrackEdit.parentTrack = {value = 0} --为0时无父轨道
 GtrackEdit.scale_with_parent = {value = false}
@@ -27,6 +30,10 @@ GtrackEdit.left_reference = {
 
 function GtrackEdit:to(istrack)
     self.track = istrack
+    for _, field in ipairs(startFields) do
+        local value = ChartService:getTrackField(istrack, field)
+        self.startValues[field].value = value ~= nil and tostring(value) or ''
+    end
     self.trackName.value = ChartService:getTrackField(istrack, 'name')
     self.zindex.value = ChartService:getTrackField(istrack, 'zindex')
     self.parentTrack.value = ChartService:getTrackField(istrack, 'parent')
@@ -55,6 +62,14 @@ function GtrackEdit:Nui()
 
     Nui:label(i18n:get('track_name'))
     ui:edit('field', self.trackName)
+
+    Nui:layoutRow('dynamic', self.layout.start_uiH, 1)
+    Nui:label(i18n:get('track_start_values'))
+    Nui:layoutRow('dynamic', self.layout.start_uiH, self.layout.cols)
+    for _, field in ipairs(startFields) do
+        Nui:label(field)
+        ui:edit('field', self.startValues[field])
+    end
 
     Nui:layoutRow('dynamic', self.layout.uiH, self.layout.cols)
     Nui:checkbox(i18n:get('do_not_hide'), self.w0thenShow)
@@ -108,6 +123,14 @@ function GtrackEdit:NuiNext()
     -- 一次轨道属性保存的全部字段归入同一事务
     ChartService:change('history.edit_track', function()
     ChartService:setTrackField(istrack, 'name', self.trackName.value)
+    for _, field in ipairs(startFields) do
+        local text = tostring(self.startValues[field].value):match('^%s*(.-)%s*$')
+        local value = text ~= '' and tonumber(text) or nil
+        -- 无效输入不覆盖已有值；留空清除初始值。
+        if text == '' or (value and value == value and math.abs(value) < math.huge) then
+            ChartService:setTrackField(istrack, field, value)
+        end
+    end
     
     if self.w0thenShow.value then
         ChartService:setTrackField(istrack, 'w0thenShow', 1)

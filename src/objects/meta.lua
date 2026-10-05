@@ -84,6 +84,7 @@ meta_chart = {
             x_offset = 0,       -- x 偏移
             event_scale = 100,  -- event 缩放
             jump_mode = 'current', -- jump：current 当前值，cumulative 累计终值
+            jump_unit = 'beat', -- jump 数值单位：beat 拍，ms 毫秒
         },
         track = {},         -- 轨道定义表
         version = 1         -- 谱面格式版本
@@ -144,6 +145,10 @@ meta_track = {
         name = '',                 -- 轨道名称
         w0thenShow = 0,           -- w=0 时是否显示
         type = 'xw',              -- 轨道类型
+        start_x = nil,           -- 可选初始值；留空不参与，仅取两个属性
+        start_w = nil,
+        start_lpos = nil,
+        start_rpos = nil,
         parent = 0,               -- 父轨道 ID (0=无父轨道)
         scale_with_parent = 0,    -- 是否跟随父轨道缩放 (0=否, 1=是)
         zindex = 0,                --层级

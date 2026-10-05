@@ -17,6 +17,11 @@ return function(ChartService, state, internal, dependencies)
             if not ok then return false end
         end
         state.chart = table.copy(data or {})
+        -- 旧 Malody 谱面的 jump 原本按毫秒解释，补字段时保留其行为。
+        state.chart.preference = state.chart.preference or {}
+        if state.chart.preference.jump_unit == nil then
+            state.chart.preference.jump_unit = state.chart.preference.motion_mode == 'malody' and 'ms' or 'beat'
+        end
         table.fill(state.chart, meta_chart.__index)
         if type(state.chart.custom_trans)~='table' then state.chart.custom_trans={} end
         if type(state.chart.event_groups) ~= 'table' then state.chart.event_groups = {} end

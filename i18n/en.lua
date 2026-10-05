@@ -16,6 +16,10 @@ return {
 
     ['import_failed'] = 'Import failed',
     ['jump_mode'] = 'Jump calculation',
+    ['jump_unit'] = 'Jump unit',
+    ['jump_unit_beat'] = 'Beats',
+    ['jump_unit_ms'] = 'Milliseconds (ms)',
+    ['track_start_values'] = 'Initial track values (fill two, leave others blank)',
     ['jump_mode_current'] = 'Current value',
     ['jump_mode_cumulative'] = 'Cumulative (to only)',
 
@@ -213,6 +217,10 @@ return {
     ['track_filter.field.right_boundary'] = 'Right boundary',
     ['track_filter.field.left_reference'] = 'Left reference',
     ['track_filter.field.right_reference'] = 'Right reference',
+    ['track_filter.field.start_x'] = 'Initial x',
+    ['track_filter.field.start_w'] = 'Initial w',
+    ['track_filter.field.start_lpos'] = 'Initial lpos',
+    ['track_filter.field.start_rpos'] = 'Initial rpos',
     ['equalizer'] = 'Equalizer',  
     ['operation history'] = 'Operation History',
     ['history.click_to_jump'] = 'Click an entry to return to that step',

@@ -42,6 +42,7 @@
 
 - [编辑手册](edit_manual.md)：标签页、轨道筛选、快捷键、改键位、操作历史。
 - [事件组](event_groups.md)：一组轨道变化在多个位置复用。
+- [Takana 导入](takana_import.md)：拖入 t3pkg、t3proj 或难度 JSON，按 1/256 拍拟合。
 - [主题](theme.md)：昼夜配色、图标与音符图片缩放。
 - [声纹图](spectrogram_manual.md)：频率范围、音名刻度、分析方式与颜色。
 - [开发入门](../DEVELOPMENT.md)、[架构与接口](../DEVELOPER_GUIDE.md)、[插件开发](../plugins/README.md)。
@@ -53,3 +54,4 @@
 元件毫秒位置调整见[偏移时值说明](time_offset.md)。
 
 - [每条轨道的效果（开发中）](track_effect.md)
+- [轨道初始值](track_start_values.md)：无 event 时的 x/w/lpos/rpos 初始值。

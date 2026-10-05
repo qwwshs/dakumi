@@ -47,7 +47,7 @@ local function validEntities(list,kind)
             if trans~=nil then
                 if type(trans)~='table' then return false end
                 if trans.type=='bezier' then
-                    if type(trans.trans)~='table' or #trans.trans~=4 then return false end
+                    if type(trans.trans)~='table' or #trans.trans%2~=0 then return false end
                     for _, n in ipairs(trans.trans) do if not finite(n) then return false end end
                 end
             end
@@ -99,6 +99,13 @@ function Import:validate(result)
         return false,'background must be Image or ImageData'
     end
     return true
+end
+-- 原生谱面识别只检查 Dakumi 自身的必需结构，不认识任何外部格式。
+function Import:isDakumiChart(data)
+    if type(data)~='table' or type(data.note)~='table' or type(data.event)~='table'
+        or type(data.bpm_list)~='table' then return false end
+    local ok,valid=pcall(self.validate,self,{chart=data})
+    return ok and valid==true
 end
 function Import:convert(input,origin)
     local request,err=self:request(input,origin)

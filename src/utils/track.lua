@@ -117,6 +117,16 @@ end
 -- @treturn table 轨道编号数组（已排序）
 function fTrack:track_get_all_track()
     local temp_track = {}
+    -- 没有音符或事件但设置了初始值的轨道，也应出现在预览和轨道列表。
+    for _, id in ipairs(ChartService:getDefinedTrackIds()) do
+        for _, field in ipairs({'start_x', 'start_w', 'start_lpos', 'start_rpos'}) do
+            local value = ChartService:getTrackField(id, field)
+            if type(value) == 'number' and value == value and math.abs(value) < math.huge then
+                temp_track[id] = 1
+                break
+            end
+        end
+    end
     for i = 1, ChartService:getChartEventCount() do
         temp_track[ChartService:getChartEvent(i):getTrack()] = 1
     end

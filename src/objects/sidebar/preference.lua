@@ -6,8 +6,10 @@ Gpreference.layout = require('config.layouts.sidebar').preference
 Gpreference.x_offset_v = {value = '0'}
 Gpreference.event_scale_v = {value = '100'}
 Gpreference.jumpMode = {value = 1}
+Gpreference.jumpUnit = {value = 1}
 function Gpreference:load()
     self.jumpMode.value=ChartService:getPreferenceField('jump_mode')=='cumulative' and 2 or 1
+    self.jumpUnit.value=ChartService:getPreferenceField('jump_unit')=='ms' and 2 or 1
     Gpreference.x_offset_v = {value = tostring(ChartService:getPreferenceField('x_offset') or 0)}
     Gpreference.event_scale_v = {value = tostring(ChartService:getPreferenceField('event_scale') or 100)}
 end
@@ -24,6 +26,8 @@ function Gpreference:Nui()
 
     Nui:label(i18n:get('jump_mode'))
     Nui:combobox(self.jumpMode,{i18n:get('jump_mode_current'),i18n:get('jump_mode_cumulative')})
+    Nui:label(i18n:get('jump_unit'))
+    Nui:combobox(self.jumpUnit,{i18n:get('jump_unit_beat'),i18n:get('jump_unit_ms')})
 
     if ui:tip(i18n:get('save')) then
         local old = ChartService:getPreferenceField('x_offset')
@@ -31,6 +35,7 @@ function Gpreference:Nui()
             ChartService:setPreferenceField('x_offset', tonumber(self.x_offset_v.value) or 0)
             ChartService:setPreferenceField('event_scale', tonumber(self.event_scale_v.value) or 100)
             ChartService:setPreferenceField('jump_mode',self.jumpMode.value==2 and 'cumulative' or 'current')
+            ChartService:setPreferenceField('jump_unit',self.jumpUnit.value==2 and 'ms' or 'beat')
         end)
 
         --[[if love.window.showMessageBox( "", i18n:get("Whether to offset the previously written event value"),{'no','yes'} ) == 2 then

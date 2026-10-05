@@ -326,6 +326,14 @@ function menu:filedropped(file) -- 文件拖入
     file:close()
     local flie_name = string.sub(flie_name, lastSlashIndex + 1)
     local isfile_extension = getFileExtension(flie_name)
+    -- 先识别 Dakumi 自身结构；不匹配的 JSON 与其他未知格式统一交给插件审核。
+    local nativeChart = true
+    if isfile_extension:lower() == 'json' then
+        local source = content:gsub('^\239\187\191', '')
+        local decoded, position, decodeError = dkjson.decode(source)
+        nativeChart = not decodeError and position and source:sub(position):match('^%s*$') ~= nil
+            and require('src.services.importService'):isDakumiChart(decoded)
+    end
 
     nativefs.mount(PATH.base)
     local now_file_path = PATH.usersPath.chart .. (menu.chartTab[menu.selectMusicPos] or "") .. "/"
@@ -334,7 +342,7 @@ function menu:filedropped(file) -- 文件拖入
         nativefs.write(now_file_path .. flie_name,
             content)
         --复制到新的文件夹
-    elseif table.find(file_extension.chart, isfile_extension) then --谱面格式
+    elseif table.find(file_extension.chart, isfile_extension) and nativeChart then --谱面格式
         nativefs.newFile(now_file_path .. flie_name)               --复制到当前文件夹下
         nativefs.write(now_file_path .. flie_name,
             content)

@@ -56,7 +56,36 @@ return function()
     menu:filedropped({open=function() return true end,read=function() return 'bytes' end,
         close=function() closed=true end,getFilename=function() return 'C:/test/file.testpkg' end})
     assert(forwarded and closed)
+    -- Takana JSON 必须分流到插件，不能被 .json 原样复制分支截获。
+    local takanaJson='{"version":3,"components":[]}'
+    local converted,convertError=Import:convert({name='normal.json',data=takanaJson},'menu')
+    assert(converted and converted.chart and converted.chart.bpm_list[1].bpm==120,convertError)
+    forwarded=false
+    menu.importFile=function(self,request)
+        assert(request.name=='normal.json' and request.data==takanaJson)
+        forwarded=true
+        return converted
+    end
+    menu:filedropped({open=function() return true end,read=function() return takanaJson end,
+        close=function() end,getFilename=function() return 'C:/test/normal.json' end})
+    assert(forwarded,'Takana JSON did not reach the import plugin')
+    -- 外部格式由插件自行识别；核心不依赖 components 或某个插件的名称。
+    forwarded=false
+    local foreignJson='{"other_format":true}'
+    menu.importFile=function(_,request)
+        assert(request.data==foreignJson)
+        forwarded=true
+        return converted
+    end
+    menu:filedropped({open=function() return true end,read=function() return foreignJson end,
+        close=function() end,getFilename=function() return 'C:/test/foreign.json' end})
+    assert(forwarded,'Unknown JSON did not reach the generic plugin entry')
+    local nativeJson='{"note":[],"event":[],"bpm_list":[{"beat":[0,0,1],"bpm":120}],"components":[]}'
+    menu.importFile=function() error('Dakumi JSON must take priority over plugins') end
+    menu.flushed=function() end
+    menu:filedropped({open=function() return true end,read=function() return nativeJson end,
+        close=function() end,getFilename=function() return 'C:/test/native.json' end})
     menu.importFile,menu.chartTab,menu.flushed=oldImport,oldTabs,oldFlushed
     manager:unregister('_test_import')
-    print('PASS: seven real import combinations, decoded audio/background, WAV/PNG roundtrip and menu fallback')
+    print('PASS: seven real import combinations, decoded audio/background, WAV/PNG roundtrip and Takana JSON menu routing')
 end

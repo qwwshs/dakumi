@@ -19,6 +19,7 @@ return {
         uiH = 50,
     },
     track_edit = {
+        start_uiH = 25,
         x = 1250,
         y = 0,
         w = 150,

@@ -226,7 +226,7 @@ local function generatePreference()
     }
     for i = 1, ChartService:getBpmCount() do
         local v = ChartService:getBpm(i)
-        preference.bpmList[ChartService:toTime(v.beat)] = v.bpm
+        preference.bpmList[ChartService:toTime(v.beat) * 1000] = v.bpm
     end
     return preference
 end

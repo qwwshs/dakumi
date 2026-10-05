@@ -47,6 +47,12 @@ local function find(entries, t)
     return answer
 end
 
+-- 拍单位的 jump 在触发位置换算为毫秒，跨 BPM 时使用完整时间映射。
+local function jumpMilliseconds(entry,amount)
+    if ChartService:getPreferenceField('jump_unit')=='ms' then return amount end
+    return (ChartService:toTime(entry.first+amount)-ChartService:toTime(entry.first))*1000
+end
+
 -- 只在谱面变化后编译：读表、实体构造、排序和完整积分不进入逐帧路径。
 local cache
 local bus = require('src.utils.eventBus')
@@ -89,7 +95,7 @@ local function compiled()
             -- 固定在触发点，后面的 scroll 变化不重新缩放已经发生的 jump。
             local i=find(lane.scroll,entry.first)
             entry.scrollMultiplier=i>0 and value(lane.scroll[i],entry.first) or 1
-            jumpDistanceTotal=jumpDistanceTotal+entry.entity:getTo()*entry.scrollMultiplier
+            jumpDistanceTotal=jumpDistanceTotal+jumpMilliseconds(entry,entry.entity:getTo())*entry.scrollMultiplier
             entry.distanceTotal=jumpDistanceTotal
         end
         lane.segments={}
@@ -153,6 +159,7 @@ function EffectService:createMotion(trackIds)
     for _, id in ipairs(trackIds) do tracks[id]=compiledTracks[id] end
     local cumulative=ChartService:getPreferenceField('jump_mode')=='cumulative'
     local malody=ChartService:getPreferenceField('motion_mode')=='malody'
+    local milliseconds=ChartService:getPreferenceField('jump_unit')=='ms'
     local timeScale=malody and ChartService:getBpm(1).bpm/60 or 1
     local function primitive(lane,t)
         local segments=lane.segments
@@ -166,7 +173,9 @@ function EffectService:createMotion(trackIds)
     local function shifted(lane,t)
         local i=find(lane.jump,t)
         if i==0 then return t end
-        return t+(cumulative and lane.jump[i].total or value(lane.jump[i],t))
+        local amount=cumulative and lane.jump[i].total or value(lane.jump[i],t)
+        if milliseconds then return ChartService:toBeat(ChartService:toTime(t)+amount/1000) end
+        return t+amount
     end
     local function position(lane,t)
         if not malody then return primitive(lane,t) end
@@ -189,7 +198,7 @@ function EffectService:createMotion(trackIds)
         end
         local j=find(lane.jump,t)
         local jump=j>0 and (cumulative and lane.jump[j].distanceTotal
-            or value(lane.jump[j],t)*lane.jump[j].scrollMultiplier) or 0
+            or jumpMilliseconds(lane.jump[j],value(lane.jump[j],t))*lane.jump[j].scrollMultiplier) or 0
         return (p+jump/1000)*timeScale
     end
     local motion={}

@@ -12,7 +12,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[1]
-INTEGRATION = ("safe_input_love", "chart_change_love", "audio_service_love", "bpm_love", "spectrogram_love", "keybinding_love", "track_filter_love")
+INTEGRATION = ("safe_input_love", "chart_change_love", "audio_service_love", "bpm_love", "spectrogram_love", "keybinding_love", "track_filter_love", "takana_import_love")
 UI = ("editor_input_love",)
 
 def library_case(library, path, syntax=False):

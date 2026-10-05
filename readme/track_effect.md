@@ -30,7 +30,7 @@
 ## 下落速度与位置跳变
 
 - `scroll`：当前下落速度，默认 `1`。`2` 是两倍速度，`0` 是停住，负数是反向。与其他效果一样，`from` 到 `to` 在 `beat` 到 `beat2` 之间过渡；之后保持 `to`，直到下一条 scroll 开始。计算位移时会对速度积分，不会简单地把整条音符位置乘上当前速度。
-- `jump`：当前时间偏移，默认 `0`，单位为拍；不是毫秒；默认的“当前值”模式不累加以前的 jump。实际读取的时间是“当前拍数 + 当前 jump 值”。同样支持 `from` / `to` 和缓动。
+- `jump`：当前时间偏移，默认 `0`。单位可在偏好中选择拍或毫秒；默认的“当前值”模式不累加以前的 jump。同样支持 `from` / `to` 和缓动。
 
 这里沿用 demo 原有的拍数坐标：令 `F(t)` 为 scroll 速度的积分，`J(t)` 为当前 jump，当前时刻为 `now`，音符判定时刻为 `hit`，到判定线的距离为：
 
@@ -67,10 +67,18 @@ scroll | jump | track_alpha | track_line_alpha | rotate
 
 点击“保存”后写入该谱面的 `preference.jump_mode`，字段值为 `current` 或 `cumulative`，支持撤销和重做。
 
+## Jump 单位
+
+偏好中的“Jump 单位”写入 `preference.jump_unit`：`beat` 为拍，`ms` 为毫秒。选择单位只改变数值的解释方式，不改写已有 jump 的 `from` / `to`。当前值和累计模式均使用所选单位，保存支持撤销和重做。
+
+普通 Dakumi 运动模式中，拍单位读取 `now + J(now)`；毫秒单位先读取当前秒数加 `J(now) / 1000`，再按完整 BPM 表换回拍数。例如 120 BPM 时，500 ms 等于 1 拍；跨变速点时按实际时间换算。
+
+旧谱面没有该字段时，普通 Dakumi 谱使用拍，`motion_mode = "malody"` 的谱面保留毫秒。新 Malody 导入谱显式写入 `jump_unit = "ms"`。
+
 
 ## Malody 导入谱的位移
 
-Malody 插件设置 `preference.motion_mode = "malody"`。该模式的 jump 单位为**毫秒**，保留原谱数值，累计模式仍只使用 `to`。scroll 在音频秒轴上积分；以首个 BPM 换算为显示距离。音符和当前播放位置共用累计位移。每条 jump 先乘以它触发时的 scroll，再进行累计；之后改变 scroll 不会重新缩放已经发生的 jump：
+Malody 插件设置 `preference.motion_mode = "malody"` 和 `preference.jump_unit = "ms"`，保留原谱数值，累计模式仍只使用 `to`。scroll 在音频秒轴上积分；以首个 BPM 换算为显示距离。音符和当前播放位置共用累计位移。每条 jump 先乘以它触发时的 scroll，再进行累计；之后改变 scroll 不会重新缩放已经发生的 jump。如果将单位切换为拍，jump 在自身触发位置按 BPM 表换算为毫秒，再按相同规则计算。
 
 ```text
 P(t) = scroll 在 0 到 t 秒之间的积分 + Σ(已触发的 jump 毫秒值 × 各自触发时的 scroll) / 1000

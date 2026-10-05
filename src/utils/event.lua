@@ -214,7 +214,7 @@ local function getValueFromExtraChart(istrack, istype, isbeat)
         if (beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat then
             local value = isevent:getFrom() +
                 (isevent:getTo() - isevent:getFrom()) * event:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
-            result = {value, beat = beat2, type = istype}
+            result = {value, beat = beat2, type = istype, found = true}
             if beat2 >= isbeat then
                 result.beat = isbeat
             end
@@ -243,7 +243,7 @@ local function getValueFromChart(istrack, istype, isbeat)
             if (beat1 <= isbeat and beat2 > isbeat) or beat2 <= isbeat then
                 local value = isevent:getFrom() +
                     (isevent:getTo() - isevent:getFrom()) * event:getTrans(isevent, (isbeat - beat1) / (beat2 - beat1))
-                result = {value, beat = beat2, type = istype}
+                result = {value, beat = beat2, type = istype, found = true}
                 return result
             end
         end
@@ -263,7 +263,14 @@ end
 local function mergeEventValues(now)
     -- 按 beat 大小排序，取最近的两项
     local sorted = {now.x, now.w, now.lpos, now.rpos}
-    table.sort(sorted, function(a, b) return a.beat > b.beat end)
+    local order = {x = 1, w = 2, lpos = 3, rpos = 4}
+    table.sort(sorted, function(a, b)
+        -- 已读取到的事件优先；初始值只补充缺失属性，最多参与两个属性的合并。
+        if (a.found == true) ~= (b.found == true) then return a.found == true end
+        if a.beat ~= b.beat then return a.beat > b.beat end
+        if (a.initial == true) ~= (b.initial == true) then return a.initial == true end
+        return order[a.type] < order[b.type]
+    end)
 
     local temp = {}
     temp[sorted[1].type] = sorted[1]
@@ -343,7 +350,7 @@ function event:get(istrack, isbeat, original, parent_tab, boundary_tab)
         if first <= isbeat and last > first then
             for kind, value in pairs(groupValues(instance, isbeat)) do
                 groupResults[kind] = {value, beat = math.min(isbeat, last), type = kind,
-                    active = isbeat < last}
+                    active = isbeat < last, found = true}
             end
         end
     end
@@ -351,6 +358,15 @@ function event:get(istrack, isbeat, original, parent_tab, boundary_tab)
         local fromGroup = groupResults[kind]
         if fromGroup and (fromGroup.active or fromGroup.beat > now[kind].beat) then
             now[kind] = fromGroup
+        end
+    end
+
+    -- 当前时间尚未读取到该属性的事件时，用轨道初始值补位（0 也是有效值）。
+    for _, kind in ipairs(event_property_type) do
+        if not now[kind].found then
+            local initial = ChartService:getTrackField(istrack, 'start_' .. kind)
+            local valid = type(initial) == 'number' and initial == initial and math.abs(initial) < math.huge
+            now[kind] = {valid and initial or 0, beat = -math.huge, type = kind, initial = valid}
         end
     end
 

@@ -99,6 +99,17 @@ return function(ChartService, state, internal, dependencies)
         end)
     end
 
+    --- 返回已定义的轨道编号副本，供初始值轨道的枚举使用。
+    function ChartService:getDefinedTrackIds()
+        local ids = {}
+        for key in pairs(state.chart.track or {}) do
+            local id = tonumber(key)
+            if id and id >= 1 and id % 1 == 0 then ids[#ids + 1] = id end
+        end
+        table.sort(ids)
+        return ids
+    end
+
     --- 读取缺省值也不创建轨道定义。
     function ChartService:getTrackField(trackId, field)
         local definition = state.chart.track and state.chart.track[tostring(trackId)]
@@ -109,6 +120,10 @@ return function(ChartService, state, internal, dependencies)
 
     --- 仅实际修改时创建轨道，创建前的缺失状态也进入撤销记录。
     function ChartService:setTrackField(trackId, field, v)
+        if field == 'start_x' or field == 'start_w' or field == 'start_lpos' or field == 'start_rpos' then
+            assert(v == nil or (type(v) == 'number' and v == v and math.abs(v) < math.huge),
+                '轨道初始值必须是有限数字或留空')
+        end
         if not internal.valuesDiffer(self:getTrackField(trackId, field), v) then return end
         self:change(nil, function()
             local key = tostring(trackId)

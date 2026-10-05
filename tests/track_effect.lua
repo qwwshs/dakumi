@@ -170,3 +170,33 @@ near(motion:distance(1,134,135),2+500*2*140/60000)
 near(motion:distance(1,136,138),0)
 near(motion:distance(1,133,132.5),-(0.2499975+0.000005))
 print('PASS: tiny-scroll Malody jumps, trigger-time weighting and zero-speed jumps')
+
+-- Jump 单位独立于当前/累计模式；毫秒跨 BPM 时按时间映射换算。
+Chart:setChart({preference={jump_unit='ms'},bpm_list={{beat={0,0,1},bpm=120},{beat={4,0,1},bpm=60}},
+    effect={item(1,'jump',3,3,1000,1000)}})
+near(Effects:createMotion({1}):distance(1,3,6),1.5)
+near(Effects:createMotion({1}):distance(1,2,6),4)
+Chart:setPreferenceField('jump_unit','beat')
+near(Effects:createMotion({1}):distance(1,3,6),-997)
+Chart:setChart({preference={jump_unit='ms',jump_mode='cumulative'},
+    bpm_list={{beat={0,0,1},bpm=120}},effect={item(1,'jump',2,2,0,250),item(1,'jump',4,4,0,500)}})
+near(Effects:createMotion({1}):distance(1,4,8),2.5)
+Chart:setChart({preference={motion_mode='malody',jump_unit='beat',jump_mode='cumulative'},
+    bpm_list={{beat={0,0,1},bpm=120},{beat={4,0,1},bpm=60}},
+    effect={item(1,'scroll',0,0,2,2),item(1,'jump',3,3,0,2)}})
+near(Effects:createMotion({1}):distance(1,2,4),10)
+assert(Chart:getPreferenceField('jump_unit')=='beat')
+Chart:setChart({preference={motion_mode='malody'}})
+assert(Chart:getPreferenceField('jump_unit')=='ms')
+Chart:setChart({})
+assert(Chart:getPreferenceField('jump_unit')=='beat')
+log=function() end
+dkjson=require('src.utils.dkjson')
+fNote={sort=function() Chart:sortNotes() end}
+fEvent={sort=function() Chart:sortEvents() end}
+local redo=require('plugins.redo')
+Chart:setPreferenceField('jump_unit','ms')
+assert(redo:undo() and Chart:getPreferenceField('jump_unit')=='beat')
+assert(redo:redoOne() and Chart:getPreferenceField('jump_unit')=='ms')
+assert(require('src.utils.dkjson').decode(Chart:encodeJson()).preference.jump_unit=='ms')
+print('PASS: jump beat/ms units, cross-BPM conversion, cumulative jumps, legacy defaults and history')
